@@ -24,14 +24,14 @@ mm_av = tmpr.groupby(tmpr.index.month).mean()
 mm_av.index.rename('MM', inplace=True)
 yymm_av = tmpr.groupby([tmpr.index.month, tmpr.index.year]).mean()
 yymm_av.index.rename(['MM', 'YY'], inplace=True)
-#    2: average; weigh with consumption / customer presence in each zone
+#    2: calculate geographic average; weigh with consumption / customer presence in each zone
 weights = pd.DataFrame({'power': [60,717,1257,1548,1859,661,304,0,83,61,0,1324,1131,0,21],
                         'gas': [729,3973,13116,28950,13243,3613,2898,0,1795,400,0,9390,3383,9,113]},
                        index=range(1,16)) #MWh/a in each zone
 weights = weights['power'] / weights['power'].sum() + weights['gas'] / weights['gas'].sum()
 mm_av['germany'] = tools.wavg(mm_av, weights, axis=1)
 yymm_av['germany'] = tools.wavg(yymm_av, weights, axis=1)
-#    3: compare to find year lowest deviation for each month
+#    3: compare to, for each month, find year with lowest deviation from the long-term average
 yymm_av['delta'] = yymm_av.apply(
     lambda row: row['germany'] - mm_av['germany'][row.name[0]], axis=1)
 idx = yymm_av['delta'].groupby('MM').apply(lambda df: df.apply(abs).idxmin())
@@ -48,16 +48,14 @@ if (2, 29) not in repryear.index:  #add 29 feb if doesn't exist yet.
         name = (2, 29))
     repryear = repryear.append(toadd)
 repryear = repryear.sort_index()
-# ...decompose into 'current' monthly averages and (zero-averaged) structure...
+# ...decompose into 'recent' monthly averages and (zero-averaged) structure...
 tmpr2012 = repryear.groupby('MM').mean()
 tmprstruct = repryear - tmpr2012
 # ...and also find the future monthly averages.
+tmpr2045 = pd.DataFrame(index=pd.MultiIndex([[],[]], [[],[]], names=['MM', 'DD']))
 for cz in range(1, 16):
-    t = lb.future.tmpr(cz).rename(cz)
-    if cz == 1:
-        tmpr2045 = pd.DataFrame(t)
-    else:
-        tmpr2045 = tmpr2045.join(t, how='outer')
+    t = lb.future.tmpr(cz)
+    tmpr2045 = tmpr2045.join(t.rename(cz), how='outer')
 tmpr2045 = tmpr2045.groupby('MM').mean() #Per month and climate zone.
 
 # Finally, combine into a daily time series with 'standardized' temperatures.

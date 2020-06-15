@@ -7,7 +7,6 @@ Converting them into loads with help of a temperature timeseries.
 import pandas as pd
 import datetime
 import numpy as np
-from typing import Union, Dict, List, Iterable, Callable, Tuple
 
 SOURCEPATH = 'lichtblick/tlp/sourcedata/'
 SOURCES = {
@@ -46,9 +45,10 @@ def tmpr2load(std_tmpr_lp:pd.Series, tmpr:pd.Series, spec:float) -> pd.Series:
     resulting timeseries has same resolution as 'std_tmpr_lp', and same length 
     as 'tmpr'.
     
-    'std_tmpr_lp': Series with multilevel-index. level 0: time. Level 1: 
-        temperature in [degC]. Values: load (in [K/h]) at given time and temperature.
-    'tmpr': Series with temperature values (in [degC]). Index = date-index.
+    'std_tmpr_lp': Series with multilevel-index. level 0: time-of-day timestamp.
+        Level 1: temperature in [degC]. Values: load (in [K/h]) at given time 
+        and temperature.
+    'tmpr': Series with temperature values (in [degC]). Index = date timestamp.
     'spec': Specific electrical load [kWh/K] with which to scale the profile.
         It describes the heating energy needed by the customer during a single
         day, per degC that the average outdoor temperature of that day is
@@ -79,5 +79,5 @@ def tmpr2load(std_tmpr_lp:pd.Series, tmpr:pd.Series, spec:float) -> pd.Series:
     merged.sort_index(inplace=True)
     
     # Convert into actual power.
-    load = merged['std_tmpr_lp'] * spec * 0.001 #kW to M
+    load = merged['std_tmpr_lp'] * spec * 0.001 #kW to MW
     return load.rename('W')
