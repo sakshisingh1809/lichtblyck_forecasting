@@ -1,0 +1,80 @@
+lichtblick
+	data
+		dataframe.py
+			def add_periodindex(df, columnName, forceFreq)
+			def hours_in_period(df_or_series_or_index)
+			def upsample(df, newFreq)
+			...
+		belvis.py
+			...
+		gas.py
+			def contracts(date, portfolio, timespan, ...) #non-timeseries
+			def dpfc() #get dpfc from system
+			def dpfc_from_file() 
+			def load()
+			def load_from_file()
+			def procurement_from_contracts()
+			def procurement_from_file()
+			def forward()
+			def options()
+			def ...
+			...
+		power.py
+			def qhpfc
+			def hpfc
+			def settlement(year, prod, ...)
+			def contract
+			def procurement
+			...
+	sim
+		gas.py
+			def spot(dpfc, startDate=None, count=10000)
+			def load(load, sigma=0.075)
+			...
+		power.py
+			def qhpfc
+			def hpfc
+			def load
+			...
+	calc
+		gas.py
+			class ParCalculation
+				def calculateScenarios()
+		power.py
+			par
+	graph.py
+		class Colors
+		def add_plot(ax, how, series, **kwargs)
+		def formt(prod, style)
+		def distribution_graph()
+		
+
+		
+		
+		
+		
+		
+		
+		
+		
+#
+
+def get_contract_data(parameters):
+	"""Go to server and retrieve all active contracts with suppliers."""
+	#...do stuff...
+	return df #dataframe
+	
+def get_supply_timeseries(contract_data, other, parameters):
+	"""Turn contract data into a time series showing when new stock is arriving."""
+	#...do stuff...
+	return df #time series dataframe
+
+def get_stock_timeseries(supply_timeseries, otherparameters):
+	"""Cumulate supply timeseries into stock level at any time point (if none sold)."""
+	#...do stuff...
+	return df #time series dataframe
+
+
+contracts = get_contract_data(...)
+supply_inflow = get_supply_timeseries(contracts)
+stock_level = get_stock_timeseries(supply_inflow)

@@ -1,0 +1,4 @@
+Source: DWD
+https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/kl/historical/
+
+Download zip files and put in this folder; delete previously existing files for same weather station.
