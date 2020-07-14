@@ -6,15 +6,16 @@ from zipfile import ZipFile
 import pandas as pd
 import numpy as np
 from geopy.distance import great_circle
+from typing import Union, Any
  
 CLIMATEZONEFILE = 'lichtblick/temperatures/sourcedata/climate_zones.csv'
 HISTORICDATAFOLDER = 'lichtblick/temperatures/sourcedata/historic/'
 FUTUREDATAFOLDER = 'lichtblick/temperatures/sourcedata/future/'
 
-def info(climate_zone:int, info:str='id'):
+def info(climate_zone:int, info:str='name') -> Union[pd.Series, Any]:
     """Return information about specified climate zone, based on 'info'. If 
     info == 'id', return weather station id. If info == 'latlon', return tuple
-    with (lat, lon) in degrees."""
+    with (lat, lon) in degrees, etc."""
     df = pd.read_csv(CLIMATEZONEFILE, sep=';')
     df = df.set_index(df.columns[0])
     if climate_zone not in df.index:
@@ -23,7 +24,9 @@ def info(climate_zone:int, info:str='id'):
         return df.loc[climate_zone, 'Stations_ID']
     if info.lower() == 'latlon':
         return (df.loc[climate_zone, 'Breite'], df.loc[climate_zone, 'Laenge'])
-    raise ValueError("Value for argument 'info' must be one of {'cz', 'latlon'}.")
+    if info.lower() == 'name':
+        return df.loc[climate_zone, 'Name']
+    raise ValueError("Value for argument 'info' must be one of {'id', 'latlon', 'name'}.")
 
 
 def historicdata(climate_zone:int) -> bytes:

@@ -1,4 +1,4 @@
-Climate zone;Stationsname;Stations_ID;Kennung;Stationskennung;Breite;Laenge;Stationshöhe;Flussgebiet;Bundesland;Beginn;Ende;Stations_ID_5stlg.;Dateiname;Zone;2045-Dwnld
+Climate zone;Name;Stations_ID;Kennung;Stationskennung;Breite;Laenge;Stationshöhe;Flussgebiet;Bundesland;Beginn;Ende;Stations_ID_5stlg.;Dateiname;Zone;2045-Dwnld
 1;Bremerhaven;701;EB;1468;53.5332;8.5761;7;565440;HB;11.02.1998;29.03.2020;00701;tageswerte_KL_00701;1;JT
 2;Rostock-Warnemünde;4271;EB;3014;54.1803;12.0808;4;236700;MV;01.11.1991;29.03.2020;04271;tageswerte_KL_04271;2;TH
 3;Hamburg-Fuhlsbüttel;1975;EB;1459;53.6332;9.9881;14;487580;HH;01.01.1961;29.03.2020;01975;tageswerte_KL_01975;3;TH

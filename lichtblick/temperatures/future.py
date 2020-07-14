@@ -8,11 +8,12 @@ Created on Wed Jun  3 11:42:08 2020
 from typing import Iterable
 import pandas as pd
 import numpy as np
-from lichtblick.tools.tools import set_ts_index
 from lichtblick.temperatures.sourcedata.climate_zones import futuredata 
+from lichtblick.temperatures import historic
 
 def climate_data(climate_zone:int) -> pd.DataFrame:
-    """Return dataframe with future daily climate data for specified climate zone."""
+    """Return dataframe with future daily climate data for specified climate 
+    zone. Column names as found in source data."""
     # Get file content and turn into dataframe...
     file = futuredata(climate_zone)
     with open(file) as f:
@@ -29,10 +30,11 @@ def climate_data(climate_zone:int) -> pd.DataFrame:
             raise ValueError(f"Couldn't find 2 empty lines (that mark table start) in {file.name}.")
     return df
 
+
 # Series (res = 1 day, len = 1 year) with temperatures.
-def tmpr(climate_zone:int) -> pd.Series:
+def tmpr_1year(climate_zone:int) -> pd.Series:
     """    
-    Return the daily temperatures for the specified climate zone.
+    Average temperatures for each day of the year for the specified climate zone.
     returns: pandas Series with average temperature values (in [degC]) and 
         (month-of-year, day-of-month) row index.
     """
@@ -66,3 +68,47 @@ def tmpr_concat(tmpr_1year:pd.Series, year_start:int, year_end:int) -> pd.Series
     tmpr.set_axis(idxTs, inplace=True)
     tmpr.index.rename('ts_left', inplace=True)
     return tmpr
+
+def tmpr_standardized():
+    """
+    Return standardized temperature year (res=1d, len=2020-2030) for 15 climate zones.
+    """
+    # Get historic daily temperatures for each climate zones...
+    tmpr_hist = historic.tmpr() # NB: may contain gaps e.g. due to broken weather station.
+    # ...keep only 2005-2019...
+    tmpr_hist = tmpr_hist[(tmpr_hist.index >= '2005') & (tmpr_hist.index < '2020')]
+    idx = tmpr_hist.index.map(lambda ts: (ts.year, ts.month)).set_names(['YY', 'MM'])
+    tmpr_hist = tmpr_hist.set_index(idx)
+    # ...and find the monthly averages.
+    tmpr2012 = tmpr_hist.groupby('MM').mean()
+    
+    # Also find the future monthly averages.
+    tmpr2045 = pd.DataFrame(index=pd.MultiIndex([[],[]], [[],[]], names=['MM', 'DD']))
+    for cz in range(1, 16):
+        t = tmpr_1year(cz)
+        tmpr2045 = tmpr2045.join(t.rename(cz), how='outer')
+    tmpr2045 = tmpr2045.groupby('MM').mean() #Per month and climate zone.
+    
+    # As well as the structure added to each month.
+    tmprstruct = historic.tmpr_struct(2005, 2019, np.std) #or np.mean, to get the pfms/pfmg year
+    
+    # Finally, combine into a daily time series with 'standardized' temperatures.
+    year_start = 2020
+    year_end = 2030
+    idxTs = pd.date_range(start=pd.Timestamp(year=year_start, month=1, day=1),
+                           end=pd.Timestamp(year=year_end+1, month=1, day=1),
+                           closed='left', freq='D', tz='Europe/Berlin')
+    idxY = idxTs.map(lambda ts: ts.year).rename('YY')
+    idxM = idxTs.map(lambda ts: ts.month).rename('MM')
+    idxMD = idxTs.map(lambda ts: (ts.month, ts.day)).rename(['MM', 'DD'])
+    factor2045 = pd.Series((np.arange(2012, 2046) - 2012) / (2045 - 2012),
+                           index=range(2012, 2046)).rename_axis('YY')
+    f = factor2045.loc[idxY]
+    f.index = idxTs
+    stdz_tmpr = tmprstruct.loc[idxMD].set_index(idxTs) \
+        + tmpr2012.loc[idxM].set_index(idxTs).multiply(1 - f, axis=0) \
+        + tmpr2045.loc[idxM].set_index(idxTs).multiply(f, axis=0)
+    
+    # stdz_tmpr.set_index(idxTs.map(lambda ts: (ts.year, ts.month, ts.day))).to_excel('tempr.xlsx')
+    
+    return stdz_tmpr
