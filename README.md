@@ -1,4 +1,4 @@
-# lichtblick
+# lichtblyck
 
 Repository with functions to do time-series analysis.
 
@@ -12,7 +12,7 @@ Rules / Conventions:
 
 ## Describing time-component of index
 
-* If values describe a **particular/specific** point in time (2020-04-21 15:32) or a period in time (2020-04-21 15:00 till 16:00), in both cases the index is a `timestamp` index, i.e., the elements are datetime values and include the timezone information.
+* If values describe a **specific point in time** (2020-04-21 15:32) or a **specific period in time** (2020-04-21 15:00 till 16:00), in both cases the index is a `timestamp` index, i.e., the elements are datetime values and include the timezone information.
   - E.g.: time series with historic temperatures or historic prices or the price-forward-curve.
 * If the **day is irrelevant**, and values describe a time (15:32) or time period (15:00 till 16:00) within a (any) day, the index is a `time` index, i.e., the elements are time values and do not (cannot) include timezone information.
   - E.g.: Standardized temperature load profile: index has time to indicate the load variation throughout the day.
@@ -61,10 +61,10 @@ These are quantities that only make sense when the *duration* of the time period
 
 * Quantity, Volume (Menge)  
   - Name starts with `q_`.
-  - `q_xxx` --> unit is always **MWh**.
+  - Unit is always **MWh**.
 * Revenue, Value (Umsatz, Betrag)
   - Name starts with `r_`.
-  - `r_xxx` --> unit is always **Eur**.
+  - Unit is always **Eur**.
 
 These quantities that can only be thought of as a *discrete list* instead of as a continuous function *f(t)*. Also, when resampling, the values must be changed, see the example below.
 
@@ -73,7 +73,7 @@ There are quantities, that can be in principle be thought of as *continuous* fun
 
 * Power (Vermoegen):
   - Name starts with `w_`.
-  - `w_xxx` --> unit is always **MW**.
+  - Unit is always **MW**.
   - These values can be integrated over time. In our case this means: by multiplying the values (in MW) with the time step of the index (in h), we get the quantity (in MWh) in each time step. By summing these in a certain time interval, we get the volume in that interval. (See "Quantity, Volume", above.)
 * Temperature:
   - Name starts with `tmpr_`.
@@ -83,24 +83,37 @@ There are quantities, that can be in principle be thought of as *continuous* fun
 
 * Speficic price (spezifischer Preis)  
   - Name starts with `p_`.
-  - `p_xxx` --> unit is always **Eur/MWh**.
-  - Price is always the revenue (`r`) divided by the quantity (`q`), and must 
+  - Unit is always **Eur/MWh**.
+  - Price is always the revenue (`r`) divided by the quantity (`q`), and must be calculated again after resampling. Alternatively, it can be averaged by using the quantity (`q`) or power (`w`) as weights.
 
 # Resampling
 
 Often, timeseries need to be resampled, i.e., their time step needs to be changed. E.g.: an hourly timeseries needs to be upsampled to quarterhourly timeseries. Or downsampled to a daily timeseries. What happens with the values in the series depends on the type of quantity (discrete or continuous) they represent.
+
+It is assumed that the conventions for column names are followed. That means:
+
+| if column name is... | or starts with... | it is assumed that... |
+|---|---|---|
+|`q`|`q_`|this is a quantity in MWh|
+|`w`|`w_`|this is a power in MW|
+|`p`|`p_`|this is a price in Eur/MWh|
+|`r`|`r_`|this is a revenue in Eur|
+|`tmpr`|`tmpr_`|this is a temperature in degC|
+
 
 ## Upsampling example
 
 If we have an hour where a customer consumes a volume of 6 MWh (`q = 6`), i.e., has an average power of 6 MW (`w = 6`), and pays a price of 30 Eur/MWh (`p = 30`), then the revenue is 180 Eur (`r = 180`). Let's say the average temperature in that hour is 8 degC (`tmpr = 8`):
 ```
                      q  w   p    r  tmpr
+ts_left_local
 2020-01-01 00:00:00  6  6  30  180     8
 ```
 If we resample these values to a higher-frequency timeseries (e.g. quarter-hourly), then the values of the discrete quantities (`q` and `r`) become smaller, as their values need to be spread over the resulting rows. The values of the continuous quantities (`w`, `p` and `tmpr`) are more or less unchanged, as they are averages.  
 If nothing more is known about how the volume is consumed throughout the day, the best estimate for the discrete quantities is to simply divide the values by the number of new rows (4 in this case), and the best estimate for the continous quantities is to simply repeat the value:
 ```
                        q  w   p     r  tmpr
+ts_left_local
 2020-01-01 00:00:00  1.5  6  30  45.0     8
 2020-01-01 00:15:00  1.5  6  30  45.0     8
 2020-01-01 00:30:00  1.5  6  30  45.0     8
@@ -113,6 +126,7 @@ Note that in this case, due to lack of information about the sub-hour granularit
 Something similar happens when going in the reverse direction, but a bit more intrecate. Let's start with these quarterhourly values:
 ```
                        q  w     p   r  tmpr
+ts_left_local
 2020-01-01 00:00:00  2.0  8  40.0  80     8
 2020-01-01 00:15:00  1.5  6  20.0  30     6
 2020-01-01 00:30:00  1.0  4  25.0  25     7
@@ -121,6 +135,8 @@ Something similar happens when going in the reverse direction, but a bit more in
 If we resample to a lower-frequency timeseries (hourly), we need to **sum** the values of the discrete quantities. We can **average** the values of the continuous quantities, but, for the price, the average must be weighed with the volume (`q`) or power (`w`) in order to get the correct value. Alternatively, the price is always `r/q` and can be calculated from these values after *they* are upsampled:
 ```
                      q  w   p    r  tmpr
+ts_left_local
 2020-01-01 00:00:00  6  6  30  180     8
 ```
 (Note that the 'simple row-average' of the price is the incorrect 28.75 Eur/MWh, instead of the (correct) weighted average of 30 Eur/MWh.)
+
