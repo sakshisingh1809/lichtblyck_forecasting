@@ -1,3 +1,11 @@
+# lichtblick
+
+Repository with functions to do time-series analysis.
+
+Developer: Ruud Wijtvliet (ruud.wijtvliet@lichtblick.de)
+
+---
+
 Rules / Conventions:
 
 # Time-index
