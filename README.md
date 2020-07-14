@@ -60,10 +60,10 @@ Column names are standardized in order to more quickly identify what its values 
 These are quantities that only make sense when the *duration* of the time period they apply to is also specified.
 
 * Quantity, Volume (Menge)  
-  - Name starts with `q_`.
+  - Name is `q` or starts with `q_`.
   - Unit is always **MWh**.
 * Revenue, Value (Umsatz, Betrag)
-  - Name starts with `r_`.
+  - Name is `r` or starts with `r_`.
   - Unit is always **Eur**.
 
 These quantities that can only be thought of as a *discrete list* instead of as a continuous function *f(t)*. Also, when resampling, the values must be changed, see the example below.
@@ -72,17 +72,17 @@ These quantities that can only be thought of as a *discrete list* instead of as 
 There are quantities, that can be in principle be thought of as *continuous* functions. Changing the time step of the series does not change the magnitude of the values, see the resampling examples below.
 
 * Power (Vermoegen):
-  - Name starts with `w_`.
+  - Name is `w` or starts with `w_`.
   - Unit is always **MW**.
   - These values can be integrated over time. In our case this means: by multiplying the values (in MW) with the time step of the index (in h), we get the quantity (in MWh) in each time step. By summing these in a certain time interval, we get the volume in that interval. (See "Quantity, Volume", above.)
 * Temperature:
-  - Name starts with `tmpr_`.
-  - `tmpr_` --> unit is always **degC**.
+  - Name is `tmpr` or starts with `tmpr_`.
+  - Unit is always **degC**.
 
 ## Derived quantities
 
 * Speficic price (spezifischer Preis)  
-  - Name starts with `p_`.
+  - Name is `p` or starts with `p_`.
   - Unit is always **Eur/MWh**.
   - Price is always the revenue (`r`) divided by the quantity (`q`), and must be calculated again after resampling. Alternatively, it can be averaged by using the quantity (`q`) or power (`w`) as weights.
 
