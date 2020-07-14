@@ -6,10 +6,10 @@ Module to read price data from disk.
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from lichtblick import tools
+from lichtblyck import tools
 from sqlalchemy import create_engine
 
-SPOTPRICEFILE = 'lichtblick/prices/sourcedata/spot.tsv'
+SPOTPRICEFILE = 'lichtblyck/prices/sourcedata/spot.tsv'
 
 def spot() -> pd.Series:
     """Return spot price timeseries."""

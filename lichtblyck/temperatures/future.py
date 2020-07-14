@@ -8,8 +8,8 @@ Created on Wed Jun  3 11:42:08 2020
 from typing import Iterable
 import pandas as pd
 import numpy as np
-from lichtblick.temperatures.sourcedata.climate_zones import futuredata 
-from lichtblick.temperatures import historic
+from lichtblyck.temperatures.sourcedata.climate_zones import futuredata 
+from lichtblyck.temperatures import historic
 
 def climate_data(climate_zone:int) -> pd.DataFrame:
     """Return dataframe with future daily climate data for specified climate 

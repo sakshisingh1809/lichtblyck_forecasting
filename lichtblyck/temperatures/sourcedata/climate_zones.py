@@ -8,9 +8,9 @@ import numpy as np
 from geopy.distance import great_circle
 from typing import Union, Any
  
-CLIMATEZONEFILE = 'lichtblick/temperatures/sourcedata/climate_zones.csv'
-HISTORICDATAFOLDER = 'lichtblick/temperatures/sourcedata/historic/'
-FUTUREDATAFOLDER = 'lichtblick/temperatures/sourcedata/future/'
+CLIMATEZONEFILE = 'lichtblyck/temperatures/sourcedata/climate_zones.csv'
+HISTORICDATAFOLDER = 'lichtblyck/temperatures/sourcedata/historic/'
+FUTUREDATAFOLDER = 'lichtblyck/temperatures/sourcedata/future/'
 
 def info(climate_zone:int, info:str='name') -> Union[pd.Series, Any]:
     """Return information about specified climate zone, based on 'info'. If 

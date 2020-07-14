@@ -2,8 +2,8 @@
 Module to calculate the historic covariance between spot price and tlp consumption.
 """
 
-import lichtblick as lb
-from lichtblick import tools
+import lichtblyck as lb
+from lichtblyck import tools
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

@@ -8,8 +8,8 @@ Or, more precise: 1/Quantitiy * d(Quantity) / d(Temperature) in [1/degC]
 
 import numpy as np
 import pandas as pd
-import lichtblick as lb
-from lichtblick.tools import tools
+import lichtblyck as lb
+from lichtblyck.tools import tools
 
 # Get temperatures...
 tmpr = lb.future.tmpr_standardized()

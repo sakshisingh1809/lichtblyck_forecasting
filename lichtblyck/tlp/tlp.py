@@ -9,7 +9,7 @@ import datetime
 import numpy as np
 from typing import Union
 
-SOURCEPATH = 'lichtblick/tlp/sourcedata/'
+SOURCEPATH = 'lichtblyck/tlp/sourcedata/'
 SOURCES = [
     {'name': 'avacon_hz0',     'io': SOURCEPATH + 'AVACON_HZ0.xlsx'},
     {'name': 'avacon_hzs',     'io': SOURCEPATH + 'AVACON_HZS.xlsx'},

@@ -7,8 +7,8 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 
 """
 
-from lichtblick import tools
-from lichtblick.temperatures.sourcedata.climate_zones import historicdata
+from lichtblyck import tools
+from lichtblyck.temperatures.sourcedata.climate_zones import historicdata
 
 import pandas as pd
 import numpy as np
