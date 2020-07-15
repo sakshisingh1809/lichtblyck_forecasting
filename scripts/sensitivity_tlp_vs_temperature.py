@@ -20,19 +20,19 @@ weights = pd.DataFrame({'power': [60,717,1257,1548,1859,661,304,0,83,61,0,1324,1
                         'gas': [729,3973,13116,28950,13243,3613,2898,0,1795,400,0,9390,3383,9,113]},
                        index=range(1,16)) #MWh/a in each zone
 weights = weights['power'] / weights['power'].sum() + weights['gas'] / weights['gas'].sum()
-tmpr['germany'] = tools.wavg(tmpr, weights, axis=1)
+tmpr['tmpr_germany'] = tools.wavg(tmpr, weights, axis=1)
 
 # Get the tlp profile... 
-profile = lb.tlp.standardized_tmpr_loadprofile(1)
+profile = lb.tlp.standardized_tmpr_loadprofile('bayernwerk_nsp')
 # ...and plot to verify.
 wide = profile.unstack('tmpr') #or: wide = profile.reset_index().pivot(index='time_left_local', columns='tmpr', values='std_tmpr_lp')
 wide.plot(colormap='coolwarm')
 
 # Combine to get the expected consumption...
-ref_consumption = lb.tlp.tmpr2load(profile, tmpr['germany'], 1).sum()
+ref_consumption = lb.tlp.tmpr2load(profile, tmpr['tmpr_germany'], 1).sum()
 # ...as well as the consumption with temperature increase...
-consumption = lb.tlp.tmpr2load(profile, tmpr['germany'] + 1, 1).sum()
-# ...and calculate the sensitivity with them
+consumption = lb.tlp.tmpr2load(profile, tmpr['tmpr_germany'] + 1, 1).sum()
+# ...and calculate the sensitivity with them.
 sensitivity = consumption / ref_consumption - 1 #fraction per degC
 
 
@@ -41,7 +41,7 @@ sensitivity = consumption / ref_consumption - 1 #fraction per degC
 
 # Plot the dependence of consumption on temperature.
 x = np.linspace(-5, 5, 101)
-consumption = [lb.tlp.tmpr2load(profile, tmpr['germany'] + dt, 1).sum() for dt in x]
+consumption = [lb.tlp.tmpr2load(profile, tmpr['tmpr_germany'] + dt, 1).sum() for dt in x]
 y = [c/ref_consumption - 1 for c in consumption]
 import matplotlib.pyplot as plt
 plt.style.use('seaborn')

@@ -50,4 +50,8 @@ def wavg(df:pd.DataFrame, weights:Optional[Iterable]=None, axis:int=0) -> pd.Dat
         return df.mean()
     if len(df) != len(weights):
         raise ValueError('Dataframe and weights have unequal length.')
+    try:
+        weights = weights.values
+    except AttributeError:
+        pass
     return df.mul(weights, axis=0).sum() / weights.sum()

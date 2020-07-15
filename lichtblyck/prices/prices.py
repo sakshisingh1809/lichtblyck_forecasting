@@ -19,6 +19,7 @@ def spot() -> pd.Series:
     #Replace missing values with NaN, convert others to float:
     data['p_spot'] = data['price'].apply(lambda x: np.NaN if x == '---' else float(x.replace(',', '.'))) 
     spot = tools.set_ts_index(data, 'ts_right', 'right')
+    spot.resample('H').asfreq()
     return spot['p_spot']
 
 
@@ -63,6 +64,7 @@ def futures(prod:str='y') -> pd.DataFrame:
     # ...and use to calculate offpeak prices.
     df['p_offpeak'] = _offpeakprice(df['p_base'], df['p_peak'], df['basehours'], df['peakhours'])
     # Finally, return in correct row and column order.
+    # TODO: add frequency to index, if possible
     return df[['deliv_ts_right', 'p_base', 'p_peak', 'p_offpeak', 'basehours', 'peakhours', 'offpeakhours']].sort_index()
 
 @np.vectorize
@@ -82,4 +84,3 @@ def _basepeakoffpeak(ts_left, ts_right) -> float:
 def _offpeakprice(p_base, p_peak, basehours, peakhours):
     """Return offpeak price from base and peak price and number of base and peak hours in period."""
     return (p_base * basehours - p_peak * peakhours) / (basehours - peakhours)
-

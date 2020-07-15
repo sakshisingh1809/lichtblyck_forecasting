@@ -163,13 +163,13 @@ def tmpr_struct(year_start:int=2005, year_end:int=2019, f:Callable=np.std
                             'gas':   [729,3973,13116,28950,13243,3613,2898,0,1795,400,0,9390,3383,9,113]},
                            index=range(1,16)) #MWh/a in each zone
     weights = weights['power'] / weights['power'].sum() + weights['gas'] / weights['gas'].sum()
-    yymm['germany'] = tools.wavg(yymm, weights, axis=1)
-    mm['germany'] = tools.wavg(mm, weights, axis=1)
+    yymm['tmpr_germany'] = tools.wavg(yymm, weights, axis=1)
+    mm['tmpr_germany'] = tools.wavg(mm, weights, axis=1)
     #    3: compare to, for each month, find year with lowest deviation from the long-term average
-    yymm['delta'] = yymm.apply(
-        lambda row: row['germany'] - mm['germany'][row.name[0]], axis=1)
-    idx = yymm['delta'].groupby('MM').apply(lambda df: df.apply(abs).idxmin())
-    bestfit = yymm.loc[idx, 'germany':'delta']
+    yymm['tmpr_delta'] = yymm.apply(
+        lambda row: row['tmpr_germany'] - mm['tmpr_germany'][row.name[0]], axis=1)
+    idx = yymm['tmpr_delta'].groupby('MM').apply(lambda df: df.apply(abs).idxmin())
+    bestfit = yymm.loc[idx, 'tmpr_germany':'tmpr_delta']
 
     # Then, create single representative year from these individual months...
     keep = t.index.map(lambda idx: (idx.month, idx.year) in bestfit.index)
