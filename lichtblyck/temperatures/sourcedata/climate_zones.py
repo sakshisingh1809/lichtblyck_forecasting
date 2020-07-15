@@ -1,16 +1,19 @@
 """
-Module to find correct file to given climate zone.
+Module handle climate zones and return correct (future or historic) data.
 """
+
 from pathlib import Path
 from zipfile import ZipFile
 import pandas as pd
 import numpy as np
 from geopy.distance import great_circle
-from typing import Union, Any
+from typing import Union, Any, Callable
  
+
 CLIMATEZONEFILE = 'lichtblyck/temperatures/sourcedata/climate_zones.csv'
 HISTORICDATAFOLDER = 'lichtblyck/temperatures/sourcedata/historic/'
 FUTUREDATAFOLDER = 'lichtblyck/temperatures/sourcedata/future/'
+
 
 def info(climate_zone:int, info:str='name') -> Union[pd.Series, Any]:
     """Return information about specified climate zone, based on 'info'. If 
@@ -77,4 +80,14 @@ def futuredata(climate_zone:int) -> Path:
     else:
         raise FileNotFoundError(f"Can't find a file named 'TRY2045..._Jahr...' in {folder.name}.")
     return file
-        
+
+
+def forallzones(function:Callable[[int], pd.Series]) -> pd.DataFrame:
+    """Execute 'function' for each climate zone and return in single dataframe."""
+    for cz in range(1, 16):
+        s = function(cz)
+        if cz == 1:
+            df = pd.DataFrame(s.rename(s.name + f"_{cz}"))
+        else:
+            df = df.join(s.rename(s.name + f"_{cz}"), how='outer')
+    return df

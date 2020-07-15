@@ -26,6 +26,7 @@ SOURCES = [
     {'name': 'wwnetz_nsp',     'io': SOURCEPATH + 'WWNETZ_NSP.xlsx'}
 ]
 
+
 # Series (res = qh, len = 1 day) with consumption for various temperatures.
 def standardized_tmpr_loadprofile(source:Union[str, int]) -> pd.Series:
     """
@@ -49,14 +50,24 @@ def standardized_tmpr_loadprofile(source:Union[str, int]) -> pd.Series:
                          "}, or the index position of one of them.")
     #Requirements/assumptions for any tlp excel file:
     #. Have column called 'Uhrzeit' with 15min resolution and right-bound timestamp.
+    #. Have column 'Nr.'
+    #. Have columns with number representing the temperature.
     df = pd.read_excel(**{'header':0, 'sheet_name':0, 'io': io})
     df['ts_right_local'] = pd.to_datetime(df['Uhrzeit'], format='%H:%M:%S')
     df['time_left_local'] = (df['ts_right_local'] + datetime.timedelta(hours=-0.25)).dt.time
+    df = df.set_index('time_left_local')
     df = df.drop(columns=['Nr.', 'Uhrzeit', 'ts_right_local'])
+    # Make sure highest temperature has all 0 values.
+    maxtemp = max(df.columns) #all remaining columns should be numeric values
+    if df[maxtemp].any(): #not all are zero
+        df[maxtemp + 1] = 0
     # Put in correct output format (long table).
-    df = pd.melt(df, id_vars=['time_left_local'], var_name='tmpr', value_name='std_tmpr_lp')
-    df = df.set_index(['time_left_local', 'tmpr'])
-    return df['std_tmpr_lp']
+    s = df.stack().sort_index()
+    s.index.rename(['time_left_local', 'tmpr'], inplace=True)
+    s.name = 'std_tmpr_lp'
+    # TODO: can a frequency be set on a datetime.time index?
+    return s
+
 
 # Function to convert temperature into load using TLP.
 def tmpr2load(std_tmpr_lp:pd.Series, tmpr:pd.Series, spec:float) -> pd.Series:
@@ -103,4 +114,5 @@ def tmpr2load(std_tmpr_lp:pd.Series, tmpr:pd.Series, spec:float) -> pd.Series:
     # Convert into actual power.
     load = merged['std_tmpr_lp'] * spec * 0.001 #kW to MW
     load.index.freq = pd.infer_freq(load.index)
+    # TODO: don't just use current temperature, but rather also yesterday's as described in standard process.
     return load.rename('w')

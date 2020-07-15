@@ -23,7 +23,7 @@ weights = weights['power'] / weights['power'].sum() + weights['gas'] / weights['
 tmpr['germany'] = tools.wavg(tmpr, weights, axis=1)
 
 # Get the tlp profile... 
-profile = lb.tlp.standardized_tmpr_loadprofile(3)
+profile = lb.tlp.standardized_tmpr_loadprofile(1)
 # ...and plot to verify.
 wide = profile.unstack('tmpr') #or: wide = profile.reset_index().pivot(index='time_left_local', columns='tmpr', values='std_tmpr_lp')
 wide.plot(colormap='coolwarm')

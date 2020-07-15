@@ -7,18 +7,20 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 
 """
 
-from lichtblyck import tools
-from lichtblyck.temperatures.sourcedata.climate_zones import historicdata
-
-import pandas as pd
-import numpy as np
+from typing import Callable
 from datetime import datetime
 from io import StringIO
-from typing import Callable
+import pandas as pd
+import numpy as np
+from lichtblyck import tools
+from lichtblyck.temperatures.sourcedata.climate_zones import historicdata, forallzones
+
 
 def climate_data(climate_zone:int) -> pd.DataFrame:
     """Return dataframe with historic daily climate data for specified climate 
-    zone. Column names as found in source data."""
+    zone. Values before 1917 are dropped. Index is gapless with missing values 
+    filled with np.nan. Column names not standardized but rather as found in 
+    source file."""
     # Get file content and turn into dataframe...
     bytes_data = historicdata(climate_zone)
     data = StringIO(str(bytes_data, 'utf-8'))
@@ -26,10 +28,14 @@ def climate_data(climate_zone:int) -> pd.DataFrame:
     # ...then do some cleaning up...
     df.columns = df.columns.str.strip()
     df.drop('eor', axis=1, inplace=True)
+    df.replace(-999, np.nan, inplace=True) #-999 represents missing value
     df['MESS_DATUM'] = pd.to_datetime(df['MESS_DATUM'], format='%Y%m%d')
+    # ...and set correct index and make gapless.
     df = tools.set_ts_index(df, 'MESS_DATUM', 'left')
-    df.index.freq = pd.infer_freq(df.index) # TODO: this is currently not working; freq == None
+    df = df[df.index >= '1917'] #Problems with earlier data.
+    df = df.resample('D').asfreq() #add na-values for missing rows.
     return df
+
 
 def _tmpr(climate_zone:int) -> pd.Series:
     """    
@@ -41,49 +47,8 @@ def _tmpr(climate_zone:int) -> pd.Series:
     """
     df = climate_data(climate_zone)
     s = df['TMK'].rename('tmpr')
-    # Keep correct values.
-    s = s[s>-950]
-    # Remove data before 1917 because of resampling problems.
-    s = s[s.index >= '1917']
     return s
 
-def _tmpr_monthlyavg(climate_zone:int) -> pd.Series:
-    """
-    Return monthly average temperatures for the specified climate zone.
-    
-    Returns:
-        Series with average temperature values. Index: timestamp (monthly).
-            Values: average temperatures for corresponding month in degC.
-    """
-    t = tmpr(climate_zone)
-    return t.resample('MS').mean()
-
-def _tmpr_monthlymovingavg(climate_zone:int, window:int=5) -> pd.Series:
-    """
-    Return monthly moving average temperatures for the specified climate zone. 
-    If e.g. 'window'==10, the value for May 2020 is the average May temperature
-    in 2010 until and including 2019.
-         
-    Returns:
-        Series with moving average temperature values. Index: timestamp (monthly).
-            Values: average temperature in preceding 'window' years for that
-            month-of-year in degC.
-    """
-    t = tmpr_monthlyavg(climate_zone)
-    mavg = t.groupby(t.index.map(lambda ts: ts.month)).rolling(window=window).mean()
-    # Do corrections
-    mavg.idex = mavg.index.droplevel(0) #drop month-level that was added 
-    mavg.index = mavg.index + pd.offsets.DateOffset(years=1) #add one year
-    mavg = mavg.sort_index() #put back into chronological order
-    mavg = mavg.dropna() #drop initial few years
-    return mavg    
-
-def __multiply(function:Callable) -> pd.DataFrame:
-    df = pd.DataFrame()
-    for cz in range(1, 16):
-        s = function(cz)
-        df = df.join(s.rename(cz), how='outer')
-    return df
 
 def tmpr() -> pd.DataFrame:
     """
@@ -94,7 +59,21 @@ def tmpr() -> pd.DataFrame:
             Columns: climate zones (1..15). Values: average temperature for
             corresponding day and climate zone in degC.
     """
-    return __multiply(_tmpr)
+    return forallzones(_tmpr)
+
+
+def _tmpr_monthlyavg(climate_zone:int) -> pd.Series:
+    """
+    Return monthly average temperatures for the specified climate zone.
+    
+    Returns:
+        Series with average temperature values. Index: timestamp (monthly).
+            Values: average temperatures for corresponding month in degC.
+    """
+    s = _tmpr(climate_zone)
+    # TODO: deal with with nan-values.
+    return s.resample('MS').mean()
+
 
 def tmpr_monthlyavg() -> pd.DataFrame:
     """
@@ -105,7 +84,30 @@ def tmpr_monthlyavg() -> pd.DataFrame:
             Columns: climate zones (1..15). Values: average temperatures for
             corresponding month and climate zone in degC.
     """
-    return __multiply(_tmpr_monthlyavg)
+    return forallzones(_tmpr_monthlyavg)
+
+
+def _tmpr_monthlymovingavg(climate_zone:int, window:int=5) -> pd.Series:
+    """
+    Return monthly moving average temperatures for the specified climate zone. 
+    If e.g. 'window'==10, the value for May 2020 is the average May temperature
+    in the time period from 2010 until and including 2019.
+         
+    Returns:
+        Series with moving average temperature values. Index: timestamp (monthly).
+            Values: average temperature in preceding 'window' years for that
+            month-of-year in degC.
+    """
+    t = _tmpr_monthlyavg(climate_zone)
+    mavg = t.groupby(t.index.map(lambda ts: ts.month)).rolling(window=window).mean()
+    # Do corrections
+    mavg.index = mavg.index.droplevel(0) #drop month-level that was added 
+    mavg.index = mavg.index + pd.offsets.DateOffset(years=1) #add one year
+    mavg = mavg.sort_index() #put back into chronological order
+    mavg.index.freq = pd.infer_freq(mavg.index)
+    mavg = mavg.dropna() #drop initial few years
+    return mavg    
+
         
 def tmpr_monthlymovingavg(window:int=5) -> pd.DataFrame:
     """
@@ -119,7 +121,8 @@ def tmpr_monthlymovingavg(window:int=5) -> pd.DataFrame:
             temperature in preceding 'windows' years for that month-of-year
             in degC.
     """
-    return __multiply(lambda cz: _tmpr_monthlymovingavg(cz, window))
+    return forallzones(lambda cz: _tmpr_monthlymovingavg(cz, window))
+
 
 def tmpr_struct(year_start:int=2005, year_end:int=2019, f:Callable=np.std
                 ) -> pd.DataFrame:

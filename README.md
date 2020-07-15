@@ -54,7 +54,7 @@ All time and date timestamps which are used to denote a **period** rather than a
 
 # Column names
 
-Column names are standardized in order to more quickly identify what its values mean, but also to be able to do a correct resampling of the timeseries (see resampling example below).
+Dataframe column names, as well as Series names, are standardized in order to more quickly identify what its values mean, but also to be able to do a correct resampling of the timeseries (see resampling example below).
 
 ## Discrete, time-integrated quantities
 These are quantities that only make sense when the *duration* of the time period they apply to is also specified.
@@ -85,6 +85,33 @@ There are quantities, that can be in principle be thought of as *continuous* fun
   - Name is `p` or starts with `p_`.
   - Unit is always **Eur/MWh**.
   - Price is always the revenue (`r`) divided by the quantity (`q`), and must be calculated again after resampling. Alternatively, it can be averaged by using the quantity (`q`) or power (`w`) as weights.
+
+# Checklist for timeseries and dataframes containing timeseries
+
+* Index:
+  * Index has name.
+  * If index values are timestamps denoting a moment in time: 
+    * Name is `ts` or `ts_local`.
+  * If index values are timestamp denoting a time period:
+    - Name is `ts_left` or `ts_left_local`;
+    - `.index.freq` is set.
+  * If index values are times denoting a moment during the (any) day:
+    - Name is `time_local`.
+  * If index values are times denoting a time period during the (any) day:
+    - Name is `time_left_local`;
+    - `.index.freq` is set.
+  * If index values are a part of a timestamp or time:
+    - Name is `YY`, `QQ`, `MM`, `DD`, `H`, `QH`, `M`, or `S`.
+* Series name:
+  - If values are in MWh, name should be `q` or start with `q_`
+  - If values are in MW, name should be `w` or start with `w_`
+  - If values are in Eur, name should be `r` or start with `r_`
+  - If values are in Eur/MWh, name should be `p` or start with `p_`
+  - If values are in degC, name should be `tmpr` or start with `tmpr_`
+  - If values are not in one of these units, the name should not be `q`, `w`, `r`, `p`, or `tmpr` and should not start with `q_`, `w_`, `r_`, `p_`, or `tmpr_`.
+* Column names for dataframe:
+  - Same as series name.
+
 
 # Resampling
 
@@ -139,4 +166,3 @@ ts_left_local
 2020-01-01 00:00:00  6  6  30  180     8
 ```
 (Note that the 'simple row-average' of the price is the incorrect 28.75 Eur/MWh, instead of the (correct) weighted average of 30 Eur/MWh.)
-

@@ -5,15 +5,16 @@ Created on Wed Jun  3 11:42:08 2020
 @author: ruud.wijtvliet
 """
 
-from typing import Iterable
+from typing import Iterable, Union
 import pandas as pd
 import numpy as np
-from lichtblyck.temperatures.sourcedata.climate_zones import futuredata 
+from lichtblyck.temperatures.sourcedata.climate_zones import futuredata, forallzones
 from lichtblyck.temperatures import historic
+
 
 def climate_data(climate_zone:int) -> pd.DataFrame:
     """Return dataframe with future daily climate data for specified climate 
-    zone. Column names as found in source data."""
+    zone. Column names not standardized, but rather as found in source data."""
     # Get file content and turn into dataframe...
     file = futuredata(climate_zone)
     with open(file) as f:
@@ -28,25 +29,39 @@ def climate_data(climate_zone:int) -> pd.DataFrame:
                 break
         else:
             raise ValueError(f"Couldn't find 2 empty lines (that mark table start) in {file.name}.")
-    return df
+    return df.set_index(["MM", "DD", "HH"])
 
 
 # Series (res = 1 day, len = 1 year) with temperatures.
-def tmpr_1year(climate_zone:int) -> pd.Series:
+def _tmpr_1year(climate_zone:int) -> pd.Series:
     """    
-    Average temperatures for each day of the year for the specified climate zone.
-    returns: pandas Series with average temperature values (in [degC]) and 
-        (month-of-year, day-of-month) row index.
+    Return the forecast future daily temperature for specified climate zone.
+    
+    Returns:
+        Dataframe with daily temperature values. Index: (MM, DD).  Values: 
+            average temperature at corresponding day in degC.
     """
     df = climate_data(climate_zone)
-    s = df.groupby(['MM', 'DD']).mean()['t'].rename('tmpr')
+    s = df['t'].groupby(['MM', 'DD']).mean().rename('tmpr')
     if (2, 29) not in s.index:    # Add 29 feb.
         s.loc[(2, 29)] = s[s.index.map(lambda idx: idx[0] == 2)].mean()
     return s.sort_index()
 
 
+def tmpr_1year() -> pd.DataFrame:
+    """
+    Return the forecast future daily temperature each climate zone.
+    
+    Returns:
+        Dataframe with daily temperature values. Index: (MM, DD).  Values: 
+            average temperature at corresponding day in degC.
+    """
+    return forallzones(_tmpr_1year)
+
+
 # Series (res = 1 day, len = several years)
-def tmpr_concat(tmpr_1year:pd.Series, year_start:int, year_end:int) -> pd.Series:
+def tmpr_concat(tmpr_1year:Union[pd.Series, pd.DataFrame], year_start:int, 
+                year_end:int) -> Union[pd.Series, pd.DataFrame]:
     """
     Turn single temperature profile 'tmpr_1year' (res = d, len = 1 year)
     into a temperature timeseries (res = d, len = 'year_start'
@@ -69,7 +84,8 @@ def tmpr_concat(tmpr_1year:pd.Series, year_start:int, year_end:int) -> pd.Series
     tmpr.index.rename('ts_left', inplace=True)
     return tmpr
 
-def tmpr_standardized():
+
+def tmpr_standardized() -> pd.DataFrame:
     """
     Return standardized temperature year (res=1d, len=2020-2030) for 15 climate zones.
     """
@@ -83,10 +99,7 @@ def tmpr_standardized():
     tmpr2012 = tmpr_hist.groupby('MM').mean()
     
     # Also find the future monthly averages.
-    tmpr2045 = pd.DataFrame(index=pd.MultiIndex([[],[]], [[],[]], names=['MM', 'DD']))
-    for cz in range(1, 16):
-        t = tmpr_1year(cz)
-        tmpr2045 = tmpr2045.join(t.rename(cz), how='outer')
+    tmpr2045 = tmpr_1year() 
     tmpr2045 = tmpr2045.groupby('MM').mean() #Per month and climate zone.
     
     # As well as the structure added to each month.
@@ -96,8 +109,8 @@ def tmpr_standardized():
     year_start = 2020
     year_end = 2030
     idxTs = pd.date_range(start=pd.Timestamp(year=year_start, month=1, day=1),
-                           end=pd.Timestamp(year=year_end+1, month=1, day=1),
-                           closed='left', freq='D', tz='Europe/Berlin')
+                          end=pd.Timestamp(year=year_end+1, month=1, day=1),
+                          closed='left', freq='D', tz='Europe/Berlin', name='ts_left')
     idxY = idxTs.map(lambda ts: ts.year).rename('YY')
     idxM = idxTs.map(lambda ts: ts.month).rename('MM')
     idxMD = idxTs.map(lambda ts: (ts.month, ts.day)).rename(['MM', 'DD'])
@@ -108,7 +121,5 @@ def tmpr_standardized():
     stdz_tmpr = tmprstruct.loc[idxMD].set_index(idxTs) \
         + tmpr2012.loc[idxM].set_index(idxTs).multiply(1 - f, axis=0) \
         + tmpr2045.loc[idxM].set_index(idxTs).multiply(f, axis=0)
-    
-    # stdz_tmpr.set_index(idxTs.map(lambda ts: (ts.year, ts.month, ts.day))).to_excel('tempr.xlsx')
-    
+
     return stdz_tmpr
