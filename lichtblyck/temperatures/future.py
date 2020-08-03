@@ -42,7 +42,7 @@ def _tmpr_1year(climate_zone:int) -> pd.Series:
             average temperature at corresponding day in degC.
     """
     df = climate_data(climate_zone)
-    s = df['t'].groupby(['MM', 'DD']).mean().rename('tmpr')
+    s = df['t'].groupby(['MM', 'DD']).mean().rename('t')
     if (2, 29) not in s.index:    # Add 29 feb.
         s.loc[(2, 29)] = s[s.index.map(lambda idx: idx[0] == 2)].mean()
     return s.sort_index()

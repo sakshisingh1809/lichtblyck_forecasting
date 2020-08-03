@@ -63,16 +63,16 @@ def standardized_tmpr_loadprofile(source:Union[str, int]) -> pd.Series:
         df[maxtemp + 1] = 0
     # Put in correct output format (long table).
     s = df.stack().sort_index()
-    s.index.rename(['time_left_local', 'tmpr'], inplace=True)
+    s.index.rename(['time_left_local', 't'], inplace=True)
     s.name = 'std_tmpr_lp'
     # TODO: can a frequency be set on a datetime.time index?
     return s
 
 
 # Function to convert temperature into load using TLP.
-def tmpr2load(std_tmpr_lp:pd.Series, tmpr:pd.Series, spec:float) -> pd.Series:
+def tmpr2load(std_tmpr_lp:pd.Series, t:pd.Series, spec:float) -> pd.Series:
     """
-    Turn temperature timeseries 'tmpr' (with res = 1d) into a load timeseries,
+    Turn temperature timeseries 't' (with res = 1d) into a load timeseries,
     with help of standardized temperature load profile series 'std_tmpr_lp'. The 
     resulting timeseries has same resolution as 'std_tmpr_lp', and same length 
     as 'tmpr'.
@@ -81,7 +81,7 @@ def tmpr2load(std_tmpr_lp:pd.Series, tmpr:pd.Series, spec:float) -> pd.Series:
     'std_tmpr_lp': Series with multilevel-index. level 0: time-of-day timestamp.
         Level 1: temperature in [degC]. Values: load (in [K/h]) at given time 
         and temperature.
-    'tmpr': Series with temperature values (in [degC]). Index = date timestamp.
+    't': Series with temperature values (in [degC]). Index = date timestamp.
     'spec': Specific electrical load [kWh/K] with which to scale the profile.
         It describes the heating energy needed by the customer during a single
         day, per degC that the average outdoor temperature of that day is
@@ -90,25 +90,26 @@ def tmpr2load(std_tmpr_lp:pd.Series, tmpr:pd.Series, spec:float) -> pd.Series:
     returns: 
         Timeseries with the electrical load in MW.
     """
-    available_tmpr = std_tmpr_lp.index.get_level_values('tmpr')
-    def nearest_available(tmpr):
-        idx = (np.abs(available_tmpr - tmpr)).argmin()
-        return available_tmpr[idx]
+    t_available = std_tmpr_lp.index.get_level_values('t')
+    def nearest_available(t):
+        idx = (np.abs(t_available - t)).argmin()
+        return t_available[idx]
     
     new_timestamps = pd.date_range(
-        tmpr.index[0], tmpr.index[-1] + datetime.timedelta(1), 
-        freq='15T', closed='left', tz='Europe/Berlin') #TODO: change freq to be same as 'tlp'
+        t.index[0], t.index[-1] + datetime.timedelta(1), 
+        freq='15T', closed='left', tz='Europe/Berlin', 
+        name='ts_left') #TODO: change freq to be same as 'tlp'
     
     # Put into correct time resolution.
-    df = pd.DataFrame({'tmpr': tmpr})
-    df['tmpr_avail'] = df['tmpr'].apply(nearest_available)
+    df = pd.DataFrame({'t':t})
+    df['t_avail'] = df['t'].apply(nearest_available)
     # df['date'] = df.index.map(lambda ts: ts.date)
     df = df.reindex(new_timestamps).ffill()
     df['time'] = df.index.map(lambda ts: ts.time)
     
     # Add corresponding standardized load.
-    merged = df.merge(std_tmpr_lp, left_on=('time', 'tmpr_avail'), right_index=True)
-    merged = merged[['tmpr', 'std_tmpr_lp']]
+    merged = df.merge(std_tmpr_lp, left_on=('time', 't_avail'), right_index=True)
+    merged = merged[['t', 'std_tmpr_lp']]
     merged.sort_index(inplace=True)
     
     # Convert into actual power.

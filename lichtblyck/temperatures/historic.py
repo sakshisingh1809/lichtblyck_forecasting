@@ -46,7 +46,7 @@ def _tmpr(climate_zone:int) -> pd.Series:
             average temperature at corresponding day in degC.
     """
     df = climate_data(climate_zone)
-    s = df['TMK'].rename('tmpr')
+    s = df['TMK'].rename('t')
     return s
 
 
@@ -100,12 +100,12 @@ def _tmpr_monthlymovingavg(climate_zone:int, window:int=5) -> pd.Series:
     """
     t = _tmpr_monthlyavg(climate_zone)
     mavg = t.groupby(t.index.map(lambda ts: ts.month)).rolling(window=window).mean()
-    # Do corrections
+    # Do corrections.
     mavg.index = mavg.index.droplevel(0) #drop month-level that was added 
-    mavg.index = mavg.index + pd.offsets.DateOffset(years=1) #add one year
     mavg = mavg.sort_index() #put back into chronological order
-    mavg.index.freq = pd.infer_freq(mavg.index)
-    mavg = mavg.dropna() #drop initial few years
+    mavg = mavg.iloc[(window-1)*12:] #drop first few months
+    mavg.index = mavg.index + pd.offsets.DateOffset(years=1) #add one year
+    mavg.index.freq = pd.infer_freq(mavg.index)    
     return mavg    
 
         
@@ -163,13 +163,13 @@ def tmpr_struct(year_start:int=2005, year_end:int=2019, f:Callable=np.std
                             'gas':   [729,3973,13116,28950,13243,3613,2898,0,1795,400,0,9390,3383,9,113]},
                            index=range(1,16)) #MWh/a in each zone
     weights = weights['power'] / weights['power'].sum() + weights['gas'] / weights['gas'].sum()
-    yymm['tmpr_germany'] = tools.wavg(yymm, weights, axis=1)
-    mm['tmpr_germany'] = tools.wavg(mm, weights, axis=1)
+    yymm['t_germany'] = tools.wavg(yymm, weights, axis=1)
+    mm['t_germany'] = tools.wavg(mm, weights, axis=1)
     #    3: compare to, for each month, find year with lowest deviation from the long-term average
-    yymm['tmpr_delta'] = yymm.apply(
-        lambda row: row['tmpr_germany'] - mm['tmpr_germany'][row.name[0]], axis=1)
-    idx = yymm['tmpr_delta'].groupby('MM').apply(lambda df: df.apply(abs).idxmin())
-    bestfit = yymm.loc[idx, 'tmpr_germany':'tmpr_delta']
+    yymm['t_delta'] = yymm.apply(
+        lambda row: row['t_germany'] - mm['t_germany'][row.name[0]], axis=1)
+    idx = yymm['t_delta'].groupby('MM').apply(lambda df: df.apply(abs).idxmin())
+    bestfit = yymm.loc[idx, 't_germany':'t_delta']
 
     # Then, create single representative year from these individual months...
     keep = t.index.map(lambda idx: (idx.month, idx.year) in bestfit.index)
@@ -186,3 +186,22 @@ def tmpr_struct(year_start:int=2005, year_end:int=2019, f:Callable=np.std
     # ... and return (zero-averaged) structure.
     struct = repryear - repryear.groupby('MM').mean()
     return struct
+
+
+def fill_gaps(t:pd.DataFrame) -> pd.DataFrame:
+    """
+    Fills gaps in temperature dataframe. By comparing one climate zone to all
+    others.
+    """    
+    t = t[t.isna().sum(axis=1) < 2] #keep only days with at most 1 missing value
+    
+    # For each missing value, get estimate. Using average difference to other stations' values.
+    complete = t.dropna() #all days without any missing value
+    for col in t.columns:
+        d = complete[col] - complete.drop(col, axis=1).mean(axis=1)
+        diff = d.mean() #average difference between this climate zone and all others
+        # Use diff to fill gaps.
+        isna = t[col].isna()
+        t.loc[isna, col] = complete.drop(col, axis=1).loc[isna].mean(axis=1) + diff
+    
+    return t

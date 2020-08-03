@@ -2,8 +2,9 @@
 """
 Module with tools to modify and standardize dataframes.
 """
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Callable
 import pandas as pd
+import numpy as np
 import datetime
 
 # The files we want to import don't have a standard layout. Importantly, the 
@@ -40,9 +41,9 @@ def set_ts_index(df:pd.DataFrame, column:str, bound="try", tz:str='Europe/Berlin
 
 
 def wavg(df:pd.DataFrame, weights:Optional[Iterable]=None, axis:int=0) -> pd.DataFrame:
-    """Returns column-average over all rows (if axis==0, default) or row-average
-    over all columns (if axis==1) in dataframe 'df'. If provided, weighted with 
-    values in 'weights', which must be of equal length.
+    """Returns each column's average over all rows (if axis==0, default) or each
+    row's average over all columns (if axis==1) in dataframe 'df'. If provided,
+    weighted with values in 'weights', which must be of equal length.
     source: http://stackoverflow.com/questions/10951341/pandas-dataframe-aggregate-function-using-multiple-columns"""
     if axis == 1:
         df = df.T
@@ -54,4 +55,19 @@ def wavg(df:pd.DataFrame, weights:Optional[Iterable]=None, axis:int=0) -> pd.Dat
         weights = weights.values
     except AttributeError:
         pass
-    return df.mul(weights, axis=0).sum() / weights.sum()
+    return df.mul(weights, axis=0).sum(skipna=False) / weights.sum()
+
+
+def __is(letter:str) -> Callable[[str], bool]:
+    """Returns function that tests if its argument is 'letter' or starts with 
+    'letter_'."""
+    @np.vectorize
+    def check(name):
+        return name == letter or name.startswith(letter + "_")
+    return check
+ 
+is_price = __is('p')
+is_quantity = __is('q')
+is_temperature = __is('t')
+is_revenue = __is('r')
+is_power = __is('w')
