@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 from lichtblyck import tools
 from lichtblyck.temperatures.sourcedata.climate_zones import historicdata, forallzones
+from sklearn.linear_model import LinearRegression
 
 
 def climate_data(climate_zone:int) -> pd.DataFrame:
@@ -193,15 +194,18 @@ def fill_gaps(t:pd.DataFrame) -> pd.DataFrame:
     Fills gaps in temperature dataframe. By comparing one climate zone to all
     others.
     """    
-    t = t[t.isna().sum(axis=1) < 2] #keep only days with at most 1 missing value
+    t = t[t.isna().sum(axis=1) < 2].copy() #keep only days with at most 1 missing value
     
     # For each missing value, get estimate. Using average difference to other stations' values.
     complete = t.dropna() #all days without any missing value
     for col in t.columns:
-        d = complete[col] - complete.drop(col, axis=1).mean(axis=1)
-        diff = d.mean() #average difference between this climate zone and all others
-        # Use diff to fill gaps.
         isna = t[col].isna()
-        t.loc[isna, col] = complete.drop(col, axis=1).loc[isna].mean(axis=1) + diff
-    
+        if not isna.any():
+            continue
+        x_fit = complete.drop(col, axis=1).mean(axis=1).values.reshape(-1, 1)
+        y_fit = complete[col].values.reshape(-1, 1)
+        model = LinearRegression().fit(x_fit, y_fit)  # perform linear regression
+        x = t.drop(col, axis=1).loc[isna].mean(axis=1).values.reshape(-1, 1)
+        y_pred = model.predict(x)
+        t.loc[isna, col] = y_pred.reshape(-1)    
     return t

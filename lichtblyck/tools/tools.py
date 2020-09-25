@@ -5,35 +5,40 @@ Module with tools to modify and standardize dataframes.
 from typing import Optional, Iterable, Callable
 import pandas as pd
 import numpy as np
-import datetime
 
 # The files we want to import don't have a standard layout. Importantly, the 
 # timestamp is not always left-bound. Therefore, we create a function to deal with this
 # (and do some other standardization).
-def set_ts_index(df:pd.DataFrame, column:str, bound="try", tz:str='Europe/Berlin') -> pd.DataFrame:
+def set_ts_index(df:pd.DataFrame, column:str=None, bound="try", 
+                 tz:str='Europe/Berlin') -> pd.DataFrame:
     """
     Use column 'column' of dataframe 'df' to create a left-bound timestamp index 
-    in timezone 'tz'. If bound=='left', will assume timestamps are already 
-    leftbound; if bound=='right', will subtract one 'timestep' first; if
-    bound=='try', will first try the timestamps unchanged, and subtract one 
-    'timestep' if that fails. NB: bound=='try' will give false results if the 
-    data contains no summertime/wintertime changeover and the times are rightbound.
+    in timezone 'tz'. (Directly works on index if column name not specified.)
+    If bound=='left', will assume timestamps are already leftbound; if bound==
+    'right', will subtract one 'timestep' first; if bound=='try', will first try 
+    the timestamps unchanged, and subtract one 'timestep' if that fails. 
+    NB: bound=='try' will give false results if the data contains no summertime
+    /wintertime changeover and the times are rightbound.
     
     Returns dataframe with 'column' removed, and index renamed to 'ts_left'.
-    """    
-    if bound=="left":
+    """
+    if column:
         df = df.set_index(column)
-        df.index.name = "ts_left"
-    elif bound=="right":
-        minutes = (df.iloc[1][column] - df.iloc[0][column]).seconds / 60
+    else:
         df = df.copy() #don't change passed-in df
-        df["ts_left"] = df[column] + datetime.timedelta(minutes = -minutes)
-        df = df.set_index("ts_left").drop(column, axis=1)
+        
+    if bound=="left":
+        pass
+    elif bound=="right":
+        minutes = (df.index[1] - df.index[0]).seconds / 60
+        df.index += pd.Timedelta(minutes = -minutes)
     else:
         try:
-            return set_ts_index(df, column, tz, "left")
+            return set_ts_index(df, column, "left", tz)
         except:
-            return set_ts_index(df, column, tz, "right")
+            return set_ts_index(df, column, "right", tz)
+    df.index.name = "ts_left"
+    
     try:
         return df.tz_localize(tz, ambiguous='infer')
     except:

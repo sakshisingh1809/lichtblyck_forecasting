@@ -57,15 +57,14 @@ def standardized_tmpr_loadprofile(source:Union[str, int]) -> pd.Series:
     df['time_left_local'] = (df['ts_right_local'] + datetime.timedelta(hours=-0.25)).dt.time
     df = df.set_index('time_left_local')
     df = df.drop(columns=['Nr.', 'Uhrzeit', 'ts_right_local'])
-    # Make sure highest temperature has all 0 values.
-    maxtemp = max(df.columns) #all remaining columns should be numeric values
-    if df[maxtemp].any(): #not all are zero
-        df[maxtemp + 1] = 0
+    # # Make sure highest temperature has all 0 values. -> Not wanted
+    # maxtemp = max(df.columns) #all remaining columns should be numeric values
+    # if df[maxtemp].any(): #not all are zero
+    #     df[maxtemp + 1] = 0
     # Put in correct output format (long table).
     s = df.stack().sort_index()
     s.index.rename(['time_left_local', 't'], inplace=True)
     s.name = 'std_tmpr_lp'
-    # TODO: can a frequency be set on a datetime.time index?
     return s
 
 
