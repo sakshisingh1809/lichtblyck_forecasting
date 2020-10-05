@@ -134,7 +134,7 @@ b = p_fwd['exp'][['p_peak', 'p_offpeak']]
 # %% Derived quantities
 
 # Duration.
-duration = (df_hourly.index[1:] - df_hourly.index[:-1]).total_seconds()/3600 #get duration in h for each datapoint
+duration = (df_hourly.index[1:] - df_hourly.index[:-1]).total_seconds()/3600 #get duration in h for each except final datapoint 
 duration = np.append(duration, np.median(duration)) #add duration of final datapoint (guessed)
 df_hourly['duration'] = duration
 

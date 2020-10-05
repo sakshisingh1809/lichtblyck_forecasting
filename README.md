@@ -6,6 +6,8 @@ Developer: Ruud Wijtvliet (ruud.wijtvliet@lichtblick.de)
 
 ---
 
+---
+
 Rules / Conventions:
 
 # Time-index
@@ -224,3 +226,19 @@ ts_left_local
 ```
 
 (Note that the 'simple row-average' of the price is the incorrect 28.75 Eur/MWh, instead of the (correct) weighted average of 30 Eur/MWh.)
+
+---
+
+---
+
+Implementation details
+
+# Extended `pandas` functionality
+
+* The `DatetimeIndex` is extended with a `.duration` property, which returns the difference between the current timestamp and the next timestamp (i.e., the duration of its values) in hours.
+
+  This removes the necessity of adding a dedicated column to the dataframe just to store this type of data. Which is data that is more closely linked to the index anyway.
+
+* `DataFrame` and `Series` are extended with a `.q` property, which returns a Series with the quantity [MWh] of each timestamp. It calculates these by, for a DataFrame, multiplying its column `'w'` with the `index.duration`. And for a Series, multiplying it with the `index.duration`, if its name is `'w'` or starts with `w_`.
+
+  This removes the necessity of creating and storing both power [MW] and quantity [MWh] columns, which are redundant.
