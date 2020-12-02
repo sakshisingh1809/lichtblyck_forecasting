@@ -17,8 +17,7 @@ def expected_shortfall(loc:float=0, scale:float=1, *, quantile:float=None, x0:fl
     Exactly one of 'quantile' and 'x0' must be specified. The right-hand tail
     is evaluated.
     """
-    if (x0 is None and quantile is None or 
-        x0 is not None and quantile is not None):
+    if sum((x0 is not None, quantile is not None)) != 1:
         raise ValueError("Of parameters 'quantile' and 'bound', exactly one must be specified.")
     if quantile is None:
         quantile = norm(loc, scale).cdf(x0)
@@ -27,4 +26,4 @@ def expected_shortfall(loc:float=0, scale:float=1, *, quantile:float=None, x0:fl
     
     expected_cost = loc + scale * norm.pdf(norm.ppf(quantile)) / (1 - quantile)
     return expected_cost - x0
-    
+

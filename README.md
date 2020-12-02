@@ -239,6 +239,6 @@ Implementation details
 
   This removes the necessity of adding a dedicated column to the dataframe just to store this type of data. Which is data that is more closely linked to the index anyway.
 
-* `DataFrame` and `Series` are extended with a `.q` property, which returns a Series with the quantity [MWh] of each timestamp. It calculates these by, for a DataFrame, multiplying its column `'w'` with the `index.duration`. And for a Series, multiplying it with the `index.duration`, if its name is `'w'` or starts with `w_`.
+* `DataFrame` and `Series` are extended with a `.q` property, which returns a Series with the quantity [MWh] of each timestamp. It calculates these by, for a DataFrame, multiplying its column `'w'` with its`.index.duration`. And for a Series, multiplying it with its `.index.duration`, if its name is `'w'` or starts with `w_`.
 
   This removes the necessity of creating and storing both power [MW] and quantity [MWh] columns, which are redundant.

@@ -107,7 +107,7 @@ def tmpr2load(std_tmpr_lp:pd.Series, t:pd.Series, spec:float) -> pd.Series:
     df['time'] = df.index.map(lambda ts: ts.time)
     
     # Add corresponding standardized load.
-    merged = df.merge(std_tmpr_lp, left_on=('time', 't_avail'), right_index=True)
+    merged = df.merge(std_tmpr_lp.rename('std_tmpr_lp'), left_on=('time', 't_avail'), right_index=True)
     merged = merged[['t', 'std_tmpr_lp']]
     merged.sort_index(inplace=True)
     

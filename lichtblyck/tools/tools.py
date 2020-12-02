@@ -50,36 +50,9 @@ def set_ts_index(df:pd.DataFrame, column:str=None, bound="try",
             df = df.tz_localize(tz, ambiguous='infer')
         except:
             df = df.tz_localize(tz, ambiguous='NaT')
-    return df.tz_convert('Europe/Berlin')
-    
-
-@property
-def duration(i:pd.core.indexes.datetimes.DatetimeIndex) -> pd.Series:
-    """
-    return duration of each timestamp (in hours).
-    """
-    duration = (i[1:] - i[:-1]).seconds/3600 #get duration in h for each except final datapoint 
-    if i.freq is not None:
-        final_duration = ((i[-1] + i.freq) - i[-1]).seconds/3600
-    else:
-        final_duration = np.median(duration)
-    return pd.Series(np.append(duration, final_duration), i) #add duration of final datapoint (guessed)
-
-@property
-def quantity(fr:pd.core.generic.NDFrame) -> pd.Series:
-    """
-    return quantity [MWh] series, if power [MW] series is given.
-    """
-    
-    if isinstance(fr, pd.Series):
-        if fr.name != 'w' and not fr.name.startswith('w_'):
-            raise ValueError("Series name is not 'w' and does not start with 'w_'.")
-        w = fr # Series
-    else:
-        if not 'w' in fr.columns:
-            raise ValueError("Dataframe does not have a column named 'w'.")
-        w = fr['w'] # Series
-    return w * fr.index.duration
+    df = df.tz_convert('Europe/Berlin')
+    df.index.freq = pd.infer_freq(df.index)
+    return df
 
 
 def wavg(df:pd.DataFrame, weights:Optional[Iterable]=None, axis:int=0) -> pd.DataFrame:
