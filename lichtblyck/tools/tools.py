@@ -2,87 +2,117 @@
 """
 Module with tools to modify and standardize dataframes.
 """
-from typing import Optional, Iterable, Callable
+from typing import Iterable, Callable, Union
 import pandas as pd
 import numpy as np
 
-# The files we want to import don't have a standard layout. Importantly, the 
-# timestamp is not always left-bound. Therefore, we create a function to deal with this
-# (and do some other standardization).
-def set_ts_index(df:pd.DataFrame, column:str=None, bound="try", 
-                 tz:str='Europe/Berlin') -> pd.DataFrame:
+
+def set_ts_index(
+    df: pd.DataFrame, column: str = None, bound: str = "try", tz: str = "Europe/Berlin"
+) -> pd.DataFrame:
     """
-    Use column 'column' (or the index, if column not specified) of dataframe 
-    'df' to create a left-bound timestamp index in the Europe/Berlin timezone.
-    
-    Other arguments:
-        tz: timezone of the input dataframe. 
-        bound: if bound=='left', will assume timestamps are already leftbound; 
-            if bound=='right', will subtract one 'timestep' first; if bound==
-            'try', will first assume bound=='left', then try with bound=='right'
-            if that fails. NB: bound=='try' will give false results if the data
-            contains no summertime/wintertime changeover and the times are 
-            rightbound.
-    
-    Returns dataframe with 'column' removed, and index renamed to 'ts_left'.
+    Create and add a standardized timestamp index to a dataframe.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    column : str, optional
+        Column to create the timestamp from. Use existing index if none specified.
+    bound : {'try', 'left', 'right'}, optional
+        If 'left' ('right'), specifies that input timestamps are left-bound (right-bound).
+        If 'try', will first try 'left', then 'right' if exception occurs. Will give false
+        results if the data contains no summertime to wintertime changeover and the times are rightbound.
+    tz : str, optional
+        Timezone of the input dataframe; used only if input dataframe contains 
+        timezone-agnostic timestamps. The default is "Europe/Berlin".
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with left-bound timestamp index in the Europe/Berlin timezone.
+        Column 'column' is removed, and index renamed to 'ts_left'.
     """
     if column:
         df = df.set_index(column)
     else:
-        df = df.copy() #don't change passed-in df
-        
-    df.index = pd.DatetimeIndex(df.index) #turn / try to turn into datetime
-    
-    if bound=="left":
+        df = df.copy()  # don't change passed-in df
+
+    df.index = pd.DatetimeIndex(df.index)  # turn / try to turn into datetime
+
+    if bound == "left":
         pass
-    elif bound=="right":
+    elif bound == "right":
         minutes = (df.index[1] - df.index[0]).seconds / 60
-        df.index += pd.Timedelta(minutes = -minutes)
+        df.index += pd.Timedelta(minutes=-minutes)
     else:
         try:
             return set_ts_index(df, None, "left", tz)
         except:
             return set_ts_index(df, None, "right", tz)
     df.index.name = "ts_left"
-    
+
     if df.index.tz is None:
         try:
-            df = df.tz_localize(tz, ambiguous='infer')
+            df = df.tz_localize(tz, ambiguous="infer")
         except:
-            df = df.tz_localize(tz, ambiguous='NaT')
-    df = df.tz_convert('Europe/Berlin')
-    df.index.freq = pd.infer_freq(df.index)
+            df = df.tz_localize(tz, ambiguous="NaT")
+    df = df.tz_convert("Europe/Berlin")
+
+    if df.index.freq is None:
+        df.index.freq = pd.infer_freq(df.index)
+    if df.index.freq is None:
+        df.index.freq = (
+            df.index[1:] - df.index[:-1]
+        ).median()  # infer_freq does not work during summer-to-wintertime changeover
+
     return df
 
 
-def wavg(df:pd.DataFrame, weights:Optional[Iterable]=None, axis:int=0) -> pd.DataFrame:
-    """Returns each column's average over all rows (if axis==0, default) or each
-    row's average over all columns (if axis==1) in dataframe 'df'. If provided,
-    weighted with values in 'weights', which must be of equal length.
-    source: http://stackoverflow.com/questions/10951341/pandas-dataframe-aggregate-function-using-multiple-columns"""
+def wavg(
+    df: Union[pd.DataFrame, pd.Series],
+    weights: Union[Iterable, pd.Series] = None,
+    axis: int = 0,
+) -> Union[pd.Series, float]:
+    """
+    Weighted average of dataframe.
+
+    Parameters
+    ----------
+    df : Union[pd.DataFrame, pd.Series]
+        The input values.
+    weights : Union[Iterable, pd.Series], optional
+        The weights. If provided as a Series, the weights and values are aligned along its index. If no weights are provided, the normal (unweighted) average is returned instead.
+    axis : int, optional
+        Calculate each column's average over all rows (if axis==0, default) or
+        each row's average over all columns (if axis==1). Ignored for Series.
+
+    Returns
+    -------
+    Union[pd.Series, float]
+        The weighted average. A single float if `df` is a Series; a Series if
+        `df` is a Dataframe.
+    """
     if axis == 1:
-        df = df.T
+        df = df.T  # correct allignment
     if weights is None:
-        return df.mean()
-    if len(df) != len(weights):
-        raise ValueError('Dataframe and weights have unequal length.')
-    try:
-        weights = weights.values
-    except AttributeError:
-        pass
-    return df.mul(weights, axis=0).sum(skipna=False) / weights.sum()
+        return df.mean()  # return non-weighted average if no weights are provided
+    return df.mul(weights, axis=0).sum(skipna=False) / sum(weights)
 
 
-def __is(letter:str) -> Callable[[str], bool]:
-    """Returns function that tests if its argument is 'letter' or starts with 
+def __is(letter: str) -> Callable[[str], bool]:
+    """Returns function that tests if its argument is 'letter' or starts with
     'letter_'."""
+
     @np.vectorize
     def check(name):
         return name == letter or name.startswith(letter + "_")
+
     return check
- 
-is_price = __is('p')
-is_quantity = __is('q')
-is_temperature = __is('t')
-is_revenue = __is('r')
-is_power = __is('w')
+
+
+_is_price = __is("p")
+_is_quantity = __is("q")
+_is_temperature = __is("t")
+_is_revenue = __is("r")
+_is_power = __is("w")
