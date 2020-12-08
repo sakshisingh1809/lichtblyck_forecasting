@@ -12,7 +12,7 @@ from datetime import datetime
 from io import StringIO
 import pandas as pd
 import numpy as np
-from lichtblyck import tools
+import lichtblyck as lb
 from lichtblyck.temperatures.sourcedata.climate_zones import historicdata, forallzones
 from sklearn.linear_model import LinearRegression
 
@@ -31,9 +31,9 @@ def climate_data(climate_zone: int) -> pd.DataFrame:
     df.drop("eor", axis=1, inplace=True)
     df.replace(-999, np.nan, inplace=True)  # -999 represents missing value
     df["MESS_DATUM"] = pd.to_datetime(df["MESS_DATUM"], format="%Y%m%d")
+    df = df[df["MESS_DATUM"] >= "1917"]  # Problems with earlier data.
     # ...and set correct index and make gapless.
-    df = tools.set_ts_index(df, "MESS_DATUM", "left")
-    df = df[df.index >= "1917"]  # Problems with earlier data.
+    df = lb.tools.set_ts_index(df, "MESS_DATUM", "left")
     df = df.resample("D").asfreq()  # add na-values for missing rows.
     return df
 

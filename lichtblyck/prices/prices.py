@@ -6,7 +6,7 @@ Module to read price data from disk.
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from lichtblyck import tools
+import lichtblyck as lb
 from sqlalchemy import create_engine
 from typing import Tuple, Union, Iterable
 import eikon
@@ -55,7 +55,7 @@ def spot() -> pd.Series:
         except KeyError:
             to_insert = pd.Series(spot[ts], [ts])
         spot = pd.concat([spot[:ts], to_insert, spot[ts:][1:]])
-    spot = tools.set_ts_index(spot).rename("p_spot")
+    spot = lb.set_ts_index(spot).rename("p_spot")
     spot = spot.resample("H").asfreq()
     return spot
 
@@ -96,6 +96,7 @@ def futures(
     df = pd.read_sql_query(
         f"SELECT * FROM dbo.Fakten_EW_EEX_Preise_fkunden {where}", engine
     )
+    breakpoint()
     # ...massage to get correct format...
     df = df.rename(
         columns={
@@ -316,7 +317,7 @@ def _w_hedge(w: Union[pd.Series, Iterable], p: Union[pd.Series, Iterable]) -> pd
     grouped = (
         pd.DataFrame({"w": w, "p": p})
         .groupby(is_peak_hour)
-        .apply(lambda df: tools.wavg(df["w"], df["p"]))
+        .apply(lambda df: lb.wavg(df["w"], df["p"]))
     )
     return pd.Series({"w_peak": grouped[True], "w_offpeak": grouped[False]})
 
@@ -382,7 +383,7 @@ def w_hedge_long(
     else:
         raise ValueError("Argument 'freq' must be in {'MS', 'QS', 'YS'}.")
     apply_function = lambda df: pd.Series(
-        [tools.wavg(df["w"], df["p"])] * len(df), df.index
+        [lb.wavg(df["w"], df["p"])] * len(df), df.index
     )
     s = (
         pd.DataFrame({"w": w, "p": p})

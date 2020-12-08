@@ -1,4 +1,4 @@
-import lichtblyck
+import lichtblyck  # necessary to extend pandas functionality
 import numpy as np
 import pandas as pd
 import pytest
@@ -143,3 +143,48 @@ def test_r():
         pd.testing.assert_series_equal(df.r, df["r"], check_names=False)
         with pytest.raises(AssertionError):
             pd.testing.assert_series_equal(df.r, df.q * df.p, check_names=False)
+
+
+def test_wavg():
+    values1 = [1, 2, 3, -1.5]
+    values2 = [1, -2, 3, -1.5]
+    weights = [1, 1, 1, 2]
+
+    # Series
+    assert np.isclose(pd.Series(values1).wavg(weights), 0.6)  # align by position
+    assert np.isclose(
+        pd.Series(values1).wavg(pd.Series(weights, [3, 2, 1, 0])), 1.1
+    )  # align by index
+    # DataFrame
+    pd.testing.assert_series_equal(
+        pd.DataFrame({"a": values1, "b": values1}).wavg(weights),
+        pd.Series({"a": 0.6, "b": 0.6}),
+    )
+    pd.testing.assert_series_equal(
+        pd.DataFrame({"a": values1, "b": values2}).wavg(weights),
+        pd.Series({"a": 0.6, "b": -0.2}),
+    )
+    pd.testing.assert_series_equal(
+        pd.DataFrame({"a": values1, "b": values2}).wavg(
+            pd.Series(weights, [3, 2, 1, 0])
+        ),
+        pd.Series({"a": 1.1, "b": 0.3}),
+    )  # align by index
+    pd.testing.assert_series_equal(
+        pd.DataFrame({"a": values1, "b": values1, "c": values1, "d": values2}).wavg(
+            weights, axis=0
+        ),
+        pd.Series({"a": 0.6, "b": 0.6, "c": 0.6, "d": -0.2}),
+    )
+    pd.testing.assert_series_equal(
+        pd.DataFrame({"a": values1, "b": values1, "c": values1, "d": values2}).wavg(
+            weights, axis=1,
+        ),
+        pd.Series([1, 0.4, 3, -1.5]),
+    )  # row-averages
+    pd.testing.assert_series_equal(
+        pd.DataFrame({"a": values1, "b": values1, "c": values1, "d": values2}).wavg(
+            pd.Series(weights, ["d", "c", "b", "a"]), axis=1
+        ),
+        pd.Series([1, 1.2, 3, -1.5]),
+    )  # align by index and row-averages

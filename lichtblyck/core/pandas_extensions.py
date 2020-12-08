@@ -5,6 +5,7 @@ Custom extensions (attributes) to the pandas objects
 
 import pandas as pd
 import numpy as np
+from ..tools.tools import wavg
 
 
 @property
@@ -71,3 +72,5 @@ pd.core.indexes.datetimes.DatetimeIndex.duration = _duration
 # Extend attributes of Series and DataFrames
 pd.core.generic.NDFrame.q = _quantity
 pd.DataFrame.r = _revenue
+
+pd.core.generic.NDFrame.wavg = wavg

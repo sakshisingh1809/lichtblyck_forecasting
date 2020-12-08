@@ -62,9 +62,10 @@ def set_ts_index(
     if df.index.freq is None:
         df.index.freq = pd.infer_freq(df.index)
     if df.index.freq is None:
-        df.index.freq = (
-            df.index[1:] - df.index[:-1]
-        ).median()  # infer_freq does not work during summer-to-wintertime changeover
+        df = df.resample((df.index[1:] - df.index[:-1]).median()).asfreq()
+    if df.index.freq is None:
+        # (infer_freq does not work during summer-to-wintertime changeover)
+        df.index.freq = (df.index[1:] - df.index[:-1]).median()
 
     return df
 
@@ -93,10 +94,10 @@ def wavg(
         The weighted average. A single float if `df` is a Series; a Series if
         `df` is a Dataframe.
     """
-    if axis == 1:
-        df = df.T  # correct allignment
-    if weights is None:
-        return df.mean()  # return non-weighted average if no weights are provided
+    if axis == 1:  # correct allignment
+        df = df.T
+    if weights is None:  # return non-weighted average if no weights are provided
+        return df.mean()
     return df.mul(weights, axis=0).sum(skipna=False) / sum(weights)
 
 
