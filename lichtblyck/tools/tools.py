@@ -24,7 +24,7 @@ def set_ts_index(
         If 'try', will first try 'left', then 'right' if exception occurs. Will give false
         results if the data contains no summertime to wintertime changeover and the times are rightbound.
     tz : str, optional
-        Timezone of the input dataframe; used only if input dataframe contains 
+        Timezone of the input dataframe; used only if input dataframe contains
         timezone-agnostic timestamps. The default is "Europe/Berlin".
 
     Returns

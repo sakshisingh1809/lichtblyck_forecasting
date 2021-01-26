@@ -5,7 +5,6 @@ Module to calculate the Beschaffungskostenaufschlag.
 """
 
 import lichtblyck as lb
-from lichtblyck import tools
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

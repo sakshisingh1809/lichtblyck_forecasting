@@ -44,21 +44,21 @@ def w(
     tlp: Callable, t: pd.Series, weights: Iterable = None, freq: str = None
 ) -> pd.Series:
     """
-    Calculate actual load of temperature-dependent load profile. 
-    
+    Calculate actual load of temperature-dependent load profile.
+
     Smooth temperature timeseries, resample to certain frequency, and calculate
     the load at each timestamp / temperature.
 
     Parameters
     ----------
     tlp : Callable
-        Function to calculate the load in [MW]. Must take one input value 
-        (temperature in [degC]) or two input values (temperature in [degC] and 
-        timestamp).       
+        Function to calculate the load in [MW]. Must take one input value
+        (temperature in [degC]) or two input values (temperature in [degC] and
+        timestamp).
     t : pd.Series
         Temperature values (in [degC]) timeseries.
     weights : Iterable, optional
-        Smoothing weights, used to include previous temperatures into calculation 
+        Smoothing weights, used to include previous temperatures into calculation
         of current load. The default is None.
     freq : TYPE, optional
         The frequency of the returned timeseries. If no value is provided, no
@@ -93,7 +93,7 @@ def tmpr2load(tlp: Union[pd.Series, Callable], t: pd.Series, spec) -> pd.Series:
     ----------
     tlp : pd.Series
         Standardized temperature-dependent load profile; with multilevel
-        index. level 0: time-of-day timestamp. Level 1: temperature in [degC]. 
+        index. level 0: time-of-day timestamp. Level 1: temperature in [degC].
         Values: load in [K/h] at given time and temperature.
     t : pd.Series
         Temperature values (in [degC]). Index = date timestamp.

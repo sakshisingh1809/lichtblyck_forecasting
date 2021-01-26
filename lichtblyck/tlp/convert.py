@@ -50,3 +50,26 @@ def series2function(tlp_s: pd.Series) -> Callable:
         return tlp_s[(corresponding_t(t), corresponding_time(time))]
 
     return tlp
+
+
+def cached_tlp(f: Callable) -> Callable:
+    def time(ts):
+        return ts.time()
+
+    def weekday(ts):
+        return ts.weekday()
+
+    def month(ts):
+        return ts.month
+
+    cache = {}
+
+    def f_cached(t, ts):
+        params = (t, time(ts), weekday(ts), month(ts))
+        try:
+            return cache[params]
+        except KeyError:
+            cache[params] = f(t, ts)
+            return cache[params]
+
+    return f_cached

@@ -13,17 +13,12 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.stats import norm
 
-pd.core.indexes.datetimes.DatetimeIndex.duration = (
-    tools.duration
-)  # Extend attributes of DateTimeIndex
-pd.core.generic.NDFrame.q = tools.quantity  # Extend attributes of Series and DataFrames
-
 
 # %% OFFTAKE
 
 # Get prognosis, prepare dataframe.
 prog = pd.read_excel(
-    "scripts/beschaffungskomponente Ludwig/prognose2021.xlsx",
+    "scripts/2020_10 beschaffungskomponente Ludwig/prognose2021.xlsx",
     header=0,
     skiprows=1,
     index_col=0,
@@ -73,7 +68,9 @@ ax.plot(
 # %% PRICES
 
 # Get prices with correct expectation value (=average).
-p_sims = pd.read_csv("scripts/beschaffungskomponente Ludwig/MC_NL_HOURLY_PWR.csv")
+p_sims = pd.read_csv(
+    "scripts/2020_10 beschaffungskomponente Ludwig/MC_NL_HOURLY_PWR.csv"
+)
 # . Clean: make timezone-aware
 p_sims = p_sims.set_index("deldatetime")
 p_sims.index = pd.DatetimeIndex(p_sims.index)
@@ -112,7 +109,7 @@ ax.plot(p_pfc.resample("D").mean(), color="r")
 # Option 1: futures procurement at level of certain volume (prog['w_certain'])
 # Option 2: futures procurement at level of expected volume (prog['w_exp'])
 w_hedge = lb.prices.w_hedge_long(prog["w_certain"], p_pfc, "QS").resample("H").mean()
-p_hedge = tools.wavg(p_pfc, w_hedge)  # 41.29 / p_hedge
+p_hedge = lb.wavg(p_pfc, w_hedge)  # 41.29 / p_hedge
 
 initial = pd.DataFrame(columns=[[], []], index=w_hedge.index)  # 2-level columns
 initial[("offtake", "w")] = w_offtake(expected)

@@ -18,7 +18,7 @@ def vs_time(tlp: Callable, t: Iterable = (-30, 30), freq: str = "15T") -> plt.Ax
     Parameters
     ----------
     tlp : Callable
-        Function that takes temperature [degC] as first argument (and possibly 
+        Function that takes temperature [degC] as first argument (and possibly
         timestamp as second argument), and returns the consumption [MW].
     t : Iterable, optional
         Temperatures for which a curve must be plot: (min, max, [step=1]). Only
@@ -56,10 +56,10 @@ def vs_t(tlp: Callable, t: Iterable = (-30, 30)) -> plt.Axes:
     Parameters
     ----------
     tlp : Callable
-        Function that takes temperature [degC] as first argument (and possibly 
+        Function that takes temperature [degC] as first argument (and possibly
         timestamp as second argument), and returns the consumption [MW].
     t : Iterable, optional
-        Temperatures for which the curve must be plot: (min, max, [step=1]). 
+        Temperatures for which the curve must be plot: (min, max, [step=1]).
         The default is (-30, 30).
 
     Returns

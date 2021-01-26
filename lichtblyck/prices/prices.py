@@ -9,7 +9,8 @@ from pathlib import Path
 import lichtblyck as lb
 from sqlalchemy import create_engine
 from typing import Tuple, Union, Iterable
-import eikon
+
+# import eikon
 
 # eikon.set_app_key('e3993065d33b4e65b742130b0aa04528e90e1338')
 

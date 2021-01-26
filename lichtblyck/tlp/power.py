@@ -40,14 +40,14 @@ def fromsource(source: Union[str, int], *, spec: float) -> Tuple[Callable, str]:
         Describes the heating energy needed by the customer during a single
         day, per degC that the average outdoor temperature of that day is
         below a certain set reference value.
-        
+
     Returns
     -------
     Callable
-        Function that takes a temperature [degC] and timestamp as input and 
-        returns the consumption [MW] as output, and 
+        Function that takes a temperature [degC] and timestamp as input and
+        returns the consumption [MW] as output, and
         string describing its native frequency.
-        
+
     Notes
     -----
     To obtain the actual electricity consumption on a certain day or during a
@@ -71,13 +71,13 @@ def series_fromsource(source: Union[str, int], *, spec: float) -> Tuple[pd.Serie
         Describes the heating energy needed by the customer during a single
         day, per degC that the average outdoor temperature of that day is
         below a certain set reference value.
-        
+
     Returns
     -------
     pd.Series
-        Load values (in [MW]), as function of 2-level row index (temperature, 
-        [degC], time of day with quarter-hourly resolution). 
-        
+        Load values (in [MW]), as function of 2-level row index (temperature,
+        [degC], time of day with quarter-hourly resolution).
+
     Notes
     -----
     See also `fromsource`.
