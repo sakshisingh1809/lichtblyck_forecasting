@@ -1,5 +1,18 @@
 # -*- coding: utf-8 -*-
 
+from proof_of_concepts.classdef import C2
+
+instA = C2(55)
+instB = instA.added_to_val(22)
+instB.val
+
+#%%
+
+
+
+import pandas as pd
+import numpy as np
+
 import lichtblyck as lb
 
 print(lb.belvis.fetch_values(""))

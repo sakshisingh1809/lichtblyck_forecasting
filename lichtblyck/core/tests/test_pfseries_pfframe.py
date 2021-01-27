@@ -6,36 +6,38 @@ import numpy as np
 import pytest
 
 
-def get_index(tz, freq):
+def get_index(tz='Europe/Berlin', freq='D'):
     count = {"QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}[freq]
     periods = np.random.randint(count, count * 10)
     a, m, d = np.array([2016, 1, 1]) + np.random.randint(0, 12, 3)
     return pd.date_range(f"{a}-{m}-{d}", freq=freq, periods=periods, tz=tz)
 
 
-def get_pfframe(i, columns):
+def get_pfframe(i=None, columns='wp'):
+    if i is None:
+        i = get_index()
     return PfFrame(np.random.rand(len(i), len(columns)), i, list(columns))
 
 
 def assert_raises_attributeerror(pf: PfFrame, yes=None, no=None):
-    def assess(a):
-        if a == "w":
-            return pf.w
-        if a == "p":
-            return pf.p
-        if a == "q":
-            return pf.q
-        if a == "r":
-            return pf.r
-        return pf.__getattr__(a)
+    # def assess(a):
+    #     if a == "w":
+    #         return pf.w
+    #     if a == "p":
+    #         return pf.p
+    #     if a == "q":
+    #         return pf.q
+    #     if a == "r":
+    #         return pf.r
+    #     return pf.__getattr__(a)
 
     if yes is not None:
         for a in yes:
             with pytest.raises(AttributeError):
-                assess(a)
+                getattr(pf, a)
     if no is not None:
         for a in no:
-            assess(a)
+            getattr(pf, a)
 
 
 def assert_w_q_compatible(pf: PfFrame, freq: str):

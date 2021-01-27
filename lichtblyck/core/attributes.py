@@ -143,44 +143,13 @@ def _duration(fr: pd.core.generic.NDFrame) -> pd.Series:
     """
     Return duration [h] of each timestamp in index of DataFrame or Series.
     """
-    return (_ts_right(fr) - fr.index).apply(lambda td: td.total_seconds()/3600)
-    i = fr.index
-    if i.tz is None:
-        raise AttributeError("Index is missing timezone information.")
+    return (_ts_right(fr) - fr.index).apply(lambda td: td.total_seconds() / 3600)
 
-    # Get duration in h for each except final datapoint.
-    # . This one breaks for 'MS':
-    # duration = ((i + pd.DateOffset(nanoseconds=i.freq.nanos)) - i).total_seconds()/3600
-    # . This drops a value at some DST transitions:
-    # duration = (i.shift(1) - i).total_seconds() / 3600
-    # . This one doesn't give enough values, and adding one with '+ i.freq' gives wrong timestamp at DST transitions:
-    # duration = (i[1:] - i[:-1]).total_seconds() / 3600
-    if i.freq == "15T":
-        duration = [0.25] * len(i)
-    elif i.freq == "H":
-        duration = [1] * len(i)
-    else:
-        if i.freq == "D":
-            kwargs = {"days": 1}
-        elif i.freq == "MS":
-            kwargs = {"months": 1}
-        elif i.freq == "QS":
-            kwargs = {"months": 3}
-        elif i.freq == "AS":
-            kwargs = {"years": 1}
-        else:
-            ValueError(f"Invalid frequency: {i.freq}.")
-        duration = ((i + pd.DateOffset(**kwargs)) - i).total_seconds() / 3600
-    # Get duration in h of final datapoint.
-    # if i.freq is not None:
-    #     final_duration = ((i[-1] + i.freq) - i[-1]).total_seconds() / 3600
-    # else:
-    #     final_duration = np.median(duration)
-
-    # Add duration of final datapoint.
-    return pd.Series(duration, i)
 
 def _ts_right(fr: pd.core.generic.NDFrame) -> pd.Series:
+    """
+    Return right-bound timestamp of each timestamp in index of DataFrame or Series.
+    """
     i = fr.index
     if i.tz is None:
         raise AttributeError("Index is missing timezone information.")
@@ -206,6 +175,6 @@ def _ts_right(fr: pd.core.generic.NDFrame) -> pd.Series:
         elif i.freq == "AS":
             kwargs = {"years": 1}
         else:
-            ValueError(f"Invalid frequency: {i.freq}.")
+            raise ValueError(f"Invalid frequency: {i.freq}.")
         ts_right = i + pd.DateOffset(**kwargs)
     return pd.Series(ts_right, i)

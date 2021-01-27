@@ -45,6 +45,8 @@ class Portfolio:
     -------
     pf()
         PfFrame with the portfolio and all its children.
+    changefreq()
+        Aggregate the data to a new frequency.
     """
 
     def __init__(
@@ -164,16 +166,15 @@ class Portfolio:
         Parameters
         ----------
         freq : str, optional
-            The frequency at which to resample. 'AS' for year, 'MS' for month,
-            'D for day', 'H' for hour, '15T' for quarterhour, None to aggregate
-            over the entire time period. The default is 'MS'.
+            The frequency at which to resample. 'AS' (or 'A') for year, 'QS' (or 'Q')
+            for quarter, 'MS' (or 'M') for month, 'D for day', 'H' for hour, '15T' for
+            quarterhour; None to aggregate over the entire time period. The default is 'MS'.
 
         Returns
         -------
-        PfFrame
+        Portfolio
             Same data at different timescale.
         """
-        # TODO: handle upsampling AND downsampling
         # TODO: change/customize the columns in the returned dataframe.
         if self.own is None and not self._children:
             raise ValueError(
