@@ -246,3 +246,6 @@ Implementation details
 * `DataFrame` is extended with a `.r` property, which returns a Series with the quantity [Eur] of each timestamp. It calculates these by multiplying its columns `'q'` and `'p'`. (Unless a column `'r'` exists; in that case, that column is returned.)
 
   This removes the necessity of storing this property if it can be both power [MW] and quantity [MWh] columns, which are redundant.
+
+---
+

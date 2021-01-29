@@ -64,32 +64,30 @@ def force_child(fun):
     def wrapper(*args, **kwargs):
         result = fun(*args, **kwargs)
         if type(result) == Base:
-            return Child2(result.val)
+            return Child(result.val)
         return result
     return wrapper
 
- 
-# class MetaChild(type):
+class ChildMeta(type):
+    def __new__(cls, name, bases, dct):
+        print (f'__new__ - name: {name}, bases: {bases}, dct: {dct}')
+        child = super().__new__(cls, name, bases, dct)
+        for base in bases:
+            print (f'base: {base}')
+            for field_name, field in base.__dict__.items():
+                print (f'field_name: {field_name}, field: {field}')
+                if callable(field):
+                    print(f'yes, callable {field_name}')
+                    setattr(child, field_name, force_child(field))
+        return child
 
-#     def __init__(cls, classname, bases, class_dict):
-#         for attr_name in dir(cls):
-#             if attr_name == "__class__":
-#                 # the metaclass is a callable attribute too, 
-#                 # but we want to leave this one alone
-#                 continue
-#             attr = getattr(cls, attr_name)
-#             if hasattr(attr, '__call__'):
-#                 attr = force_child(attr)
-#                 setattr(cls, attr_name, attr)
-    
-#         # not need for the `return` here
-#         super(MetaChild, cls).__init__(classname, bases, class_dict)
-
-class Child2(Base):
+class Child(Base, metaclass=ChildMeta):
     
     @property
     def sqrt(self):
         return math.sqrt(self.val)
+
+
 
 #%%
 for meth in dir(Base):

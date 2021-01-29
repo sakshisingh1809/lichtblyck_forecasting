@@ -41,12 +41,12 @@ class Portfolio:
     <<name>> : Portfolio
         Use name of child portfolio as attribute to access it.
 
-    Methods
-    -------
-    pf()
-        PfFrame with the portfolio and all its children.
-    changefreq()
-        Aggregate the data to a new frequency.
+    Notes
+    -----
+
+
+        
+    
     """
 
     def __init__(
@@ -95,12 +95,17 @@ class Portfolio:
 
     @property
     def children(self):
+        """Names of child portfolios."""
         return [child.name for child in self._children]
 
-    def add_child(self, child: Portfolio) -> None:
+    def add_child(self, child: Portfolio, index:int = None) -> None:
+        """Insert child at given index position (default: at end)."""
         if child in self._children:
             return
-        self._children.append(child)
+        if index is None:
+            self._children.append(child)
+        else:
+            self._children.insert(index, child)
         child.parent = self
 
     @property
@@ -123,6 +128,7 @@ class Portfolio:
     @property
     @force_Pf
     def w(self) -> PfSeries:
+        """Power [MW] timeseries."""
         if not self._children:
             w = self.own.w  # should exist in pfolio without children
         else:
@@ -134,6 +140,7 @@ class Portfolio:
     @property
     @force_Pf
     def r(self) -> PfSeries:
+        """Revenue [Eur] timeseries."""
         if not self._children:
             r = self.own.r  # will raise AttributeError if .own has no .p attribute
         else:
@@ -145,17 +152,30 @@ class Portfolio:
     @property
     @force_Pf
     def p(self) -> PfSeries:
+        """Price [Eur/MWh] timeseries."""
         return (self.r / self.q).rename("p")
 
     @property
     @force_Pf
     def q(self) -> PfSeries:
+        """Quantity [MWh] timeseries."""
         w = self.w
         return (w * w.duration).rename("w")
-
+    
+    @property 
+    def index(self):
+        """Left-bound timestamps of index."""
+        return self.w.index
+    
     @property
     def duration(self) -> pd.Series:
+        """Duration [h] timeseries."""
         return self.w.duration
+    
+    @property
+    def ts_right(self) -> pd.Series:
+        """Timeseries with right-bound timestamps."""
+        return self.w.ts_right
 
     # Resample and aggregate.
 
@@ -191,7 +211,7 @@ class Portfolio:
 
     def pf(self, maxdepth: int = -1, show: str = "wp") -> PfFrame:
         """
-        Dataframe for this portfolio.
+        Portfolioframe for this portfolio, including all children.
 
         Parameters
         ----------

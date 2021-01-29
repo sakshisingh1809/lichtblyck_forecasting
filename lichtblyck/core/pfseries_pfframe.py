@@ -110,6 +110,18 @@ def force_Pf(function):
 
     return wrapper
 
+# Currently not working. Goal: wrap each method of pd.DataFrame and pd.Series
+# class PfMeta(type):
+#     def __new__(cls, name, bases, dct):
+#         klass = super().__new__(cls, name, bases, dct)
+#         for base in bases:
+#             print (f'base: {base}')
+#             for field_name, field in base.__dict__.items():
+#                 print (f'field_name: {field_name}, field: {field}')
+#                 if callable(field):
+#                     print(f'yes, callable {field_name}')
+#                     setattr(klass, field_name, force_Pf(field))
+#         return klass
 
 class PfSeries(pd.Series):
     """

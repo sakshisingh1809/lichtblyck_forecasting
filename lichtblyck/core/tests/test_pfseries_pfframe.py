@@ -20,17 +20,6 @@ def get_pfframe(i=None, columns='wp'):
 
 
 def assert_raises_attributeerror(pf: PfFrame, yes=None, no=None):
-    # def assess(a):
-    #     if a == "w":
-    #         return pf.w
-    #     if a == "p":
-    #         return pf.p
-    #     if a == "q":
-    #         return pf.q
-    #     if a == "r":
-    #         return pf.r
-    #     return pf.__getattr__(a)
-
     if yes is not None:
         for a in yes:
             with pytest.raises(AttributeError):
