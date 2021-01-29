@@ -43,10 +43,10 @@ class Portfolio:
 
     Notes
     -----
-
-
-        
-    
+    A Portfolio can *either* hold a PfFrame, specified by the `own` argument,
+    *or* child Portfolios, specified by the `children` argument. It cannot hold
+    both. In the first case, the Portfolio is a 'leaf node' portfolio, in the
+    second, it's an 'internal node' portfolio.    
     """
 
     def __init__(
@@ -57,15 +57,21 @@ class Portfolio:
         children: Iterable[Portfolio] = [],
     ):
         self.name = name
-        self.__set_own(own)
+        self.own = own
         self._children = []
         for child in children:
             self.add_child(child)  # add like this to ensure children are notified
         self.parent = parent  # set like this to ensure parent is notified
 
-    def __set_own(self, own):
+    @property
+    def own(self) -> Union[None, PfFrame]:
+        """Return the PfFrame set at this portfolio."""
+        return self._own
+    @own.setter
+    def own(self, own):
+        #Set own PfFrame. Can be specified as 
         if own is None:
-            self.own = None
+            self._own = None
             return
         w = p = None
         # Try to get w and p as keys.

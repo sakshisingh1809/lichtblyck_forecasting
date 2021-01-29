@@ -14,7 +14,7 @@ In short:
 
 * The `PfFrame` class is an extension of the `pandas` `DataFrame` class. Each instance stores related information about a single timeseries, most notably its volume information (in units of MW and/or MWh), and, if available, pricing information (in units of Eur and/or Eur/MWh).
 
-* The `Portfolio` class is a collection. It stores other (sub-)portfolios and possibly a single `PfFrame`, and is able to aggregate the information correctly to higher levels
+* The `Portfolio` class is a collection. It stores other (sub-)portfolios and/or `PfFrame`s, and is able to aggregate the information correctly to higher levels
 
 # Vision
 
@@ -42,18 +42,13 @@ The `Portfolio` object contains all information about a portfolio:
         * **does not** contain "own" `PfFrame`
     * No 'mixed' portfolios
   * Sample structure of portfolios and their attributes:
-    * No 'mixed' portfolios
-    * LUD [`Portfolio`, internal node]
-      * procured [`Portfolio`, internal node]
-        * FWD [`Portfolio`, leaf]
-          * own [`PfFrame`]
-        * DA [`Portfolio`, leaf]
-          * own [`PfFrame`]
-        * ID [`Portfolio`, leaf]
-          * own [`PfFrame`]
-      * offtake [`Portfolio`, leaf]
-        * own [`PfFrame`]
-      * LUD_SIM [`Portfolio`, internal node]
+    * LUD [`Portfolio`]
+      * procured [`Portfolio`]
+        * FWD [`PfFrame`]
+        * DA [`PfFrame`]
+        * ID [`PfFrame`]
+      * offtake [`PfFrame`]
+      * LUD_SIM [`Portfolio`]
         * procured ... etc
 
 # Roadmap

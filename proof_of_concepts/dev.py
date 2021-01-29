@@ -15,7 +15,6 @@ import numpy as np
 
 import lichtblyck as lb
 
-print(lb.belvis.fetch_values(""))
 
 
 #%%
