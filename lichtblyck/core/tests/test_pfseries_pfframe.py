@@ -1,234 +1,117 @@
 """Testing PfSeries and PfFrame."""
 
 from lichtblyck import PfSeries, PfFrame
+from lichtblyck.core.dev import get_index, get_pfframe, get_pfseries, OK_FREQ
 import pandas as pd
 import numpy as np
 import pytest
 
 
-def get_index(tz='Europe/Berlin', freq='D'):
-    count = {"QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}[freq]
-    periods = np.random.randint(count, count * 10)
-    a, m, d = np.array([2016, 1, 1]) + np.random.randint(0, 12, 3)
-    return pd.date_range(f"{a}-{m}-{d}", freq=freq, periods=periods, tz=tz)
+def assert_all_same_time(ps):
+    assert len(ps.index.map(lambda ts: ts.time()).unique()) == 1
+    assert len(ps.ts_right.map(lambda ts: ts.time()).unique()) == 1
 
 
-def get_pfframe(i=None, columns='wp'):
-    if i is None:
-        i = get_index()
-    return PfFrame(np.random.rand(len(i), len(columns)), i, list(columns))
-
-
-def assert_raises_attributeerror(pf: PfFrame, yes=None, no=None):
-    if yes is not None:
-        for a in yes:
-            with pytest.raises(AttributeError):
-                getattr(pf, a)
-    if no is not None:
-        for a in no:
-            getattr(pf, a)
-
-
-def assert_w_q_compatible(pf: PfFrame, freq: str):
-    if freq == "15T":
-        np.testing.assert_allclose(pf.q, pf.w * 0.25)
-    elif freq == "H":
-        np.testing.assert_allclose(pf.q, pf.w)
-    elif freq == "D":
-        assert (pf.q > pf.w * 22.99).all()
-        assert (pf.q < pf.w * 25.01).all()
-    elif freq == "MS":
-        assert (pf.q > pf.w * 27 * 24).all()
-        assert (pf.q < pf.w * 32 * 24).all()
-    elif freq == "QS":
-        assert (pf.q > pf.w * 89 * 24).all()
-        assert (pf.q < pf.w * 93 * 24).all()
-
-
-def assert_p_q_r_compatible(pf: PfFrame):
-    np.testing.assert_allclose(pf.r, pf.q * pf.p)
-
-
-def test_index():
-    for freq in ["QS", "MS", "D", "H", "15T"]:
-        pf = get_pfframe(get_index("Europe/Berlin", freq), "qr")
+@pytest.mark.parametrize("freq", [*OK_FREQ, "A", "Q", "M", "5T", "T"])
+@pytest.mark.parametrize("tz", ["Europe/Berlin", None])
+@pytest.mark.parametrize("get_obj_func", [get_pfseries, get_pfframe])
+def test_index(freq, tz, get_obj_func):
+    i = pd.date_range("2020-03-28", freq=freq, periods=3, tz=tz)
+    pf = get_obj_func(i)
+    if freq in OK_FREQ and tz is not None:
         assert len(pf.duration) == len(pf)
         assert np.isclose(
-            pf.duration[:-1].sum(),
-            (pf.index[-1] - pf.index[0]).total_seconds() / 3600,
+            pf.duration[:-1].sum(), (pf.index[-1] - pf.index[0]).total_seconds() / 3600,
+        )
+        assert np.allclose(
+            pf.duration, (pf.ts_right - pf.index).dt.total_seconds() / 3600
         )
         assert pf.index.freq is not None
+    else:
+        with pytest.raises(ValueError):
+            pf.duration
+        with pytest.raises(ValueError):
+            pf.ts_right
 
 
-def test_index_wt_st():
+@pytest.mark.parametrize("get_obj_func", [get_pfseries, get_pfframe])
+def test_index_wt_st(get_obj_func):
     i = pd.date_range("2020-03-28", freq="D", periods=3, tz="Europe/Berlin")
-    pf = PfSeries(np.random.rand(len(i)), i)
-    assert pf.duration[-2] == 23
-    pf = PfSeries(pf[:-1])
-    assert pf.duration[-1] == 23
-    i = pd.date_range("2020-03-28", freq="H", periods=72, tz="Europe/Berlin")
-    pf = PfSeries(np.random.rand(len(i)), i)
-    assert (pf.duration == 1).all()
+    ps = get_obj_func(i)
+    assert_all_same_time(ps)
+    assert ps.duration[-2] == 23
+    ps = get_obj_func(i[:-1])
+    assert_all_same_time(ps)
+    assert ps.duration[-1] == 23
+    i = pd.date_range("2020-03-28", freq="H", periods=71, tz="Europe/Berlin")
+    ps = get_obj_func(i)
+    assert (ps.duration == 1).all()
+    assert ps.ts_right[-1].time() == ps.index[0].time()
 
 
-def test_index_st_wt():
+@pytest.mark.parametrize("get_obj_func", [get_pfseries, get_pfframe])
+def test_index_st_wt(get_obj_func):
     i = pd.date_range("2020-10-24", freq="D", periods=3, tz="Europe/Berlin")
-    pf = PfSeries(np.random.rand(len(i)), i)
-    assert pf.duration[-2] == 25
-    pf = PfSeries(pf[:-1])
-    assert pf.duration[-1] == 25
-    i = pd.date_range("2020-10-24", freq="H", periods=72, tz="Europe/Berlin")
-    pf = PfSeries(np.random.rand(len(i)), i)
-    assert (pf.duration == 1).all()
+    ps = get_obj_func(i)
+    assert_all_same_time(ps)
+    assert ps.duration[-2] == 25
+    ps = get_obj_func(i[:-1])
+    assert_all_same_time(ps)
+    assert ps.duration[-1] == 25
+    i = pd.date_range("2020-10-24", freq="H", periods=73, tz="Europe/Berlin")
+    ps = get_obj_func(i)
+    assert (ps.duration == 1).all()
+    assert ps.ts_right[-1].time() == ps.index[0].time()
 
 
-def test_series():
-    for tz in [None, "Europe/Berlin"]:
-        for freq in ["QS", "MS", "D", "H", "15T"]:
-            i = get_index(tz, freq)
-            s = PfSeries(np.random.rand(len(i)), i)
-            if tz is None:
-                with pytest.raises(AttributeError):
-                    s.duration
-            else:
-                assert len(s.duration) == len(i)
+def test_sameobject():
+    i = get_index()
+
+    # Compare (DataFrame and Series) with (PfFrame and PfSeries).
+    # Former don't have .duration or .ts_right attribute, but should have equal values.
+
+    vals = np.random.rand(len(i), 2)
+    df1 = pd.DataFrame(vals, i, list("wp"))
+    pf1 = PfFrame(vals, i, list("wp"))
+    assert ((df1.index - pf1.index) < pd.Timedelta(minutes=1)).all()
+    assert ((df1.index - pf1.index) > pd.Timedelta(minutes=-1)).all()
+    np.testing.assert_array_almost_equal(df1.w.values, pf1.w.values)
+    np.testing.assert_array_almost_equal(df1.p.values, pf1.p.values)
+
+    vals = np.random.rand(len(i))
+    s1 = pd.Series(vals, i, name="w")
+    ps1 = PfSeries(vals, i, name="w")
+    assert ((s1.index - ps1.index) < pd.Timedelta(minutes=1)).all()
+    assert ((s1.index - ps1.index) > pd.Timedelta(minutes=-1)).all()
+    np.testing.assert_array_almost_equal(s1.values, ps1.values)
+
+    # Check that creating object from existing object makes a copy.
+
+    vals = np.random.rand(len(i), 2)
+    pf1 = PfFrame(vals, i, list("wp"))
+    pf2 = PfFrame(pf1)
+    pd.testing.assert_frame_equal(pf1, pf2)
+
+    vals = np.random.rand(len(i), 1)
+    pf1 = PfFrame(vals, i, list("w"))
+    pf2 = PfFrame(pf1)
+    pd.testing.assert_frame_equal(pf1, pf2)
+
+    vals = np.random.rand(len(i))
+    ps1 = PfSeries(vals, i, name="w")
+    ps2 = PfSeries(ps1)
+    pd.testing.assert_series_equal(ps1, ps2)
 
 
-def test_frame():
-    for tz in [None, "Europe/Berlin"]:
-        for freq in ["QS", "MS", "D", "H", "15T"]:
-            # Specify one. That's never enough.
+def test_conversion():
+    pf = get_pfframe()
+    df = pd.DataFrame(pf)
+    assert type(df) is pd.DataFrame
+    pf = PfFrame(df)
+    assert type(pf) is PfFrame
 
-            pf = get_pfframe(get_index(tz, freq), "q")
-            assert_raises_attributeerror(pf, "rp", "q")
-            if tz is None:
-                assert_raises_attributeerror(pf, "w")
-            else:
-                assert_w_q_compatible(pf, freq)
-
-            pf = get_pfframe(get_index(tz, freq), "q")
-            assert_raises_attributeerror(pf, "rp", "q")
-            if tz is None:
-                assert_raises_attributeerror(pf, "w")
-            else:
-                assert_w_q_compatible(pf, freq)
-
-            pf = get_pfframe(get_index(tz, freq), "r")
-            assert_raises_attributeerror(pf, "pqw", "r")
-
-            pf = get_pfframe(get_index(tz, freq), "p")
-            assert_raises_attributeerror(pf, "rqw", "p")
-
-            # Specify two. That's good, as long as w xor q is specified.
-
-            # . w not specified.
-
-            pf = get_pfframe(get_index(tz, freq), "pr")
-            if tz is None:
-                assert_raises_attributeerror(pf, "w", "pqr")
-            else:
-                assert_raises_attributeerror(pf, no="wpqr")
-                assert_w_q_compatible(pf, freq)
-            assert_p_q_r_compatible(pf)
-
-            pf = get_pfframe(get_index(tz, freq), "qr")
-            if tz is None:
-                assert_raises_attributeerror(pf, "w", "pqr")
-            else:
-                assert_raises_attributeerror(pf, no="wpqr")
-                assert_w_q_compatible(pf, freq)
-            assert_p_q_r_compatible(pf)
-
-            pf = get_pfframe(get_index(tz, freq), "pq")
-            if tz is None:
-                assert_raises_attributeerror(pf, "w", "pqr")
-            else:
-                assert_raises_attributeerror(pf, no="wpqr")
-                assert_w_q_compatible(pf, freq)
-            assert_p_q_r_compatible(pf)
-
-            # . w specified, q not specified.
-
-            pf = get_pfframe(get_index(tz, freq), "wr")
-            if tz is None:
-                assert_raises_attributeerror(pf, "qp", "wr")
-            else:
-                assert_raises_attributeerror(pf, no="wpqr")
-                assert_w_q_compatible(pf, freq)
-                assert_p_q_r_compatible(pf)
-
-            pf = get_pfframe(get_index(tz, freq), "wp")
-            if tz is None:
-                assert_raises_attributeerror(pf, "qr", "wp")
-            else:
-                assert_raises_attributeerror(pf, no="wpqr")
-                assert_w_q_compatible(pf, freq)
-                assert_p_q_r_compatible(pf)
-
-            # . w specified and q specified.
-
-            pf = get_pfframe(get_index(tz, freq), "wq")
-            assert_raises_attributeerror(pf, "pr", "wq")
-            with pytest.raises(AssertionError):
-                assert_w_q_compatible(pf, freq)  # both specified: won't be compatible
-
-            # Specify three. Always incompatible.
-
-            pf = get_pfframe(get_index(tz, freq), "pqr")
-            if tz is None:
-                assert_raises_attributeerror(pf, "w", "pqr")
-            else:
-                assert_raises_attributeerror(pf, no="wpqr")
-                assert_w_q_compatible(pf, freq)
-            with pytest.raises(AssertionError):
-                assert_p_q_r_compatible(pf)  # all specified: won't be compatible
-
-            pf = get_pfframe(get_index(tz, freq), "wpr")
-            assert_raises_attributeerror(pf, no="wqpr")
-            if tz is not None:
-                with pytest.raises(AssertionError):
-                    assert_p_q_r_compatible(pf)
-
-            pf = get_pfframe(get_index(tz, freq), "wpq")
-            assert_raises_attributeerror(pf, no="wpqr")
-            assert_p_q_r_compatible(pf)
-            with pytest.raises(AssertionError):
-                assert_w_q_compatible(pf, freq)  # both specified: won't be compatible
-
-            pf = get_pfframe(get_index(tz, freq), "wqr")
-            assert_raises_attributeerror(pf, no="wpqr")
-            assert_p_q_r_compatible(pf)
-            with pytest.raises(AssertionError):
-                assert_w_q_compatible(pf, freq)  # both specified: won't be compatible
-
-            # Specify four. Always incompatible.
-
-            pf = get_pfframe(get_index(tz, freq), "wpqr")
-            assert_raises_attributeerror(pf, no="wpqr")
-            with pytest.raises(AssertionError):
-                assert_p_q_r_compatible(pf)  # all specified: won't be compatible
-            with pytest.raises(AssertionError):
-                assert_w_q_compatible(pf, freq)  # both specified: won't be compatible
-
-
-def test_changefreq():
-    for freq in ["QS", "MS", "D", "H", "15T"]:
-        for columns in ["qr", "wr", "qp", "wp", "pr"]:
-            for newfreq in [None, "AS", "QS", "MS", "D", "H", "15T"]:
-                pf = get_pfframe(get_index("Europe/Berlin", freq), columns)
-                newpf = pf.changefreq(newfreq)
-                if newfreq is None:
-                    assert np.isclose(pf.r.sum(), newpf.r.sum())
-                    assert np.isclose(pf.q.sum(), newpf.q.sum())
-                else:
-                    if len(newpf) == 0:
-                        continue
-                    oldpf = pf[
-                        (pf.index >= newpf.index[0])
-                        & (pf.ts_right <= newpf.ts_right[-1])
-                    ]
-                    if len(oldpf) == 0:
-                        continue
-                    oldpf = PfFrame(oldpf)
-                    assert np.isclose(oldpf.r.sum(), newpf.r.sum())
-                    assert np.isclose(oldpf.q.sum(), newpf.q.sum())
+    ps = get_pfseries()
+    s = pd.Series(ps)
+    assert type(s) is pd.Series
+    ps = PfSeries(s)
+    assert type(ps) is PfSeries

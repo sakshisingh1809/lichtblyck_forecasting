@@ -9,12 +9,10 @@ instB.val
 #%%
 
 
-
 import pandas as pd
 import numpy as np
 
 import lichtblyck as lb
-
 
 
 #%%

@@ -1,5 +1,5 @@
 from .core.pfseries_pfframe import PfSeries, PfFrame
-from .core.portfolio import Portfolio
+from .core.portfolio import portfolio, SinglePf, MultiPf
 from .temperatures import future, historic
 from .prices import prices
 from .analyses import analyses

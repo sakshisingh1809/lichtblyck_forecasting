@@ -2,7 +2,7 @@
 Retrieve data from Belvis.
 """
 
-from ..core.portfolio import Portfolio
+from ..core.portfolio import SinglePf, MultiPf
 from anytree import Node, RenderTree
 import pandas as pd
 import numpy as np
@@ -165,7 +165,7 @@ def _add_timeseries(booknode: Node, maxage: float = 14) -> None:
         raise ValueError("While finding needed timeseries:\n" + "\n".join(errors))
 
 
-def power(bookname: str = None, maxage: float = 2) -> Portfolio:
+def power(bookname: str = None, maxage: float = 2) -> SinglePf:
     """
     Load Belvis data into Portfolio object.
 

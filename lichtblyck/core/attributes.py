@@ -7,7 +7,6 @@ import pandas as pd
 import numpy as np
 from ..tools.tools import wavg
 
-
 # def _w_ofblock(fr: pd.DataFrame) -> pd.Series:
 #     """
 #     Returns the power [MW] timeseries of a dataframe by aggregating from below.
@@ -143,7 +142,8 @@ def _duration(fr: pd.core.generic.NDFrame) -> pd.Series:
     """
     Return duration [h] of each timestamp in index of DataFrame or Series.
     """
-    return (_ts_right(fr) - fr.index).apply(lambda td: td.total_seconds() / 3600)
+    hours = (_ts_right(fr) - fr.index).apply(lambda td: td.total_seconds() / 3600)
+    return hours.rename("duration")
 
 
 def _ts_right(fr: pd.core.generic.NDFrame) -> pd.Series:
@@ -152,7 +152,7 @@ def _ts_right(fr: pd.core.generic.NDFrame) -> pd.Series:
     """
     i = fr.index
     if i.tz is None:
-        raise AttributeError("Index is missing timezone information.")
+        raise ValueError("Index is missing timezone information.")
 
     # Get right timestamp for each index value, based on the frequency.
     # . This one breaks for 'MS':
@@ -177,4 +177,4 @@ def _ts_right(fr: pd.core.generic.NDFrame) -> pd.Series:
         else:
             raise ValueError(f"Invalid frequency: {i.freq}.")
         ts_right = i + pd.DateOffset(**kwargs)
-    return pd.Series(ts_right, i)
+    return pd.Series(ts_right, i, name="ts_right")

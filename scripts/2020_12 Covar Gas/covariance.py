@@ -71,7 +71,6 @@ tlp_hp = lb.tlp.power.fromsource(3, spec=specfc_el_load)
 tlp = lambda *args: 0.9 * tlp_rh(*args) + 0.1 * tlp_hp(*args)
 lb.tlp.plot.vs_time(tlp)  # quick visual check
 
-ispeak = lb.prices.is_peak_hour
 
 
 # %% ACTUAL: after delivery month.

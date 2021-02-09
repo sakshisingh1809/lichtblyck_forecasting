@@ -3,98 +3,13 @@ Custom classes that are thin wrappers around the pandas objects.
 """
 
 from __future__ import annotations
-import pandas as pd
 from . import attributes
+import pandas as pd
+import numpy as np
+import functools
+
 
 FREQUENCIES = ["AS", "QS", "MS", "D", "H", "15T"]
-
-
-
-def _aggpf(pf: PfFrame) -> pd.Series:
-    """
-    Aggregation function for PfFrames.
-
-    Parameters
-    ----------
-    pf : PfFrame
-        Dataframe with (at least) 2 of the following columns: (w or q), p, r.
-
-    Returns
-    -------
-    pd.Series
-        The aggregated series with the aggregated values for w and p.
-    """
-    if not isinstance(pf, PfFrame):
-        pf = PfFrame(pf)
-    duration = pf.duration.sum()
-    q = pf.q.sum()
-    r = pf.r.sum()
-    return pd.Series({"w": q / duration, "p": r / q})
-
-
-def _changefreq(pf: PfFrame, freq: str = "MS") -> PfFrame:
-    """
-    Resample and aggregate the DataFrame at a new frequency.
-
-    Parameters
-    ----------
-    freq : str, optional
-        The frequency at which to resample. 'AS' (or 'A') for year, 'QS' (or 'Q')
-        for quarter, 'MS' (or 'M') for month, 'D for day', 'H' for hour, '15T' for
-        quarterhour; None to aggregate over the entire time period. The default is 'MS'.
-
-    Returns
-    -------
-    PfFrame
-        Same data at different timescale.
-    """
-    # By default, resampling labels are sometimes right-bound. Change to make left-bound.
-    if freq == "M" or freq == "A" or freq == "Q":
-        freq += "S"
-    if freq is not None and freq not in FREQUENCIES:
-        raise ValueError(
-            "Parameter `freq` must be None or one of {"
-            + ",".join(FREQUENCIES)
-            + "}."
-        )
-
-    # Don't resample, just aggregate.
-    if freq is None:  
-        duration = pf.duration.sum()
-        q = pf.q.sum()
-        r = pf.r.sum()
-        # Must return all data, because time information is lost.
-        return pd.Series({"w": q / duration, "q": q, "p": r / q, "r": r})
-
-    # Empty frame.
-    if len(pf) == 0:
-        return PfFrame(pf.resample(freq).mean())
-
-    down_or_up= FREQUENCIES.index(freq) - FREQUENCIES.index(pf.index.freq)
-
-    # Nothing more needed; dataframe already in desired frequency.
-    if down_or_up== 0:
-        return pf
-
-    # Must downsample.
-    elif down_or_up < 0:
-        newpf = PfFrame(pf.resample(freq).apply(_aggpf))
-        # Discard rows in new dataframe that are only partially present in original dataframe.
-        newpf = newpf[(newpf.index >= pf.index[0]) & (newpf.ts_right <= pf.ts_right[-1])]
-        return PfFrame(newpf)
-
-    # Must upsample.
-    else:
-        # Keep only w and p because these are averages that can be copied over to each child row.
-        newpf = PfFrame({"w": pf.w, "p": pf.p}, pf.index)
-        # Workaround to avoid missing final values:
-        newpf.loc[newpf.ts_right[-1]] = [None, None]  # first, add additional row...
-        newpf = newpf.resample(freq).ffill()  # ... then do upsampling ...
-        newpf = newpf.iloc[:-1]  # ... and then remove final row.
-        return PfFrame(newpf)
-
-    # TODO: change/customize the columns in the returned dataframe.
-    
 
 
 def force_Pf(function):
@@ -110,6 +25,7 @@ def force_Pf(function):
 
     return wrapper
 
+
 # Currently not working. Goal: wrap each method of pd.DataFrame and pd.Series
 # class PfMeta(type):
 #     def __new__(cls, name, bases, dct):
@@ -123,16 +39,34 @@ def force_Pf(function):
 #                     setattr(klass, field_name, force_Pf(field))
 #         return klass
 
+
 class PfSeries(pd.Series):
     """
     PortfolioSeries; pandas series with additional functionality for getting
     duration [h] timeseries.
     """
 
+    # @functools.wraps(pd.Series.__init__)  # keep original signature
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self._entrycheck()
+
+    # def _entrycheck(self):
+    #     """Check passed values to see if all is OK."""
+    #     # Index must have timezone and frequency information.
+    #     if not self.index.tz:
+    #         raise AttributeError("No timezone information is passed.")
+    #     if not self.index.freq in FREQUENCIES:
+    #         raise AttributeError(
+    #             f".freq attribute must be one of {', '.join(FREQUENCIES)}."
+    #         )
+    #     # Set index name.
+    #     self.index = self.index.rename("ts_left")
+
     duration = property(attributes._duration)
     ts_right = property(attributes._ts_right)
-    
-    
+
+
 class PfFrame(pd.DataFrame):
     """
     PortfolioFrame; pandas dataframe with additional functionality for getting
@@ -145,24 +79,63 @@ class PfFrame(pd.DataFrame):
         Power [MW], quantity [MWh], price [Eur/MWh], revenue [Eur] timeseries.
     ts_right, duration : pandas.Series
         Right timestamp and duration [h] of row.
-        
-    Methods
-    -------
-    changefreq()
-        Aggregate the data to a new frequency.
+
+    Notes
+    -----
+    Under the hood, only the `q` and `r` values are kept; the others are calculated
+    whenever needed.
     """
 
-    # Time series.
-    w = property(force_Pf(attributes._power))
-    p = property(force_Pf(attributes._price))
-    q = property(force_Pf(attributes._quantity))
-    r = property(force_Pf(attributes._revenue))
+    # @functools.wraps(pd.DataFrame.__init__)  # keep original signature
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self._entrycheck()
+
+    # def _entrycheck(self):
+    #     """Check passed values to see if all is OK."""
+    #     # Index must have timezone and frequency information.
+    #     if not self.index.tz:
+    #         raise AttributeError("No timezone information is passed.")
+    #     if self.index.freq not in FREQUENCIES:
+    #         raise AttributeError(
+    #             f".freq attribute must be one of {', '.join(FREQUENCIES)}."
+    #         )
+
+    #     # Keep only q and r timeseries, and checking if redundant information is correct.
+    #     if "q" not in self.columns:
+    #         if "w" in self.columns:
+    #             self["q"] = self["w"] * self.duration
+    #         elif "r" in self.columns and "p" in self.columns:
+    #             self["q"] = self["r"] / self["p"]
+    #         else:
+    #             raise AttributeError(
+    #                 "`q` not passed as column and can't be calculated."
+    #             )
+
+    #     if "r" not in self.columns:
+    #         if "p" in self.columns:
+    #             self["r"] = self["q"] * self["p"]
+    #         else:  # only MW data is provided, no financial value.
+    #             self["r"] = np.nan
+
+    #     if "w" in self.columns:
+    #         if not np.allclose(self["q"], self["w"] * self.duration):  # redundant check
+    #             raise ValueError("Passed values for `q` and `w` not compatible.")
+    #         del self["w"]
+
+    #     if "p" in self.columns:
+    #         if not np.allclose(self["r"], self["p"] * self["q"], equal_nan=True):  # redundant check
+    #             raise ValueError("Passed values for `q`, `p` and `r` not compatible.")
+    #         del self["p"]
+
+    #     # Set index name.
+    #     self.index = self.index.rename("ts_left")
+
+    # # Time series.
+    # q = property(lambda self: PfSeries(self["q"]))
+    # r = property(lambda self: PfSeries(self["r"]))
+    # w = property(lambda self: PfSeries((self.q / self.duration).rename("w")))
+    # p = property(lambda self: PfSeries((self.r / self.q).rename("p")))
+
     duration = property(attributes._duration)
     ts_right = property(attributes._ts_right)
-
-    # Resample and aggregate.
-    changefreq = _changefreq
-
-
-
-

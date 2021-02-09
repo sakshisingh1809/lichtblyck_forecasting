@@ -178,8 +178,7 @@ def test_wavg():
     )
     pd.testing.assert_series_equal(
         pd.DataFrame({"a": values1, "b": values1, "c": values1, "d": values2}).wavg(
-            weights,
-            axis=1,
+            weights, axis=1,
         ),
         pd.Series([1, 0.4, 3, -1.5]),
     )  # row-averages
