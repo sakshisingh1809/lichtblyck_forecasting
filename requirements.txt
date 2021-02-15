@@ -5,4 +5,4 @@ scipy
 geopy
 scikit-learn
 sqlalchemy
-xlrd
+openpyxl

@@ -29,8 +29,8 @@ import datetime
 from scipy.stats import norm
 
 
-exp = pd.DataFrame(columns=[[], []])  # 2-level columns
-act = pd.DataFrame(columns=[[], []])  # 2-level columns
+exp = lb.PfFrame(columns=[[], []])  # 2-level columns
+act = lb.PfFrame(columns=[[], []])  # 2-level columns
 
 
 # %% TEMPERATURE INFLUENCE
@@ -63,37 +63,35 @@ weights = (
     weights["power"] / weights["power"].sum() + weights["gas"] / weights["gas"].sum()
 )
 
-# Temperature to load
-t2l = 0.9 * lb.tlp.standardized_tmpr_loadprofile(
-    2
-) + 0.1 * lb.tlp.standardized_tmpr_loadprofile(
-    3
-)  # 2=nsp, 3=wp
-t2l.unstack().plot(cmap="coolwarm")
-
-ispeak = lb.prices.is_peak_hour
-
+# Temperature to load.
 specfc_el_load = 0.79e6
+tlp_rh = lb.tlp.power.fromsource(2, spec=specfc_el_load)
+tlp_hp = lb.tlp.power.fromsource(3, spec=specfc_el_load)
+tlp = lambda *args: 0.9 * tlp_rh(*args) + 0.1 * tlp_hp(*args)
+lb.tlp.plot.vs_time(tlp)  # quick visual check
 
 
-# %% ACTUAL: after delivery month.
-
-# Actual temperature.
-t = lb.historic.tmpr()
-t = lb.historic.fill_gaps(t)
-t_act = lb.tools.wavg(t, weights, axis=1)
-act[("envir", "t")] = t_act.resample("H").ffill()  # TODO: use new/own resample function
-
-# Actual offtake.
-w_act = lb.tlp.tmpr2load(t2l, t_act, spec=specfc_el_load)
-act[("offtake", "w")] = w_act.resample("H").mean()
+#%%
 
 # Actual spot prices.
 act[("spot", "p")] = lb.prices.spot()
 
-act = (
-    act.dropna()
-)  # drop rows for which temperature is available but price is not (or vice versa)
+# Actual temperature.
+t = lb.historic.tmpr()
+t = lb.historic.fill_gaps(t)
+t_act = t.wavg(weights.values, axis=1)
+act[("envir", "t")] = t_act.resample("H").ffill()  # TODO: use new/own resample function
+
+# Only keep rows for which temperature and price are available.
+act = act.dropna()
+
+# Actual offtake.
+w_act = tlp(t_act)
+act[("offtake", "w")] = w_act.resample("H").mean()
+
+# t_act = t_act[-1000:]
+# x1 = pd.DataFrame({'t_act':t_act.resample("15T").asfreq()}).apply(lambda row: tlp(row.t_act, row.name), axis=1)
+# x0 = lb.tlp.toload.w(t_act, tlp, freq="15T")
 
 
 # %% EXPECTED: ~ 2 weeks before delivery month, without temperature influence in price.
@@ -114,7 +112,7 @@ tau = (
     / 3600
     / 24
     / 365.24
-)
+)  # zeit in jahresfractionen seit 1900
 t_exp = pd.Series(
     5.83843470203356
     + 0.037894551208033 * tau
@@ -124,7 +122,8 @@ t_exp = pd.Series(
 exp[("envir", "t")] = t_exp.resample("H").ffill()  # TODO: use new/own resample function
 
 # Expected offtake.
-w_exp = lb.tlp.tmpr2load(t2l, t_exp, spec=specfc_el_load)
+w_exp = tlp(lb.PfSeries(t_exp))
+# w_exp = lb.tlp.tmpr2load(t2l, t_exp, spec=specfc_el_load)
 exp[("offtake", "w")] = w_exp.resample("H").mean()
 
 # Expected spot prices.

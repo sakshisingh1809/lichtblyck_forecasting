@@ -12,7 +12,10 @@ OK_FREQ = ["AS", "QS", "MS", "D", "H", "15T"]
 
 def get_index(tz="Europe/Berlin", freq="D"):
     """Get index with random length and starting point."""
-    count = {"AS": 1, "QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}[freq]
+    countdict = {"AS": 1, "QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}
+    count = countdict.get(freq, 1001)
+    if count == 1001:
+        count = countdict.get(freq + "S", 1001)
     periods = np.random.randint(count, count * 10)
     a, m, d = np.array([2016, 1, 1]) + np.random.randint(0, 12, 3)
     return pd.date_range(f"{a}-{m}-{d}", freq=freq, periods=periods, tz=tz)

@@ -3,9 +3,8 @@
 Attributes for custom dataframes, series, and indices.
 """
 
-import pandas as pd
-import numpy as np
 from ..tools.tools import wavg
+import pandas as pd
 
 # def _w_ofblock(fr: pd.DataFrame) -> pd.Series:
 #     """

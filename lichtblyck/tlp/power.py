@@ -2,11 +2,10 @@
 """
 Standardized temperature load profiles for electricity consumption.
 """
-
-import pandas as pd
-import datetime
 from typing import Union, Callable, Tuple
-from .convert import series2function
+from . import convert
+import pandas as pd
+import datetime as dt
 
 SOURCEPATH = "lichtblyck/tlp/sourcedata/power/"
 SOURCES = [
@@ -26,7 +25,9 @@ SOURCES = [
 ]
 
 
-def fromsource(source: Union[str, int], *, spec: float) -> Tuple[Callable, str]:
+def fromsource(
+    source: Union[str, int], *, spec: float
+) -> Callable[[pd.Series], pd.Series]:
     """
     Standardized temperature-dependent load profile for a certain DSO.
 
@@ -43,21 +44,15 @@ def fromsource(source: Union[str, int], *, spec: float) -> Tuple[Callable, str]:
 
     Returns
     -------
-    Callable
-        Function that takes a temperature [degC] and timestamp as input and
-        returns the consumption [MW] as output, and
-        string describing its native frequency.
-
-    Notes
-    -----
-    To obtain the actual electricity consumption on a certain day or during a
-    certain time period, use the function `tmpr2load`.
+    Callable[[pd.Series], pd.Series]
+        Function that takes a temperature [degC] timeseries as input and
+        returns the consumption [MW] timeseries as output.
     """
-    s = series_fromsource(source, spec=spec)
-    return series2function(s)
+    tlp_s = _series_fromsource(source, spec=spec)
+    return convert.series2function(tlp_s)
 
 
-def series_fromsource(source: Union[str, int], *, spec: float) -> Tuple[pd.Series, str]:
+def _series_fromsource(source: Union[str, int], *, spec: float) -> pd.Series:
     """
     Standardized temperature-dependent load profile for a certain DSO.
 
@@ -75,13 +70,25 @@ def series_fromsource(source: Union[str, int], *, spec: float) -> Tuple[pd.Serie
     Returns
     -------
     pd.Series
-        Load values (in [MW]), as function of 2-level row index (temperature,
-        [degC], time of day with quarter-hourly resolution).
+        Load values (in [MW]), as function of 2-level row index ('t' for temperature,
+        [degC], 'time_left_local' for time of day).
 
     Notes
     -----
     See also `fromsource`.
     """
+
+    def get_time(time_or_datetime):
+        try:
+            return time_or_datetime.time()
+        except AttributeError:
+            return time_or_datetime
+
+    def subtract_15_min_overflow(time):
+        return (
+            dt.datetime.combine(dt.date.today(), time) + dt.timedelta(hours=-0.25)
+        ).time()
+
     try:
         if isinstance(source, str):
             io = [s for s in SOURCES if s["name"] == source][0]["io"]
@@ -98,13 +105,11 @@ def series_fromsource(source: Union[str, int], *, spec: float) -> Tuple[pd.Serie
     # . Have column 'Nr.'
     # . Have columns with number representing the temperature.
     df = pd.read_excel(header=0, sheet_name=0, io=io)
-    df["ts_right_local"] = pd.to_datetime(df["Uhrzeit"], format="%H:%M:%S")
-    df["time_left_local"] = (
-        df["ts_right_local"] + datetime.timedelta(hours=-0.25)
-    ).dt.time
+    df["time_right_local"] = df["Uhrzeit"].apply(get_time)
+    df["time_left_local"] = df["time_right_local"].apply(subtract_15_min_overflow)
     df = df.set_index("time_left_local")
-    df = df.drop(columns=["Nr.", "Uhrzeit", "ts_right_local"])
+    df = df.drop(columns=["Nr.", "Uhrzeit", "time_right_local"])
     # Put in correct output format (long table).
-    s = df.stack().swaplevel().sort_index() * spec * 0.001  # kW to MW
-    s.index.rename(["t", "time_left_local"], inplace=True)
-    return s
+    tlp_s = df.stack().swaplevel().sort_index() * spec * 0.001  # kW to MW
+    tlp_s.index.rename(["t", "time_left_local"], inplace=True)
+    return tlp_s

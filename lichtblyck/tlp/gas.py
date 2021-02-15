@@ -3,6 +3,7 @@
 Standardized temperature load profiles for gas consumption.
 """
 
+from . import convert
 from typing import Callable
 
 
@@ -20,15 +21,15 @@ def fromscratch(A: float, B: float, C: float, Dprime: float, *, kw: float) -> Ca
 
     Returns
     -------
-    Callable
-        Function that takes a temperature [degC] as input and returns the
-        consumption [MW] as output.
+    Callable[[pd.Series], pd.Series]
+        Function that takes a temperature [degC] timeseries as input and
+        returns the consumption [MW] timeseries as output.
     """
 
     def f(t: float) -> float:  # original formula gives kWh per day, so kWh/day --> MW
         return kw * ((A / (1 + (B / (t - 40)) ** C)) + Dprime) * 0.001 / 24
 
-    return f
+    return convert.function2function(f)
 
 
 def D14(*, kw: float) -> Callable:

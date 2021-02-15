@@ -4,14 +4,14 @@ Module to calculate the historic covariance between spot price and tlp consumpti
 
 Process:
 
-expected temperature -> (with tlp:) expected offtake -> (with pfc:) hedge of expected offtake
+. expected temperature -> (with tlp:) expected offtake -> (with pfc:) hedge of expected offtake
   -> expected spot volume -> (with pfc:) expected spot costs
-actual temperatures -> (with tlp:) actual offtake 
+. actual temperatures -> (with tlp:) actual offtake 
   -> (with hedge:) actual spot volume -> (with spot prices:) actual spot costs
-delta offtake volume, caused by temperature: actual - expected
-delta spot costs, caused by many things incl. temperature: actual - expected
-Interested in: average spot costs in given year --> Expected covariance costs
-And interested in: distribution of spot costs --> Temperature risk
+. delta offtake volume, caused by temperature: actual - expected
+. delta spot costs, caused by many things incl. temperature: actual - expected
+. Interested in: average spot costs in given year --> Expected covariance costs
+. And interested in: distribution of spot costs --> Temperature risk
 
 Variations:
   1. Expected temperature = monthly average, i.e., same temperature for each day of a given month.
@@ -30,8 +30,8 @@ import datetime
 from scipy.stats import norm
 
 
-exp = pd.DataFrame(columns=[[], []])  # 2-level columns
-act = pd.DataFrame(columns=[[], []])  # 2-level columns
+exp = lb.PfFrame(columns=[[], []])  # 2-level columns
+act = lb.PfFrame(columns=[[], []])  # 2-level columns
 
 
 # %% TEMPERATURE INFLUENCE
@@ -60,36 +60,35 @@ weights = pd.DataFrame(
     },
     index=range(1, 16),
 )  # MWh/a in each zone
-weights = (
-    weights["power"] / weights["power"].sum() + weights["gas"] / weights["gas"].sum()
-)
+weights = weights["gas"] / weights["gas"].sum()
 
 # Temperature to load.
 specfc_el_load = 0.79e6
-tlp_rh = lb.tlp.power.fromsource(2, spec=specfc_el_load)
-tlp_hp = lb.tlp.power.fromsource(3, spec=specfc_el_load)
-tlp = lambda *args: 0.9 * tlp_rh(*args) + 0.1 * tlp_hp(*args)
-lb.tlp.plot.vs_time(tlp)  # quick visual check
+tlp = lb.tlp.gas.D14(kw=100)
+lb.tlp.plot.vs_t(tlp)  # quick visual check
 
 
+#%%
 
-# %% ACTUAL: after delivery month.
+# Actual spot prices.
+act[("spot", "p")] = lb.prices.gas_spot()
+# (split into month average and month-to-day deviations)
+act[('spot_m', 'p')] = act.spot.p.resample('MS').transform(np.mean)
+act[('spot_m2d', 'p')] = act.spot.p - act.spot_m.p
+
 
 # Actual temperature.
 t = lb.historic.tmpr()
 t = lb.historic.fill_gaps(t)
 t_act = t.wavg(weights.values, axis=1)
-act[("envir", "t")] = t_act.resample("H").ffill()  # TODO: use new/own resample function
-
-# Actual offtake.
-w_act = lb.tlp.toload.w(tlp, t_act, freq="15T")
-act[("offtake", "w")] = w_act.resample("H").mean()
-
-# Actual spot prices.
-act[("spot", "p")] = lb.prices.spot()
+act[("envir", "t")] = t_act  # TODO: use new/own resample function
 
 # Only keep rows for which temperature and price are available.
-act = act.dropna()
+act = act.dropna().resample('D').asfreq()
+
+# Actual offtake.
+w_act = tlp(t_act)
+act[("offtake", "w")] = w_act.resample("H").mean()
 
 
 # %% EXPECTED: ~ 2 weeks before delivery month, without temperature influence in price.
@@ -110,138 +109,99 @@ tau = (
     / 3600
     / 24
     / 365.24
-)
+)  # zeit in jahresfractionen seit 1900
 t_exp = pd.Series(
     5.83843470203356
     + 0.037894551208033 * tau
     + -9.03387134093431 * np.cos(2 * np.pi * (tau - 19.3661745382612 / 365.24)),
     index=ti,
 )
-exp[("envir", "t")] = t_exp.resample("H").ffill()  # TODO: use new/own resample function
+exp[("envir", "t")] = t_exp  # TODO: use new/own resample function
 
 # Expected offtake.
-w_exp = lb.tlp.tmpr2load(t2l, t_exp, spec=specfc_el_load)
-exp[("offtake", "w")] = w_exp.resample("H").mean()
+w_exp = tlp(lb.PfSeries(t_exp))
+# w_exp = lb.tlp.tmpr2load(t2l, t_exp, spec=specfc_el_load)
+exp[("offtake", "w")] = w_exp
+
+
+def exp_price(df):
+    cols = ["p", "ts_left_trade"]  # columns to keep
+    df = df.reset_index("ts_left_trade")  # to get 'ts_left_trade' in columns.
+    df = df[df["trade_before_deliv"] > datetime.timedelta(21)]  # keep suitable.
+    if not df.empty:
+        df = df.sort_values("trade_before_deliv")  # sort suitable.
+        return pd.Series(df[cols].iloc[0])  # keep one.
+    return pd.Series([])
+
 
 # Expected spot prices.
 # . Use futures prices to calculate the expected average price level.
-futures = lb.prices.frontmonth()
+futures = lb.prices.gas_frontmonth()
+# . Prices before temperature influence: at least 21 days before delivery start.
+exp_m = futures.groupby("ts_left_deliv").apply(exp_price).dropna()
+exp[('spot_m', 'p')] = exp_m.p.resample('D').ffill()
 
-
-def exp_and_act(df):
-    """Returns expected (pre-tmpr-influence) and actual (including-tmpr-influence)
-    base, peak, offpeak prices, as well as respective trading days."""
-    # Columns to keep.
-    cols = df.columns[lb.tools.is_price(df.columns)]
-    cols = np.append(cols, "ts_left_trade")
-    df = df.reset_index("ts_left_trade")  # to get 'ts_left_trade' in columns.
-    df = df.sort_values("trade_before_deliv")
-    data = []
-    exp = df[df["trade_before_deliv"] > datetime.timedelta(15)]
-    if not exp.empty:
-        data.append(exp[cols].iloc[0].rename("exp"))
-    act = df[df["trade_before_deliv"] < datetime.timedelta(-20)]
-    if not act.empty:
-        data.append(act[cols].iloc[0].rename("act"))
-    return pd.DataFrame(data)
-
-
-p_fwd = (
-    futures.groupby("ts_left_deliv").apply(exp_and_act).unstack().dropna()
-)  # expected and actual
-p_fwd = p_fwd.swaplevel(axis=1).sort_index(axis=1)
-p_exp_po = p_fwd["exp"][["p_peak", "p_offpeak"]].resample("H").ffill()
-p_exp_m = pd.Series(
-    np.where(ispeak(p_exp_po.index), p_exp_po["p_peak"], p_exp_po["p_offpeak"]),
-    p_exp_po.index,
-    name="p_spot_m_exp",
-)
-# . Use actual spot prices to calculate expected M2H profile.
-p = pd.DataFrame({"p_spot": lb.prices.spot()})
-p["p_spot_m"] = lb.prices.p_bpo_long(p.p_spot, "MS")
-p["p_spot_m2h"] = p["p_spot"] - p["p_spot_m"]
+# . Use actual spot prices to calculate expected M2D profile.
 rolling_av = lambda nums: sum(np.sort(nums)[3:-3]) / (
     len(nums) - 6
 )  # mean but without the extremes
-p_exp_m2h = (
-    p.groupby(p.index.map(lambda ts: (ts.weekday(), ts.hour)))
-    .apply(lambda df: df["p_spot_m2h"].rolling(75).apply(rolling_av).shift())
-    .droplevel(0)
-    .resample("H")
-    .asfreq()
-)
-p_exp_m2h -= p_exp_m2h.groupby(lambda ts: (ts.year, ts.month, ispeak(ts))).transform(
-    np.mean
-)  # arbitrage free
+act_m2d = act.spot_m2d.p
+exp_m2d = act_m2d.groupby(act_m2d.index.map(lambda ts: ts.weekday())) \
+    .apply(lambda df: df.rolling(75).apply(rolling_av).shift())
+# . Make arbitrage free.
+exp[('spot_m2d', 'p')] = exp_m2d - exp_m2d.groupby(lambda ts: (ts.year, ts.month)).transform(np.mean)
 # . Add together to get expected prices.
-exp[("spot", "p")] = p_exp_m + p_exp_m2h
+exp[("spot", "p")] = exp.spot_m.p + exp.spot_m2d.p
 
-
-### TODO: ADD BETTER PFC (df_hourly)
-b = p_fwd["exp"][["p_peak", "p_offpeak"]]
 
 
 # %% Derived quantities
 
-# Combine.
-hourly = pd.concat([exp, act], axis=1, keys=["exp", "act"]).dropna()
+duration = lb.core.attributes._duration
 
-# Hedge.
-hourly[("pf", "hedge", "w")] = lb.prices.w_hedge_long(
-    hourly.exp.offtake.w, hourly.exp.spot.p, "MS"
-)
+# Combine.
+daily = pd.concat([exp, act], axis=1, keys=["exp", "act"]).dropna().resample('D').asfreq()
+
+# Hedge. --> Volume hedge.
+daily[("pf", "hedge", "w")] = daily.exp.offtake.w.resample('MS').transform(np.mean)
 
 # Expected spot quantities.
-hourly[("exp", "spot", "w")] = hourly.exp.offtake.w - hourly.pf.hedge.w
-# check: spot revenue should add to 0 for each given month
-# hourly.exp.spot.r.resample('MS').sum()
+daily[("exp", "spot", "w")] = daily.exp.offtake.w - daily.pf.hedge.w
+# check: spot volume should add to 0 for each given month
+assert ((daily.exp.spot.w * duration(daily)).resample('MS').sum().abs() < 0.1).all()
 
 # Actual spot quantities.
-hourly[("act", "spot", "w")] = hourly.act.offtake.w - hourly.pf.hedge.w
+daily[("act", "spot", "w")] = daily.act.offtake.w - daily.pf.hedge.w
 
 # Difference.
-hourly[("delta", "offtake", "w")] = hourly.act.offtake.w - hourly.exp.offtake.w
-hourly[("delta", "spot", "p")] = hourly.act.spot.p - hourly.exp.spot.p
-hourly[("act", "par", "r")] = hourly.exp.spot.q * hourly.delta.spot.p
-hourly[("act", "covar", "r")] = hourly.delta.offtake.q * hourly.delta.spot.p
+daily[("delta", "offtake", "w")] = daily.act.offtake.w - daily.exp.offtake.w
+daily[("delta", "spot", "p")] = daily.act.spot.p - daily.exp.spot.p
+daily[("act", "par", "r")] = daily.exp.spot.w * duration(daily) * daily.delta.spot.p
+daily[("act", "covar", "r")] = daily.delta.offtake.w * duration(daily) * daily.delta.spot.p
 
 
 # %% Aggregations
 
 # only keep full year
-start = hourly.index[0] + pd.offsets.YearBegin(0)
-hourly = hourly[hourly.index >= start]
+start = daily.index[0] + pd.offsets.YearBegin(1)
+daily = daily[daily.index >= start]
 # aggregate
-daily = hourly.resample("D").mean()
-monthly = hourly.resample("MS").mean()
-yearly = hourly.resample("AS").mean()
-for df in [daily, monthly, yearly]:
+monthly = daily.resample("MS").mean()
+yearly = daily.resample("AS").mean()
+for df in [monthly, yearly]:
     # Correction: here sum is needed, not mean
-    df[("act", "covar", "r")] = hourly.act.covar.r.resample(df.index.freq).sum()
-    df[("act", "par", "r")] = hourly.act.par.r.resample(df.index.freq).sum()
+    df[("act", "covar", "r")] = daily.act.covar.r.resample(df.index.freq).sum()
+    df[("act", "par", "r")] = daily.act.par.r.resample(df.index.freq).sum()
     # New information
-    df[("act", "covar", "p")] = df.act.covar.r / df.act.offtake.q
-    df[("act", "par", "p")] = df.act.par.r / df.act.offtake.q
-
-
-# %% VERIFICATION OF DATA INTEGRITY
-
-# pop1 = p_spot.groupby(lambda ts: (ts.year, ts.month, ispeak(ts))).mean()
-# pop1.index = pd.MultiIndex.from_tuples(pop1.index, names=['YY','MM',''])
-# pop1 = pop1.unstack().rename({True: 'p_peak', False: 'p_offpeak'}, axis=1)
-
-# pop2 = p_fwd.set_index(pd.MultiIndex.from_arrays([p_fwd.index.year,
-#     p_fwd.index.month], names=['YY', 'MM']))['act'][['p_peak', 'p_offpeak']]
-
-# # should be equal
-# pop1.join(pop2, how='inner', lsuffix='_fromspot', rsuffix='_fromfwd').plot()
+    df[("act", "covar", "p")] = df.act.covar.r / (df.act.offtake.w * duration(df))
+    df[("act", "par", "p")] = df.act.par.r / (df.act.offtake.w * duration(df))
 
 
 # %% PLOT: short example timeseries
 
 # Filter time section
-ts_left = pd.Timestamp("2007-01-01", tz="Europe/Berlin")
-ts_right = ts_left + pd.offsets.MonthBegin(1)
+ts_left = pd.Timestamp("2010-01-01", tz="Europe/Berlin")
+ts_right = ts_left + pd.offsets.MonthBegin(6)
 
 
 def get_filter(ts_left, ts_right):
@@ -252,12 +212,12 @@ def get_filter(ts_left, ts_right):
 
 
 filtr = get_filter(ts_left, ts_right)
-df = filtr(hourly)
+df = filtr(daily)
 
 # Values
 r_covar = df.act.covar.r.sum()
 r_par = df.act.par.r.sum()
-q = df.act.offtake.q.sum()
+q = (df.act.offtake.w * duration(df)).sum()
 
 # Formatting
 plt.style.use("seaborn")
@@ -451,9 +411,9 @@ ax.legend()
 ax = axes[1]
 ax.title.set_text("Offtake, per month")
 ax.yaxis.label.set_text("MWh")
-ax.plot(monthly.exp.offtake.q, "b-", linewidth=1, label="expected")
-ax.plot(monthly.pf.hedge.q, "b--", alpha=0.4, linewidth=1, label="hedge")
-ax.plot(monthly.act.offtake.q, "r-", linewidth=1, label="actual")
+ax.plot(monthly.exp.offtake.w * duration(monthly), "b-", linewidth=1, label="expected")
+ax.plot(monthly.pf.hedge.w * duration(monthly), "b--", alpha=0.4, linewidth=1, label="hedge")
+ax.plot(monthly.act.offtake.w * duration(monthly), "r-", linewidth=1, label="actual")
 ax.legend()
 #  Prices.
 ax = axes[2]

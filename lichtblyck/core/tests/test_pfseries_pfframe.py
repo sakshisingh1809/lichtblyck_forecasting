@@ -16,7 +16,7 @@ def assert_all_same_time(ps):
 @pytest.mark.parametrize("tz", ["Europe/Berlin", None])
 @pytest.mark.parametrize("get_obj_func", [get_pfseries, get_pfframe])
 def test_index(freq, tz, get_obj_func):
-    i = pd.date_range("2020-03-28", freq=freq, periods=3, tz=tz)
+    i = get_index(tz=tz, freq=freq)
     pf = get_obj_func(i)
     if freq in OK_FREQ and tz is not None:
         assert len(pf.duration) == len(pf)

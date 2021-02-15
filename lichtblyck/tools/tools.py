@@ -71,7 +71,7 @@ def set_ts_index(
 
 
 def wavg(
-    df: Union[pd.DataFrame, pd.Series],
+    fr: Union[pd.DataFrame, pd.Series],
     weights: Union[Iterable, pd.Series] = None,
     axis: int = 0,
 ) -> Union[pd.Series, float]:
@@ -80,7 +80,7 @@ def wavg(
 
     Parameters
     ----------
-    df : Union[pd.DataFrame, pd.Series]
+    fr : Union[pd.DataFrame, pd.Series]
         The input values.
     weights : Union[Iterable, pd.Series], optional
         The weights. If provided as a Series, the weights and values are aligned along its index. If no weights are provided, the normal (unweighted) average is returned instead.
@@ -91,14 +91,14 @@ def wavg(
     Returns
     -------
     Union[pd.Series, float]
-        The weighted average. A single float if `df` is a Series; a Series if
-        `df` is a Dataframe.
+        The weighted average. A single float if `fr` is a Series; a Series if
+        `fr` is a Dataframe.
     """
     if axis == 1:  # correct allignment
-        df = df.T
+        fr = fr.T
     if weights is None:  # return non-weighted average if no weights are provided
-        return df.mean()
-    return df.mul(weights, axis=0).sum(skipna=False) / sum(weights)
+        return fr.mean()
+    return fr.mul(weights, axis=0).sum(skipna=False) / sum(weights)
 
 
 def __is(letter: str) -> Callable[[str], bool]:

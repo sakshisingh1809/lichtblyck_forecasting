@@ -3,19 +3,125 @@
 Module to read price data from disk.
 """
 
+from typing import Tuple, Union, Iterable, Dict
+from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import lichtblyck as lb
-from sqlalchemy import create_engine
-from typing import Tuple, Union, Iterable
+import functools
+import re
 
 # import eikon
 
 # eikon.set_app_key('e3993065d33b4e65b742130b0aa04528e90e1338')
 
-SPOTPRICEFILE = "lichtblyck/prices/sourcedata/prices_mid2000_mid2020.xlsx"
-FRONTMONTHPRICEFILE = "lichtblyck/prices/sourcedata/prices_mid2000_mid2020.xlsx"
+MONTELFILEPATH = "lichtblyck/prices/sourcedata/prices_montel.xlsx"
+
+
+def _excel_gas(
+    period_type: str = "M", period_start: int = 1, market_code: str = "ncg"
+) -> Dict:
+    """
+    Get the location of gas data in the montel excel file.
+
+    Parameters
+    ----------
+    period_type : {'d' (day-ahead), 'm' (month), 'q' (quarter), 's' (season), 'a' (year)}
+    period_start : int
+        ignored for period_type == 'd'
+    market_code : {'gpl' (gaspool), 'ncg' (netconnect-germany)}
+    
+    Example
+    -------
+    period_type, period_start, market_code == ('q', 1, 'gpl') to get prices for 
+    band delivery in the next quarter in the gpl market area.
+    """
+    period_type = period_type.lower()[0]
+    kwargs = {"io": MONTELFILEPATH, "header": 0}
+    market_code = market_code.lower()
+
+    if period_type == "d":  # day prices from day-ahead market
+        if market_code == "gpl":
+            startcol = 5
+        elif market_code == "ncg":
+            startcol = 15
+        else:
+            raise ValueError("Invalid value for parameter `market_code`.")
+        kwargs.update(
+            {"sheet_name": "gas_spot_static", "usecols": startcol + np.array([1, 2])}
+        )
+    else:
+        if market_code == "gpl":
+            startcol = 0
+        elif market_code == "ncg":
+            startcol = 24
+        else:
+            raise ValueError("Invalid value for parameter `market_code`.")
+        if period_type == "m":
+            startcol += 0
+        elif period_type == "q":
+            startcol += 6
+        elif period_type == "s":
+            startcol += 12
+        elif period_type == "a":
+            startcol += 18
+        else:
+            raise ValueError("Invalid value for parameter `period_type`.")
+        kwargs.update(
+            {"sheet_name": "gas_futures_static", "usecols": startcol + np.array([1, 2])}
+        )
+    return kwargs
+
+
+def _excel_power(
+    period_type: str = "M", period_start: int = 1, product_code: str = "base"
+) -> Dict:
+    """
+    Get the location of power data in the montel excel file.
+
+    Parameters
+    ----------
+    period_type : {'h' (hourly from day-ahead market), 'm' (month), 'q' (quarter), 'a' (year)}
+    period_start : int
+        ignored for period_type == 'h'
+    product_code : {'base', 'peak'}
+        ignored for period_type == 'h'
+    
+    Example
+    -------
+    period_type, period_start, product_code == ('q', 1, 'peak') to get prices for 
+    peak band delivery in the next quarter.
+    """
+    period_type = period_type.lower()[0]
+    kwargs = {"io": MONTELFILEPATH, "header": 0}
+    product_code = product_code.lower()
+
+    if period_type == "h":  # hourly prices from day-ahead market
+        kwargs.update({"sheet_name": "power_spot_static", "usecols": "B:AC"})
+    else:
+        if product_code == "base":
+            startcol = 0
+        elif product_code == "peak":
+            startcol = 6
+        else:
+            raise ValueError("Invalid value for parameter `product_code`.")
+        if period_type == "m":
+            startcol += 0
+        elif period_type == "q":
+            startcol += 12
+        elif period_type == "a":
+            startcol += 24
+        else:
+            raise ValueError("Invalid value for parameter `period_type`.")
+        kwargs.update(
+            {
+                "sheet_name": "power_futures_static",
+                "usecols": startcol + np.array([1, 2]),
+            }
+        )
+    return kwargs
+
 
 # From Belvis
 # SPOTPRICEFILE = 'lichtblyck/prices/sourcedata/spot.tsv'
@@ -31,12 +137,10 @@ FRONTMONTHPRICEFILE = "lichtblyck/prices/sourcedata/prices_mid2000_mid2020.xlsx"
 #     return spot['p_spot']
 
 
-def spot() -> pd.Series:
-    """Return spot price timeseries."""
-    data = pd.read_excel(
-        SPOTPRICEFILE, sheet_name="spot_static", header=0, usecols="B:AC", index_col=-1
-    )
-    data = data.drop(data.columns[-2:], axis=1)
+def power_spot() -> pd.Series:
+    """Return power spot price timeseries."""
+    data = pd.read_excel(**_excel_power("h"))
+    data = data.set_index("Date").drop(data.columns[-2:], axis=1)
     dls_values = data[
         "DLS"
     ].dropna()  # prices for second 02:00-03:00 hour on last Sun in Oct.
@@ -56,137 +160,188 @@ def spot() -> pd.Series:
         except KeyError:
             to_insert = pd.Series(spot[ts], [ts])
         spot = pd.concat([spot[:ts], to_insert, spot[ts:][1:]])
-    spot = lb.set_ts_index(spot).rename("p_spot")
+    spot = lb.tools.set_ts_index(spot).rename("p")
     spot = spot.resample("H").asfreq()
     return spot
 
 
-def futures(
-    prod: str = "y", earliest_trading=None, earliest_delivery=None
-) -> pd.DataFrame:
+def gas_spot(market_code: str = "ncg") -> pd.Series:
+    """Return gas spot price timeseries."""
+    data = pd.read_excel(**_excel_gas("da", market_code=market_code))
+    data = lb.tools.set_ts_index(data.dropna(), data.columns[0])
+    data = lb.PfSeries(data.iloc[:, 0])  # turn one-column df into series
+    data.index = data.ts_right  # shift up one, so delivery (not trade) day is shown.
+    spot = lb.tools.set_ts_index(data).rename("p")
+    return spot
+
+
+# def power_futures(
+#     prod: str = "y", earliest_trading=None, earliest_delivery=None
+# ) -> pd.DataFrame:
+#     """
+#     Return futures prices timeseries.
+
+#     Arguments:
+#         prod: product to return the prices of. One of {'y', 'q', 'm'}.
+#         earliest_trading: only return prices after this date. (default: all)
+#         earliest_delivery: only return prices for products whose delivery is
+#             on or after this date. (default: all)
+
+#     Returns:
+#         Dataframe with EEX futures prices. Index: Multiindex (with levels 0:
+#             product {'y', 'q', 'm'}, 1: time stamp of delivery start, 2: date
+#             of trading). Columns: p_base (base price), p_peak (peak price),
+#             p_offpeak (offpeak price). ts_right_deliv (time stamp of delivery
+#             end), trade_before_deliv (timedelta between trade and delivery
+#             start), basehours, peakhours, offpeakhours in delivery period.
+#     """
+#     engine = create_engine("mssql+pymssql://sqlbiprod/__Staging")
+
+#     try:
+#         dur_months = {"m": 1, "q": 3, "y": 12}[prod]
+#     except KeyError:
+#         raise ValueError("Argument 'prod' must be in {'y', 'q', 'm'}.")
+
+#     # Get values from server...
+#     where = f"WHERE Typ='{prod.upper()}'"
+#     if earliest_trading:
+#         where += f" AND EEX_Handelstag > '{earliest_trading}'"
+#     if earliest_delivery:
+#         where += f" AND Lieferzeitraum > '{earliest_delivery}'"
+#     df = pd.read_sql_query(
+#         f"SELECT * FROM dbo.Fakten_EW_EEX_Preise_fkunden {where}", engine
+#     )
+#     # ...massage to get correct format...
+#     df = df.rename(
+#         columns={
+#             "Typ": "deliv_prod",
+#             "Peak_Preis": "p_peak",
+#             "Base_Preis": "p_base",
+#             "EEX_Handelstag": "ts_left_trade",
+#             "Lieferzeitraum": "ts_left_deliv",
+#         }
+#     )
+#     df = df.drop("ID", axis=1)
+#     df["ts_left_trade"] = pd.to_datetime(df["ts_left_trade"]).dt.tz_localize(
+#         "Europe/Berlin"
+#     )
+#     df["ts_left_deliv"] = pd.to_datetime(df["ts_left_deliv"]).dt.tz_localize(
+#         "Europe/Berlin"
+#     )
+#     df["ts_right_deliv"] = df["ts_left_deliv"] + pd.offsets.DateOffset(
+#         months=dur_months
+#     )
+#     df["trade_before_deliv"] = df["ts_left_deliv"] - df["ts_left_trade"]
+#     # ...get peak and base and offpeak hours...
+#     h = df[["ts_left_deliv", "ts_right_deliv"]].drop_duplicates()
+#     bpo = hours_bpo(h["ts_left_deliv"], h["ts_right_deliv"])
+#     h["basehours"], h["peakhours"], h["offpeakhours"] = bpo
+#     df = pd.merge(df, h, on=["ts_left_deliv", "ts_right_deliv"])
+#     # ...and use to calculate offpeak prices.
+#     df["p_offpeak"] = p_offpeak(
+#         df["p_base"], df["p_peak"], df["basehours"], df["peakhours"]
+#     )
+#     # Finally, return in correct row and column order.
+#     # TODO: add frequency to index, if possible
+#     df = df.set_index(["deliv_prod", "ts_left_deliv", "ts_left_trade"]).sort_index()
+#     return df[
+#         [
+#             "ts_right_deliv",
+#             "trade_before_deliv",
+#             "p_base",
+#             "p_peak",
+#             "p_offpeak",
+#             "basehours",
+#             "peakhours",
+#             "offpeakhours",
+#         ]
+#     ]
+
+
+def ts_left(s: str, mode=0) -> pd.Timestamp:
     """
-    Return futures prices timeseries.
-
-    Arguments:
-        prod: product to return the prices of. One of {'y', 'q', 'm'}.
-        earliest_trading: only return prices after this date. (default: all)
-        earliest_delivery: only return prices for products whose delivery is
-            on or after this date. (default: all)
-
-    Returns:
-        Dataframe with EEX futures prices. Index: Multiindex (with levels 0:
-            product {'y', 'q', 'm'}, 1: time stamp of delivery start, 2: date
-            of trading). Columns: p_base (base price), p_peak (peak price),
-            p_offpeak (offpeak price). ts_right_deliv (time stamp of delivery
-            end), trade_before_deliv (timedelta between trade and delivery
-            start), basehours, peakhours, offpeakhours in delivery period.
+    Get timestamp object from a string representing a datetime, 
+    or the left timestamp from a string representing a period.
     """
-    engine = create_engine("mssql+pymssql://sqlbiprod/__Staging")
 
-    try:
-        dur_months = {"m": 1, "q": 3, "y": 12}[prod]
-    except KeyError:
-        raise ValueError("Argument 'prod' must be in {'y', 'q', 'm'}.")
+    def change(s, mode=0):
+        try:
+            s = s.lower().replace("m", "-")
+        except:
+            pass
+        if mode % 2 >= 1:  # replace
+            s = s.replace("hy1", "q1").replace("hy2", "q3")
+            s = s.replace("cal", "").replace("su", "q2").replace("wi", "q4")
+        if mode % 6 >= 2:  # swap
+            if mode % 6 >= 4:
+                s = s.replace(" ", "-")
+            else:
+                s = s.replace("-", " ")
+        if mode % 18 >= 6:
+            match = re.findall(r"(?<!\d)(\d{4})(?!\d)", s)
+            if match:
+                year = match[0]
+                rest = s.replace(year, "").strip()
+                if mode % 12 >= 8:
+                    s = f"{rest}-{year}"
+                else:
+                    s = f"{year}-{rest}"
+        return s
 
-    # Get values from server...
-    where = f"WHERE Typ='{prod.upper()}'"
-    if earliest_trading:
-        where += f" AND EEX_Handelstag > '{earliest_trading}'"
-    if earliest_delivery:
-        where += f" AND Lieferzeitraum > '{earliest_delivery}'"
-    df = pd.read_sql_query(
-        f"SELECT * FROM dbo.Fakten_EW_EEX_Preise_fkunden {where}", engine
-    )
-    breakpoint()
-    # ...massage to get correct format...
-    df = df.rename(
-        columns={
-            "Typ": "deliv_prod",
-            "Peak_Preis": "p_peak",
-            "Base_Preis": "p_base",
-            "EEX_Handelstag": "ts_left_trade",
-            "Lieferzeitraum": "ts_left_deliv",
-        }
-    )
-    df = df.drop("ID", axis=1)
-    df["ts_left_trade"] = pd.to_datetime(df["ts_left_trade"]).dt.tz_localize(
-        "Europe/Berlin"
-    )
-    df["ts_left_deliv"] = pd.to_datetime(df["ts_left_deliv"]).dt.tz_localize(
-        "Europe/Berlin"
-    )
-    df["ts_right_deliv"] = df["ts_left_deliv"] + pd.offsets.DateOffset(
-        months=dur_months
-    )
-    df["trade_before_deliv"] = df["ts_left_deliv"] - df["ts_left_trade"]
-    # ...get peak and base and offpeak hours...
-    h = df[["ts_left_deliv", "ts_right_deliv"]].drop_duplicates()
-    bpo = hours_bpo(h["ts_left_deliv"], h["ts_right_deliv"])
-    h["basehours"], h["peakhours"], h["offpeakhours"] = bpo
-    df = pd.merge(df, h, on=["ts_left_deliv", "ts_right_deliv"])
-    # ...and use to calculate offpeak prices.
-    df["p_offpeak"] = p_offpeak(
-        df["p_base"], df["p_peak"], df["basehours"], df["peakhours"]
-    )
-    # Finally, return in correct row and column order.
-    # TODO: add frequency to index, if possible
-    df = df.set_index(["deliv_prod", "ts_left_deliv", "ts_left_trade"]).sort_index()
-    return df[
-        [
-            "ts_right_deliv",
-            "trade_before_deliv",
-            "p_base",
-            "p_peak",
-            "p_offpeak",
-            "basehours",
-            "peakhours",
-            "offpeakhours",
-        ]
-    ]
+    for mode in range(18):
+        t = change(s, mode)
+        try:
+            return pd.Timestamp(t)
+        except:
+            pass
+        try:
+            return pd.Period(t).to_timestamp()
+        except:
+            pass
+
+    raise ValueError(f'can\'t turn "{s}" into timestamp.')
 
 
-def frontmonth():
-    """
-    Return futures prices timeseries of frontmonth (M1).
-
+def _power_front(period_type="m"):
+    """    
     Returns:
         Dataframe with EEX futures prices. Index: trading day. Columns:
-            p_base (base price), p_peak (peak price), p_offpeak (offpeak
-            price). ts_left_deliv, ts_right_deliv (timestamps of delivery),
-            trade_before_deliv (timedelta between trade and delivery
-            start), basehours, peakhours, offpeakhours in delivery period.
+            p_base, p_peak, p_offpeak (prices), ts_left_deliv, ts_right_deliv
+            (timestamps of delivery), trade_before_deliv (timedelta between trade 
+            and delivery start), basehours, peakhours, offpeakhours in delivery 
+            period.
     """
+    offset = {
+        "m": pd.offsets.MonthBegin(1),
+        "q": pd.offsets.QuarterBegin(1, startingMonth=1),
+        "a": pd.offsets.YearBegin(1),
+    }[period_type]
     # Get values...
-    b = pd.read_excel(
-        FRONTMONTHPRICEFILE,
-        sheet_name="futures_static",
-        usecols=[4, 8, 9],
-        header=0,
-        names=["p_base", "ts_left_trade", "ts_left_deliv"],
+    b = pd.read_excel(**_excel_power(period_type, 1, "base"))
+    p = pd.read_excel(**_excel_power(period_type, 1, "peak"))
+    for df in (b, p):
+        df.dropna(inplace=True)
+        df.columns = ["ts_left_trade", "p"]
+    b = lb.tools.set_ts_index(b, "ts_left_trade")
+    p = lb.tools.set_ts_index(p, "ts_left_trade")
+    # ...put into one object...
+    df = p.merge(
+        b, how="inner", left_index=True, right_index=True, suffixes=("_peak", "_base"),
     )
-    p = pd.read_excel(
-        FRONTMONTHPRICEFILE,
-        sheet_name="futures_static",
-        usecols=[16, 20, 21],
-        header=0,
-        names=["p_peak", "ts_left_trade", "ts_left_deliv"],
-    )
-    df = p.merge(b, how="inner", on=["ts_left_trade", "ts_left_deliv"])
-    df["ts_left_trade"] = df["ts_left_trade"].dt.tz_localize("Europe/Berlin")
-    df["ts_left_deliv"] = df["ts_left_deliv"].dt.tz_localize("Europe/Berlin")
-    df["ts_right_deliv"] = df["ts_left_deliv"] + pd.offsets.DateOffset(months=1)
-    df["trade_before_deliv"] = df["ts_left_deliv"] - df["ts_left_trade"]
-    # ...get peak and base and offpeak hours...
+    df["ts_left_deliv"] = df.index + offset
+    df["ts_right_deliv"] = df.ts_left_deliv + offset
+    df["trade_before_deliv"] = df["ts_left_deliv"] - df.index
+    # ...get number of peak and base and offpeak hours...
     h = df[["ts_left_deliv", "ts_right_deliv"]].drop_duplicates().reset_index(drop=True)
     bpo = hours_bpo(h["ts_left_deliv"], h["ts_right_deliv"])
     h["basehours"], h["peakhours"], h["offpeakhours"] = bpo
-    df = df.merge(h, how="left", on=["ts_left_deliv", "ts_right_deliv"])
+    df = df.reset_index().merge(h, how="left").set_index(df.index.names)
     # ...and use to calculate offpeak prices.
     df["p_offpeak"] = p_offpeak(
         df["p_base"], df["p_peak"], df["basehours"], df["peakhours"]
     )
     # Finally, return in correct row and column order.
-    df = df.set_index("ts_left_trade").sort_index()
+    df.index = df.index.rename("ts_left_trade")
     return df[
         [
             "ts_left_deliv",
@@ -202,7 +357,86 @@ def frontmonth():
     ]
 
 
-def hours_bpo(ts_left, ts_right) -> float:
+@functools.wraps(_power_front)
+def power_frontmonth():
+    """
+    Return futures prices timeseries of frontmonth (M1).
+    """
+    return _power_front("m")
+
+
+@functools.wraps(_power_front)
+def power_frontquarter():
+    """
+    Return futures prices timeseries of frontyear (Q1).
+    """
+    return _power_front("q")
+
+
+@functools.wraps(_power_front)
+def power_frontyear():
+    """
+    Return futures prices timeseries of frontyear (A1).
+    """
+    return _power_front("a")
+
+
+def _gas_front(period_type="m", market_code: str = "ncg"):
+    """    
+    Returns:
+        Dataframe with gas futures prices. Index: trading day. Columns:
+            p_ncg, p_gpl (prices), ts_left_deliv, ts_right_deliv
+            (timestamps of delivery), trade_before_deliv (timedelta between trade 
+            and delivery start), hours in delivery period.
+    """
+    offset = {
+        "m": pd.offsets.MonthBegin(1),
+        "q": pd.offsets.QuarterBegin(1, startingMonth=1),
+        "a": pd.offsets.YearBegin(1),
+    }[period_type]
+    # Get values...
+    df = pd.read_excel(**_excel_gas(period_type, 1, market_code))
+    df.dropna(inplace=True)
+    df.columns = ["ts_left_trade", "p"]
+    df = lb.tools.set_ts_index(df, "ts_left_trade")
+    # ...put into one object...
+    df["ts_left_deliv"] = df.index + offset
+    df["ts_right_deliv"] = df.ts_left_deliv + offset
+    df["trade_before_deliv"] = df["ts_left_deliv"] - df.index
+    # ...get number of hours
+    df["hours"] = (df["ts_right_deliv"] - df["ts_left_deliv"]).apply(
+        lambda dt: dt.total_seconds() / 3600
+    )
+    # Finally, return in correct row and column order.
+    df.index = df.index.rename("ts_left_trade")
+    return df[["ts_left_deliv", "ts_right_deliv", "trade_before_deliv", "p", "hours",]]
+
+
+@functools.wraps(_gas_front)
+def gas_frontmonth():
+    """
+    Return futures prices timeseries of frontmonth (M1).
+    """
+    return _gas_front("m")
+
+
+@functools.wraps(_gas_front)
+def gas_frontquarter():
+    """
+    Return futures prices timeseries of frontyear (Q1).
+    """
+    return _gas_front("q")
+
+
+@functools.wraps(_gas_front)
+def gas_frontyear():
+    """
+    Return futures prices timeseries of frontyear (A1).
+    """
+    return _gas_front("a")
+
+
+def hours_bpo(ts_left, ts_right) -> Tuple[float]:
     """Return number of base, peak and offpeak hours in interval [ts_left, ts_right).
     Timestamps must coincide with day start."""
     if isinstance(ts_left, Iterable):
