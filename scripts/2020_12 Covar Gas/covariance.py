@@ -236,7 +236,7 @@ def price_at_acquisition(index, monthpricefactors, lead_time=1.5):
 monthpricefactors = factor_p_a2m(p_exp1_m.p)
 prices_at_various_leadtimes = [
     price_at_acquisition(p_exp1_m.index, monthpricefactors, lead_time)
-    for lead_time in np.linspace(0.5, 3.5, 5)
+    for lead_time in np.linspace(0.5, 1.5, 5)
 ]
 p0_m = pd.DataFrame([p["p_month"] for p in prices_at_various_leadtimes]).mean().T
 
@@ -259,7 +259,7 @@ daily = (
 )
 
 # Hedge. --> Volume hedge.
-daily[("pf", "hedge", "w")] = lb.prices.w_hedge(daily.exp.offtake.w)
+daily[("pf", "hedge", "w")] = lb.hedge(daily.exp.offtake.w)
 
 
 # Expected spot quantities.
@@ -616,7 +616,7 @@ yearly[("delta", "covar", "r")] = (
 )
 
 
-#%%
+# %%
 
 u = daily[[("exp", "offtake", "w"), ("act", "offtake", "w"), ("delta", "offtake", "w")]]
 ax = u.delta.offtake.w.abs().hist(

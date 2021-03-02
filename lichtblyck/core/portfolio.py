@@ -6,7 +6,7 @@ portfolio timeseries.
 from __future__ import annotations
 from .pfseries_pfframe import FREQUENCIES
 from . import functions
-from typing import Union, Tuple, Iterable, Dict, List
+from typing import Union, Iterable
 import pandas as pd
 import numpy as np
 import functools

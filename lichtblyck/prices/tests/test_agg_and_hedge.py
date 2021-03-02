@@ -1,9 +1,11 @@
 from lichtblyck.prices import agg_and_hedge
 from lichtblyck.prices import utils
 from lichtblyck.core import dev
+from lichtblyck.core import functions
 import numpy as np
 import pandas as pd
 import pytest
+import functools
 
 
 @pytest.fixture(params=["2020", "2020-04-15 9:00", "2020-03-29", "2020-10-25"])
@@ -11,8 +13,13 @@ def start(request):
     return request.param
 
 
+@pytest.fixture(params=["H", "15T", "D", "MS"])
+def freq_bpoFalse(request):
+    return request.param
+
+
 @pytest.fixture(params=["H", "15T"])
-def freq(request):
+def freq_bpoTrue(request):
     return request.param
 
 
@@ -26,8 +33,13 @@ def count(request):
     return request.param
 
 
-@pytest.fixture(params=["D", "MS", "QS", "AS"])
+@pytest.fixture(params=["MS", "QS", "AS"])
 def aggfreq(request):
+    return request.param
+
+
+@pytest.fixture(params=["vol", "val"])
+def how(request):
     return request.param
 
 
@@ -85,6 +97,14 @@ def test_basic_volhedge(values, start, notbpo, bpo):
     )
 
 
+@functools.lru_cache(maxsize=1024)
+def get_hedgeresults(start, freq, length, tz, bpo, aggfreq):
+    if functions.freq_diff(freq, "H") <= 0:
+        return get_hedgeresults_short(start, freq, length, tz, bpo, aggfreq)
+    else:
+        return get_hedgeresults_long(start, freq, length, aggfreq)
+
+
 def get_hedgeresults_short(start, freq, length, tz, bpo, aggfreq):
     """For freq == 'H' or shorter.
     returns {(None or startts): {('val' or 'vol'): (peak, offpeak)}}
@@ -138,7 +158,7 @@ def get_hedgeresults_short(start, freq, length, tz, bpo, aggfreq):
 def get_hedgeresults_long(start, freq, length, aggfreq):
     """For freq == 'D' or longer.
     No split in peak and offpeak values possible.
-    returns {(None or startts): {('val' or 'vol'): value}}
+    returns {(None or startts): {('val' or 'vol'): (value, 0)}}
     """
     i = pd.date_range(start, freq=freq, periods=length, tz="Europe/Berlin")
     w_values = 100 + 100 * np.random.rand(len(i))
@@ -166,82 +186,71 @@ def get_hedgeresults_long(start, freq, length, aggfreq):
         pd.Series(w_values, i),
         pd.Series(p_values, i),
         {
-            key: {
-                "val": values["w.pd"] / values["pd"],
-                "vol": values["w.d"] / values["d"],
-            }
-            for key, values in result.items()
+            key: {"val": (v["w.pd"] / v["pd"], 0), "vol": (v["w.d"] / v["d"], 0)}
+            for key, v in result.items()
         },
     )
 
 
-def test__w_hedge_bpoFalse(start, freq, count, tz):
-    w, p, ref_results = get_hedgeresults_short(start, freq, count, tz, False, None)
+def test__w_hedge_bpoFalse(start, freq_bpoFalse, count, tz):
+    freq = freq_bpoFalse
+    w, p, ref_results = get_hedgeresults(start, freq, count, tz, False, None)
     for how in ["vol", "val"]:
         test_result = agg_and_hedge._w_hedge(w, p, how, False)
         ref_result = ref_results[None][how][0]
         assert np.isclose(test_result, ref_result)
 
 
-def test__w_hedge_bpoTrue(start, freq, count, tz):
-    w, p, ref_results = get_hedgeresults_short(start, freq, count, tz, True, None)
+def test__w_hedge_bpoTrue(start, freq_bpoTrue, count, tz):
+    freq = freq_bpoTrue
+    w, p, ref_results = get_hedgeresults(start, freq, count, tz, True, None)
     for how in ["vol", "val"]:
         test_result = agg_and_hedge._w_hedge(w, p, how, True).sort_index()
         ref_bpo = ref_results[None][how]
-        ref_result = (
-            pd.Series({"w_peak": ref_bpo[0], "w_offpeak": ref_bpo[1]})
-            .dropna()
-            .sort_index()
-        )
+        records = {"w_peak": ref_bpo[0], "w_offpeak": ref_bpo[1]}
+        ref_result = pd.Series(records).dropna().sort_index()
         pd.testing.assert_series_equal(test_result, ref_result)
 
 
-def test_w_hedge_wide_bpoFalse(start, freq, count, tz, aggfreq):
-    w, p, ref_results = get_hedgeresults_short(start, freq, count, tz, False, aggfreq)
-    for how in ["vol", "val"]:
-        test_result = agg_and_hedge.w_hedge_wide(w, p, aggfreq, how, False).sort_index()
-        ref_result = (
-            pd.Series({ts: values[how][0] for ts, values in ref_results.items()})
-            .sort_index()
-            .dropna()
-        )
-        pd.testing.assert_series_equal(test_result, ref_result, check_freq=False)
+def test_wide_bpoFalse(start, freq_bpoFalse, count, tz, aggfreq, how):
+    freq = freq_bpoFalse
+    w, p, ref_results = get_hedgeresults(start, freq, count, tz, False, aggfreq)
+    test_result = agg_and_hedge.hedge(w, p, aggfreq, how, False, False).sort_index()
+    records = {ts: values[how][0] for ts, values in ref_results.items()}
+    ref_result = pd.Series(records).sort_index().dropna()
+    pd.testing.assert_series_equal(test_result, ref_result, check_freq=False)
 
 
-def test_w_hedge_wide_bpoTrue(start, freq, count, tz, aggfreq):
-    w, p, ref_results = get_hedgeresults_short(start, freq, count, tz, True, aggfreq)
-    for how in ["vol", "val"]:
-        test_result = agg_and_hedge.w_hedge_wide(w, p, aggfreq, how, True).sort_index()
-        ref_result = (
-            pd.DataFrame.from_records(
-                {
-                    ts: {"w_peak": values[how][0], "w_offpeak": values[how][1]}
-                    for ts, values in ref_results.items()
-                }
-            )
-            .sort_index()
-            .T.dropna(1)
-        )
-        pd.testing.assert_frame_equal(test_result, ref_result, check_freq=False)
+def test_wide_bpoTrue(start, freq_bpoTrue, count, tz, aggfreq, how):
+    freq = freq_bpoTrue
+    w, p, ref_results = get_hedgeresults(start, freq, count, tz, True, aggfreq)
+    test_result = agg_and_hedge.hedge(w, p, aggfreq, how, True, False).sort_index()
+    records = {
+        ts: {"w_peak": values[how][0], "w_offpeak": values[how][1]}
+        for ts, values in ref_results.items()
+    }
+    ref_result = pd.DataFrame.from_records(records).sort_index().T.dropna(1)
+    pd.testing.assert_frame_equal(test_result, ref_result, check_freq=False)
 
 
-def test_w_hedge_bpoFalse(start, freq, count, tz, aggfreq):
-    w, p, ref_results = get_hedgeresults_short(start, freq, count, tz, False, aggfreq)
-    for how in ["vol", "val"]:
-        test_result = agg_and_hedge.w_hedge(w, p, aggfreq, how, False)
-        availkeys = np.array([key for key in ref_results.keys()])
-        keys = availkeys[np.searchsorted(availkeys, w.index, side="right") - 1]
-        ref_result = pd.Series([ref_results[key][how][0] for key in keys], w.index)
-        pd.testing.assert_series_equal(test_result, ref_result, check_names=False)
+def test_narrow_bpoFalse(start, freq_bpoFalse, count, tz, aggfreq, how):
+    freq = freq_bpoFalse
+    w, p, ref_results = get_hedgeresults(start, freq, count, tz, False, aggfreq)
+    test_result = agg_and_hedge.hedge(w, p, aggfreq, how, False, True)
+    availkeys = np.array([key for key in ref_results.keys()])
+    keys = availkeys[np.searchsorted(availkeys, w.index, side="right") - 1]
+    ref_result = pd.Series([ref_results[key][how][0] for key in keys], w.index)
+    pd.testing.assert_series_equal(test_result, ref_result, check_names=False)
 
 
-def test_w_hedge_bpoTrue(start, freq, count, tz, aggfreq):
-    w, p, ref_results = get_hedgeresults_short(start, freq, count, tz, True, aggfreq)
-    for how in ["vol", "val"]:
-        test_result = agg_and_hedge.w_hedge(w, p, aggfreq, how, True)
-        availkeys = np.array([key for key in ref_results.keys()])
-        keys = availkeys[np.searchsorted(availkeys, w.index, side="right") - 1]
-        inds = [0 if utils.is_peak_hour(ts) else 1 for ts in w.index]
-        ref_values = [ref_results[key][how][ind] for key, ind in zip(keys, inds)]
-        ref_result = pd.Series(ref_values, w.index)
-        pd.testing.assert_series_equal(test_result, ref_result, check_names=False)
+def test_narrow_bpoTrue(start, freq_bpoTrue, count, tz, aggfreq, how):
+    freq = freq_bpoTrue
+    w, p, ref_results = get_hedgeresults(start, freq, count, tz, True, aggfreq)
+    test_result = agg_and_hedge.hedge(w, p, aggfreq, how, True, True)
+    availkeys = np.array([key for key in ref_results.keys()])
+    keys = availkeys[np.searchsorted(availkeys, w.index, side="right") - 1]
+    inds = [0 if utils.is_peak_hour(ts) else 1 for ts in w.index]
+    ref_values = [ref_results[key][how][ind] for key, ind in zip(keys, inds)]
+    ref_result = pd.Series(ref_values, w.index)
+    pd.testing.assert_series_equal(test_result, ref_result, check_names=False)
+
