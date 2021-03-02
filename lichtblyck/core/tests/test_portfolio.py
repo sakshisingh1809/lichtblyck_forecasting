@@ -1,6 +1,6 @@
 """Testing Portfolio."""
 
-from lichtblyck import PfSeries, PfFrame, SinglePf, MultiPf
+from lichtblyck import SinglePf, MultiPf
 from lichtblyck.core.dev import (
     get_index,
     get_pfframe,
@@ -15,14 +15,14 @@ import numpy as np
 import pytest
 
 
-def assert_raises_attributeerror(pf: PfFrame, yes=None, no=None):
+def assert_raises_attributeerror(df: pd.DataFrame, yes=None, no=None):
     if yes is not None:
         for a in yes:
             with pytest.raises(AttributeError):
-                getattr(pf, a)
+                getattr(df, a)
     if no is not None:
         for a in no:
-            getattr(pf, a)
+            getattr(df, a)
 
 
 def assert_w_q_compatible(p: Union[SinglePf, MultiPf]):
@@ -46,8 +46,8 @@ def assert_w_q_compatible(p: Union[SinglePf, MultiPf]):
         raise ValueError("Uncaught value for .index.freq: {p.index.freq}.")
 
 
-def assert_p_q_r_compatible(pf: PfFrame):
-    np.testing.assert_allclose(pf.r, pf.q * pf.p)
+def assert_p_q_r_compatible(df: pd.DataFrame):
+    np.testing.assert_allclose(df.r, df.q * df.p)
 
 
 def get_by_attr_or_key(obj, a):
@@ -139,29 +139,29 @@ def test_singlepf_init(columns):
 @pytest.mark.parametrize("newfreq", np.random.choice(OK_FREQ, 3, False))
 @pytest.mark.parametrize("columns", np.random.choice(OK_COL_COMBOS, 3, False))
 def test_change_freq(freq, newfreq, columns):
-    pf = get_pfframe(get_index("Europe/Berlin", freq), columns)
-    spf1 = SinglePf(pf, "test")
+    df = get_pfframe(get_index("Europe/Berlin", freq), columns)
+    spf1 = SinglePf(df, "test")
     spf2 = spf1.changefreq(newfreq)
     # Compare the dataframes.
     # To compare, only keep time intervals that are in both objects.
-    pf1, pf2 = spf1.pf("qr"), spf2.pf("qr")
-    if pf2.empty:
+    df1, df2 = spf1.df("qr"), spf2.df("qr")
+    if df2.empty:
         return
-    pf1 = pf1[(pf1.index >= pf2.index[0]) & (pf1.ts_right <= pf2.ts_right[-1])]
-    if pf1.empty:
+    df1 = df1[(df1.index >= df2.index[0]) & (df1.ts_right <= df2.ts_right[-1])]
+    if df1.empty:
         return
-    assert np.isclose(pf1.r.sum(), pf2.r.sum())
-    assert np.isclose(pf1.q.sum(), pf2.q.sum())
+    assert np.isclose(df1.r.sum(), df2.r.sum())
+    assert np.isclose(df1.q.sum(), df2.q.sum())
 
 
 def test_sameobject():
 
     sp1 = get_singlepf()
     sp2 = SinglePf(sp1)
-    pd.testing.assert_frame_equal(sp1.pf(), sp2.pf())
+    pd.testing.assert_frame_equal(sp1.df(), sp2.df())
     assert sp1.name == sp2.name
 
     mp1 = get_multipf()
     mp2 = MultiPf(mp1)
-    pd.testing.assert_frame_equal(mp1.pf(), mp2.pf())
+    pd.testing.assert_frame_equal(mp1.df(), mp2.df())
     assert mp1.name == mp2.name

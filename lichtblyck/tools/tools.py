@@ -20,9 +20,10 @@ def set_ts_index(
     column : str, optional
         Column to create the timestamp from. Use existing index if none specified.
     bound : {'try', 'left', 'right'}, optional
-        If 'left' ('right'), specifies that input timestamps are left-bound (right-bound).
-        If 'try', will first try 'left', then 'right' if exception occurs. Will give false
-        results if the data contains no summertime to wintertime changeover and the times are rightbound.
+        If 'left' ('right'), specifies that input timestamps are left-(right-)bound.
+        If 'try', will first try 'left', then 'right' if exception occurs. Will give
+        false results if the data contains no summertime to wintertime changeover and
+        times are rightbound.
     tz : str, optional
         Timezone of the input dataframe; used only if input dataframe contains
         timezone-agnostic timestamps. The default is "Europe/Berlin".
@@ -68,6 +69,33 @@ def set_ts_index(
         df.index.freq = (df.index[1:] - df.index[:-1]).median()
 
     return df
+
+
+def fill_gaps(s: pd.Series, maxgap=2) -> pd.Series:
+    """Fill gaps in series by linear interpolation."""
+    is_gap = s.isna()
+    next_gap = is_gap.shift(-1)
+    prev_gap = is_gap.shift(1)
+    index_beforegap = s[~is_gap & next_gap].index
+    index_aftergap = s[~is_gap & prev_gap].index
+    # remove orphans at beginning and end
+    if index_beforegap.empty:
+        return s
+    elif index_beforegap[-1] > index_aftergap[-1]:
+        index_beforegap = index_beforegap[:-1]
+    if index_aftergap.empty:
+        return s
+    elif index_aftergap[0] < index_beforegap[0]:
+        index_aftergap = index_aftergap[1:]
+    s = s.copy()
+    for i_before, i_after in zip(index_beforegap, index_aftergap):
+        section = s.loc[i_before:i_after]
+        if len(section) > maxgap + 2:
+            continue
+        x0, y0, x1, y1 = i_before, s[i_before], i_after, s[i_after]
+        dx, dy = x1 - x0, y1 - y0
+        s.loc[i_before:i_after] = y0 + (section.index - x0) / dx * dy
+    return s
 
 
 def wavg(

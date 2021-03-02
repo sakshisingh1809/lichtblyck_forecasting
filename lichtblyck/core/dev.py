@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .pfseries_pfframe import PfSeries, PfFrame
+from . import pfseries_pfframe
 from .portfolio import SinglePf, MultiPf
 import pandas as pd
 import numpy as np
@@ -25,14 +25,14 @@ def get_pfframe(i=None, columns="wp"):
     """Get PfFrame with index and certain columns."""
     if i is None:
         i = get_index()
-    return PfFrame(np.random.rand(len(i), len(columns)), i, list(columns))
+    return pd.DataFrame(np.random.rand(len(i), len(columns)), i, list(columns))
 
 
 def get_pfseries(i=None, name="w"):
     """Get PfFrame with index and certain name."""
     if i is None:
         i = get_index()
-    return PfSeries(np.random.rand(len(i)), i, name=name)
+    return pd.Series(np.random.rand(len(i)), i, name=name)
 
 
 def get_singlepf(i=None, columns: str = "wp", name: str = "test"):

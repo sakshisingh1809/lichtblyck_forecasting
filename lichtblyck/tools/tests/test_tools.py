@@ -1,6 +1,38 @@
 from lichtblyck import tools
+from numpy import nan
 import numpy as np
 import pandas as pd
+import pytest
+
+
+@pytest.mark.parametrize(
+    ("values", "maxgap", "gapvalues"),
+    [
+        ([1, 2, 3, 4, 25, 7, 8], 1, []),
+        ([1, 2, 3, 4, nan, 7, 8], 1, [5.5]),
+        ([1, 2, 3, 4, nan, 7, 8], 2, [5.5]),
+        ([1, 2, 3, 4, nan, 7, 8], 3, [5.5]),
+        ([3, 2, 1, nan, nan, 7, 8], 1, [nan, nan]),
+        ([3, 2, 1, nan, nan, 7, 8], 2, [3, 5]),
+        ([3, 2, 1, nan, nan, 7, 8], 3, [3, 5]),
+        ([nan, 2, 1, nan, nan, 7, nan], 1, [nan, nan, nan, nan]),
+        ([nan, 2, 1, nan, nan, 7, nan], 2, [nan, 3, 5, nan]),
+    ],
+)
+@pytest.mark.parametrize(
+    ("index", "tol"),
+    [
+        (range(7), 0),
+        (range(-3, 4), 0),
+        (pd.date_range("2020", periods=7, freq="D"), 0),
+        (pd.date_range("2020", periods=7, freq="M", tz="Europe/Berlin"), 0.04),
+    ],
+)
+def test_fill_gaps(values, index, maxgap, gapvalues, tol):
+    s = pd.Series(values, index)
+    s_new = tools.fill_gaps(s, maxgap)
+    s[s.isna()] = gapvalues
+    pd.testing.assert_series_equal(s_new, s, rtol=tol)
 
 
 def test_wavg():

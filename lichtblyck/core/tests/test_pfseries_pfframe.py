@@ -1,6 +1,5 @@
 """Testing PfSeries and PfFrame."""
 
-from lichtblyck import PfSeries, PfFrame
 from lichtblyck.core.dev import get_index, get_pfframe, get_pfseries, OK_FREQ
 import pandas as pd
 import numpy as np
@@ -67,51 +66,51 @@ def test_index_st_wt(get_obj_func):
 def test_sameobject():
     i = get_index()
 
-    # Compare (DataFrame and Series) with (PfFrame and PfSeries).
-    # Former don't have .duration or .ts_right attribute, but should have equal values.
+    # # Compare (DataFrame and Series) with (PfFrame and PfSeries).
+    # # Former don't have .duration or .ts_right attribute, but should have equal values.
 
-    vals = np.random.rand(len(i), 2)
-    df1 = pd.DataFrame(vals, i, list("wp"))
-    pf1 = PfFrame(vals, i, list("wp"))
-    assert ((df1.index - pf1.index) < pd.Timedelta(minutes=1)).all()
-    assert ((df1.index - pf1.index) > pd.Timedelta(minutes=-1)).all()
-    np.testing.assert_array_almost_equal(df1.w.values, pf1.w.values)
-    np.testing.assert_array_almost_equal(df1.p.values, pf1.p.values)
+    # vals = np.random.rand(len(i), 2)
+    # df1 = pd.DataFrame(vals, i, list("wp"))
+    # pf1 = PfFrame(vals, i, list("wp"))
+    # assert ((df1.index - pf1.index) < pd.Timedelta(minutes=1)).all()
+    # assert ((df1.index - pf1.index) > pd.Timedelta(minutes=-1)).all()
+    # np.testing.assert_array_almost_equal(df1.w.values, pf1.w.values)
+    # np.testing.assert_array_almost_equal(df1.p.values, pf1.p.values)
 
-    vals = np.random.rand(len(i))
-    s1 = pd.Series(vals, i, name="w")
-    ps1 = PfSeries(vals, i, name="w")
-    assert ((s1.index - ps1.index) < pd.Timedelta(minutes=1)).all()
-    assert ((s1.index - ps1.index) > pd.Timedelta(minutes=-1)).all()
-    np.testing.assert_array_almost_equal(s1.values, ps1.values)
+    # vals = np.random.rand(len(i))
+    # s1 = pd.Series(vals, i, name="w")
+    # ps1 = PfSeries(vals, i, name="w")
+    # assert ((s1.index - ps1.index) < pd.Timedelta(minutes=1)).all()
+    # assert ((s1.index - ps1.index) > pd.Timedelta(minutes=-1)).all()
+    # np.testing.assert_array_almost_equal(s1.values, ps1.values)
 
     # Check that creating object from existing object makes a copy.
 
     vals = np.random.rand(len(i), 2)
-    pf1 = PfFrame(vals, i, list("wp"))
-    pf2 = PfFrame(pf1)
+    pf1 = pd.DataFrame(vals, i, list("wp"))
+    pf2 = pd.DataFrame(pf1)
     pd.testing.assert_frame_equal(pf1, pf2)
 
     vals = np.random.rand(len(i), 1)
-    pf1 = PfFrame(vals, i, list("w"))
-    pf2 = PfFrame(pf1)
+    pf1 = pd.DataFrame(vals, i, list("w"))
+    pf2 = pd.DataFrame(pf1)
     pd.testing.assert_frame_equal(pf1, pf2)
 
     vals = np.random.rand(len(i))
-    ps1 = PfSeries(vals, i, name="w")
-    ps2 = PfSeries(ps1)
+    ps1 = pd.Series(vals, i, name="w")
+    ps2 = pd.Series(ps1)
     pd.testing.assert_series_equal(ps1, ps2)
 
 
-def test_conversion():
-    pf = get_pfframe()
-    df = pd.DataFrame(pf)
-    assert type(df) is pd.DataFrame
-    pf = PfFrame(df)
-    assert type(pf) is PfFrame
+# def test_conversion():
+#     pf = get_pfframe()
+#     df = pd.DataFrame(pf)
+#     assert type(df) is pd.DataFrame
+#     pf = PfFrame(df)
+#     assert type(pf) is PfFrame
 
-    ps = get_pfseries()
-    s = pd.Series(ps)
-    assert type(s) is pd.Series
-    ps = PfSeries(s)
-    assert type(ps) is PfSeries
+#     ps = get_pfseries()
+#     s = pd.Series(ps)
+#     assert type(s) is pd.Series
+#     ps = PfSeries(s)
+#     assert type(ps) is PfSeries

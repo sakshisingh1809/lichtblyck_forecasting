@@ -5,9 +5,9 @@ Created on Fri Feb 12 16:16:24 2021
 @author: ruud.wijtvliet
 """
 import datetime as dt
+import numpy as np
 import lichtblyck as lb
 import pandas as pd
-import numpy as np
 import functools
 import pytest
 
@@ -28,82 +28,25 @@ def test_p_offpeak(p_base, p_peak, h_base, h_peak, expected_p_offpeak):
     )
 
 
-@pytest.mark.parametrize(
-    ("start", "end", "bp"),
-    [
-        (
-            pd.Timestamp("2021-01-01", tz=_tz),
-            pd.Timestamp("2021-01-03", tz=_tz),
-            (48, 12),
-        ),
-        (
-            pd.Timestamp("2021-01-02", tz=_tz),
-            pd.Timestamp("2021-01-04", tz=_tz),
-            (48, 0),
-        ),
-        (
-            pd.Timestamp("2021-01-01", tz=_tz),
-            pd.Timestamp("2021-02-01", tz=_tz),
-            (744, 252),
-        ),
-        (
-            pd.Timestamp("2021-02-01", tz=_tz),
-            pd.Timestamp("2021-03-01", tz=_tz),
-            (672, 240),
-        ),
-        (
-            pd.Timestamp("2021-03-01", tz=_tz),
-            pd.Timestamp("2021-04-01", tz=_tz),
-            (743, 276),
-        ),
-    ],
-)
-def test_hours_bpo(start, end, bp):
-    bpo = lb.prices.hours_bpo(start, end)
-    assert bpo == (*bp, bp[0] - bp[1])
-
-
-@pytest.mark.parametrize(
-    ("year", "text", "expected"),
-    [
-        (2020, "Q3", dt.datetime(2020, 7, 1)),
-        (2020, "HY2", dt.datetime(2020, 7, 1)),
-        (2020, "Cal", dt.datetime(2020, 1, 1)),
-        (2020, "Wi", dt.datetime(2020, 10, 1)),
-        (2020, "Su", dt.datetime(2020, 4, 1)),
-        (2020, "M3", dt.datetime(2020, 3, 1)),
-    ],
-)
-def test_ts_left1(year, text, expected):
-    for s in (
-        f"{year}{text}",
-        f"{year}-{text}",
-        f"{year} {text}",
-        f"{text}-{year}",
-        f"{text} {year}",
-    ):
-        assert lb.prices.ts_left(s) == expected
-
-
 @functools.lru_cache
-def power_front(period_type):
-    return lb.prices._power_front(period_type)
+def power_futures(period_type, period_start):
+    return lb.prices.power_futures(period_type, period_start)
 
 
 @pytest.mark.parametrize(
-    ("period_type", "trading_day", "base_and_peakprice"),
+    ("trading_day", "period_type", "period_start", "base_and_peakprice"),
     [
-        ("m", pd.Timestamp("2010-09-08", tz=_tz), (49.83, 62.42)),
-        ("m", pd.Timestamp("2020-11-11", tz=_tz), (32.58, 43.2)),
-        ("q", pd.Timestamp("2010-09-08", tz=_tz), (50.34, 63.54)),
-        ("q", pd.Timestamp("2020-11-11", tz=_tz), (38.51, 47.68)),
-        ("a", pd.Timestamp("2010-09-08", tz=_tz), (50.47, 64.13)),
-        ("a", pd.Timestamp("2020-11-11", tz=_tz), (39.79, 47.95)),
+        (pd.Timestamp("2010-09-08", tz=_tz), "m", 1, (49.83, 62.42)),
+        (pd.Timestamp("2020-11-11", tz=_tz), "m", 1, (32.58, 43.2)),
+        (pd.Timestamp("2010-09-08", tz=_tz), "q", 1, (50.34, 63.54)),
+        (pd.Timestamp("2020-11-11", tz=_tz), "q", 1, (38.51, 47.68)),
+        (pd.Timestamp("2010-09-08", tz=_tz), "a", 1, (50.47, 64.13)),
+        (pd.Timestamp("2020-11-11", tz=_tz), "a", 1, (39.79, 47.95)),
     ],
 )
-def test_power_front(period_type, trading_day, base_and_peakprice):
+def test_power(trading_day, period_type, period_start, base_and_peakprice):
     p_base, p_peak = base_and_peakprice
-    prices = power_front(period_type)
+    prices = power_futures(period_type, period_start)
     assert_prices_close(prices.loc[trading_day, "p_base"], p_base)
     assert_prices_close(prices.loc[trading_day, "p_peak"], p_peak)
     if period_type == "m":

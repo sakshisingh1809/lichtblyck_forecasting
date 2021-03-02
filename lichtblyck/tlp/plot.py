@@ -2,7 +2,8 @@
 """
 Plotting of tlp functions.
 """
-from ..core.pfseries_pfframe import PfSeries
+
+from ..core import pfseries_pfframe
 from . import toload
 from typing import Callable, Iterable
 import matplotlib.pyplot as plt
@@ -34,7 +35,7 @@ def vs_time(tlp: Callable, t: Iterable = (-30, 30), freq: str = "15T") -> plt.Ax
     ts = pd.date_range(
         "2020-01-01", "2020-01-02", freq=freq, closed="left", tz="Europe/Berlin"
     )
-    y = {tmpr: tlp(PfSeries(tmpr, ts)).values for tmpr in np.arange(*t)}
+    y = {tmpr: tlp(pd.Series(tmpr, ts)).values for tmpr in np.arange(*t)}
     i = len(y) // 2
     df = pd.DataFrame(y, ts)
     df_draw = pd.concat(

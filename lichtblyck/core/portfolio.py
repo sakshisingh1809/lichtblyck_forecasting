@@ -4,7 +4,7 @@ portfolio timeseries.
 """
 
 from __future__ import annotations
-from .pfseries_pfframe import PfSeries, PfFrame, FREQUENCIES
+from .pfseries_pfframe import FREQUENCIES
 from . import functions
 from typing import Union, Tuple, Iterable, Dict, List
 import pandas as pd
@@ -14,8 +14,8 @@ import textwrap
 import colorama
 
 
-def _make_pf(data) -> PfFrame:
-    """From data, create a PfFrame with columns `q` and `r`, if possible. Also,
+def _make_df(data) -> pd.DataFrame:
+    """From data, create a DataFrame with columns `q` and `r`, if possible. Also,
     do some data verification."""
 
     def get_by_attr_or_key(a, obj=data):
@@ -41,40 +41,40 @@ def _make_pf(data) -> PfFrame:
             break
     else:
         raise ValueError("No index can be found in the data.")
-    pf = PfFrame(index=i)
-    pf.index = pf.index.rename("ts_left")
+    df = pd.DataFrame(index=i)
+    df.index = df.index.rename("ts_left")
 
     # Quantity.
     if q is not None:
-        pf["q"] = q
+        df["q"] = q
     elif w is not None:
-        pf["q"] = w * pf.duration
+        df["q"] = w * df.duration
     elif r is not None and p is not None:
-        pf["q"] = r / p
+        df["q"] = r / p
     else:
         raise ValueError("No values for `q` can be found in the data.")
 
     # Revenue.
     if r is not None:
-        pf["r"] = r
+        df["r"] = r
     elif p is not None:
-        pf["r"] = pf["q"] * p
+        df["r"] = df["q"] * p
     else:  # no financial data is included, set to nan.
-        pf["r"] = np.nan
+        df["r"] = np.nan
 
     # Consistancy checks for redundant data.
     if w is not None:
-        if not pf.empty and not np.allclose(pf["q"], w * pf.duration):
+        if not df.empty and not np.allclose(df["q"], w * df.duration):
             raise ValueError("Passed values for `q` and `w` not compatible.")
 
     if p is not None:
-        if not pf.empty and not np.allclose(pf["r"], pf["q"] * p, equal_nan=True):
+        if not df.empty and not np.allclose(df["r"], df["q"] * p, equal_nan=True):
             raise ValueError("Passed values for `q`, `p` and `r` not compatible.")
 
-    return pf
+    return df
 
 
-# def _make_childlist(data) -> PfFrame:
+# def _make_childlist(data) -> pd.DataFrame:
 #     """From data, create a List with SinglePf and/or MultiPf objects, if possible."""
 
 #     if type(data) is MultiPf:
@@ -100,13 +100,16 @@ def _make_pf(data) -> PfFrame:
 
 
 def _unit(attr: str) -> str:
-    return {"q": "MWh", "w": "MW", "p": "Eur/MWh", "r": "Eur"}.get(attr, "")
+    return {"q": "MWh", "w": "MW", "p": "Eur/MWh", "r": "Eur", "t": "degC"}.get(
+        attr, ""
+    )
 
 
 def _unitsline(headerline: str) -> str:
-    """Return a line of text with units that line up with the provided headers."""
+    """Return a line of text with units that line up with the provided header."""
     text = headerline
-    for att, unit in (("w", "MW"), ("q", "MWh"), ("r", "Eur"), ("p", "Eur/MWh")):
+    for att in ("w", "q", "p", "r"):
+        unit = _unit(att)
         to_add = f" [{unit}]"
         text = text.replace(att.rjust(len(to_add)), to_add)
         while to_add not in text and len(unit) > 1:
@@ -114,71 +117,6 @@ def _unitsline(headerline: str) -> str:
             to_add = f" [{unit}]"
             text = text.replace(att.rjust(len(to_add)), to_add)
     return text
-
-
-def _changefreq(spf: SinglePf, freq: str = "MS") -> SinglePf:
-    """
-    Resample and aggregate SinglePf instance at a new frequency.
-
-    Parameters
-    ----------
-    freq : str, optional
-        The frequency at which to resample. 'AS' (or 'A') for year, 'QS' (or 'Q')
-        for quarter, 'MS' (or 'M') for month, 'D for day', 'H' for hour, '15T' for
-        quarterhour; None to aggregate over the entire time period. The default is 'MS'.
-
-    Returns
-    -------
-    SinglePf
-    """
-
-    def agg(pf):
-        q = pf.q.sum(skipna=False)
-        r = pf.r.sum(skipna=False)
-        return pd.Series({"q": q, "r": r})
-
-    # Some resampling labels are right-bound by default. Change to make left-bound.
-    if freq == "M" or freq == "A" or freq == "Q":
-        freq += "S"
-    if freq not in FREQUENCIES:
-        raise ValueError(f"Parameter `freq` must be one of {','.join(FREQUENCIES)}.")
-
-    # # Don't resample, just aggregate.
-    # if freq is None:
-    #     duration = spf.duration.sum()
-    #     q = spf.q.sum(skipna=False)
-    #     r = spf.r.sum(skipna=False)
-    #     # Must return all data, because time information is lost.
-    #     return pd.Series({"w": q / duration, "q": q, "p": r / q, "r": r})
-    #     # i = pd.date_range(start = spf.index[0], end=spf.ts_right[-1], periods=1, tz=spf.index.tz)
-    #     # return PfFrame([[q/duration, q, r/q, r]], i, columns=list('wqpr'))
-
-    # Empty frame.
-    if len(spf.q) == 0:
-        return SinglePf(spf._pf.resample(freq).mean(), spf.name)
-
-    down_or_up = FREQUENCIES.index(freq) - FREQUENCIES.index(spf.index.freq)
-
-    # Nothing more needed; portfolio already in desired frequency.
-    if down_or_up == 0:
-        return spf
-
-    # Must downsample.
-    elif down_or_up < 0:
-        pf = PfFrame(spf.pf("qr").resample(freq).apply(agg))
-        # Discard rows in new dataframe that are only partially present in original dataframe.
-        pf = pf[(pf.index >= spf.index[0]) & (pf.ts_right <= spf.ts_right[-1])]
-        return SinglePf(pf, spf.name)  # pf is a pd.DataFrame
-
-    # Must upsample.
-    else:
-        # Keep only w and p because these are averages that can be copied over to each child row.
-        pf = spf.pf("wp")
-        # Workaround to avoid missing final values:
-        pf.loc[pf.ts_right[-1]] = [None, None]  # first, add additional row...
-        pf = pf.resample(freq).ffill()  # ... then do upsampling ...
-        pf = pf.iloc[:-1]  # ... and then remove final row.
-        return SinglePf(pf, spf.name)  # pf is a pd.DataFrame
 
 
 def _treetext(portfolio, attributes="wqpr", as_cols=True):
@@ -507,8 +445,8 @@ class _PortfolioBase:
         self._childlist = []
 
     # .w and .p alway calculated from .q, .duration and .r.
-    w = property(lambda self: PfSeries(self.q / self.duration, name="w"))
-    p = property(lambda self: PfSeries(self.r / self.q, name="p"))
+    w = property(lambda self: pd.Series(self.q / self.duration, name="w"))
+    p = property(lambda self: pd.Series(self.r / self.q, name="p"))
 
     @property
     def name(self) -> str:
@@ -572,7 +510,7 @@ class SinglePf(_PortfolioBase):
 
     Attributes
     ----------
-    w, q, p, r : PfSeries
+    w, q, p, r : pd.Series
         Power [MW], quantity [MWh], price [Eur/MWh], revenue [Eur] timeseries.
         Can also be accessed by key (e.g., with ['w']).
     ts_right, duration : pandas.Series
@@ -587,7 +525,7 @@ class SinglePf(_PortfolioBase):
                 raise ValueError("No value provided for `name`.")
 
         super().__init__(name)
-        self._pf = _make_pf(data)  # specific to SinglePf
+        self._df = _make_df(data)  # specific to SinglePf
 
     # Inheritance downwards.
 
@@ -595,41 +533,43 @@ class SinglePf(_PortfolioBase):
 
     # Time series.
 
-    q = property(lambda self: PfSeries(self._pf.q))
-    r = property(lambda self: PfSeries(self._pf.r))
-    index = property(lambda self: self._pf.index)
-    duration = property(lambda self: self._pf.duration)
-    ts_right = property(lambda self: self._pf.ts_right)
+    q = property(lambda self: self._df.q)
+    r = property(lambda self: self._df.r)
+    index = property(lambda self: self._df.index)
+    duration = property(lambda self: self._df.duration)
+    ts_right = property(lambda self: self._df.ts_right)
 
     # Resample and aggregate.
 
-    @functools.wraps(_changefreq)
+    @functools.wraps(functions.changefreq_summable)
     def changefreq(self, freq: str = "MS") -> SinglePf:
-        return _changefreq(self, freq)
+        new_df = functions.changefreq_summable(self.df("qr"), freq)
+
+        return SinglePf(new_df, self.name)
 
     def flatten(self, *args, **kwargs) -> SinglePf:
         return self
 
     # Turn into PortfolioFrame.
 
-    def pf(self, show: Iterable[str] = "wp", *args, **kwargs) -> PfFrame:
+    def df(self, show: Iterable[str] = "wp", *args, **kwargs) -> pd.DataFrame:
         """
-        Portfolioframe for this portfolio.
+        pd.DataFrame for this portfolio.
 
         See also
         --------
-        MultiPf.pf
+        MultiPf.df
         """
-        return PfFrame({attr: getattr(self, attr) for attr in show})
+        return pd.DataFrame({attr: getattr(self, attr) for attr in show})
 
     # Dunder methods.
 
     def __len__(self):
-        return len(self._pf)
+        return len(self._df)
 
     def __repr__(self):
         header = f'Lichtblick SinglePf object for portfolio "{self.name}"'
-        body = repr(self.pf("wqpr"))
+        body = repr(self.df("wqpr"))
         units = _unitsline(body.split("\n")[0])
         loc = body.find("\n\n") + 1
         if loc == 0:
@@ -649,7 +589,7 @@ class MultiPf(_PortfolioBase):
 
     Attributes
     ----------
-    w, q, p, r : PfSeries
+    w, q, p, r : pd.Series
         Power [MW], quantity [MWh], price [Eur/MWh], revenue [Eur] timeseries.
         Aggregated over children. Can also be accessed by key (e.g., with ['w']).
     ts_right, duration : pandas.Series
@@ -704,8 +644,8 @@ class MultiPf(_PortfolioBase):
 
     # Time series.
 
-    q = property(lambda self: PfSeries(sum([child.q for child in self]), name="q"))
-    r = property(lambda self: PfSeries(sum([child.r for child in self]), name="r"))
+    q = property(lambda self: pd.Series(sum([child.q for child in self]), name="q"))
+    r = property(lambda self: pd.Series(sum([child.r for child in self]), name="r"))
     index = property(lambda self: self.q.index)
     duration = property(lambda self: self.q.duration)
     ts_right = property(lambda self: self.q.ts_right)
@@ -741,9 +681,9 @@ class MultiPf(_PortfolioBase):
 
     # Turn into PortfolioFrame.
 
-    def pf(self, show: Iterable[str] = "wp", levels: int = -1) -> PfFrame:
+    def df(self, show: Iterable[str] = "wp", levels: int = -1) -> pd.DataFrame:
         """
-        Portfolioframe for this portfolio, including children.
+        pd.DataFrame for this portfolio, including children.
 
         Parameters
         ----------
@@ -755,16 +695,16 @@ class MultiPf(_PortfolioBase):
 
         Returns
         -------
-        PfFrame
+        pd.DataFrame
         """
         if levels == 1:
-            return PfFrame({attr: getattr(self, attr) for attr in show})
+            return pd.DataFrame({attr: getattr(self, attr) for attr in show})
 
-        pfs = [
-            functions.add_header(child.pf(show, levels - 1), child.name)
+        dfs = [
+            functions.add_header(child.df(show, levels - 1), child.name)
             for child in self
         ]
-        return PfFrame(functions.concat(pfs, axis=1))
+        return functions.concat(dfs, axis=1)
 
     # Tree view.
 
@@ -798,7 +738,7 @@ class MultiPf(_PortfolioBase):
         return header + _treetext(self.changefreq("MS"))
 
     def __str__(self):
-        return self.pf().__str__()
+        return self.df().__str__()
 
 
 def portfolio(data):

@@ -82,10 +82,10 @@ def test_power_series_fromsource(source):
 @pytest.mark.parametrize("source", np.random.choice(lb.tlp.power.SOURCES, 8, False))
 def test_power_fromsource(source):
     i = get_index(freq="D")  # some random time index in days
-    t = lb.PfSeries(np.random.uniform(-30, 30, len(i)), i)
+    t = pd.Series(np.random.uniform(-30, 30, len(i)), i)
     tlp1 = lb.tlp.power.fromsource(source["name"], spec=1)
     w1 = tlp1(t)
-    w1b = tlp1(lb.PfSeries(t - 5))
+    w1b = tlp1(t - 5)
     tlp2 = lb.tlp.power.fromsource(
         source["name"], spec=2
     )  # should have double the consumption
@@ -96,10 +96,10 @@ def test_power_fromsource(source):
 
 def test_gas_D14():
     i = get_index(freq="D")  # some random time index in days
-    t = lb.PfSeries(np.random.uniform(-30, 30, len(i)), i)
+    t = pd.Series(np.random.uniform(-30, 30, len(i)), i)
     tlp1 = lb.tlp.gas.D14(kw=1)
     w1 = tlp1(t)
-    w1b = tlp1(lb.PfSeries(t - 5))
+    w1b = tlp1(t - 5)
     tlp2 = lb.tlp.gas.D14(kw=2)
     w2 = tlp2(t)  # should have double the consumption
     assert np.allclose(w2, 2 * w1)

@@ -175,3 +175,32 @@ print(pfframe.a)
 #     and functionality.
 #     """
 #     pass
+
+
+#%%
+
+import numpy as np
+from collections import namedtuple
+
+
+class A:
+    def __init__(self):
+        self.a = np.random.rand()
+        self.b = np.random.rand()
+        self.c = np.random.rand()
+
+    @property
+    def a2(self):
+        return self.a + 2
+
+
+a = A()
+
+ext = namedtuple("extensions", ("a3", "a4"))
+
+
+def _a3(self):
+    return self.a + 3
+
+
+A.ext = ext

@@ -10,9 +10,9 @@ from geopy.distance import great_circle
 from typing import Union, Any, Callable
 
 
-CLIMATEZONEFILE = "lichtblyck/temperatures/sourcedata/climate_zones.csv"
-HISTORICDATAFOLDER = "lichtblyck/temperatures/sourcedata/historic/"
-FUTUREDATAFOLDER = "lichtblyck/temperatures/sourcedata/future/"
+CLIMATEZONEFILE = Path(__file__).parent / "climate_zones.csv"
+HISTORICDATAFOLDER = Path(__file__).parent / "historic"
+FUTUREDATAFOLDER = Path(__file__).parent / "future"
 
 
 def info(climate_zone: int, info: str = "name") -> Union[pd.Series, Any]:

@@ -8,7 +8,7 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 """
 
 from .sourcedata.climate_zones import historicdata, forallzones
-from ..core.pfseries_pfframe import force_Pf
+from ..core import pfseries_pfframe
 from sklearn.linear_model import LinearRegression
 from typing import Callable
 from datetime import datetime
@@ -18,7 +18,6 @@ import pandas as pd
 import numpy as np
 
 
-@force_Pf
 def climate_data(climate_zone: int) -> pd.DataFrame:
     """Return dataframe with historic daily climate data for specified climate
     zone. Values before 1917 are dropped. Index is gapless with missing values
@@ -40,7 +39,6 @@ def climate_data(climate_zone: int) -> pd.DataFrame:
     return df
 
 
-@force_Pf
 def _tmpr(climate_zone: int) -> pd.Series:
     """
     Return the daily temperatures for the specified climate zone.
@@ -54,7 +52,6 @@ def _tmpr(climate_zone: int) -> pd.Series:
     return s
 
 
-@force_Pf
 def tmpr() -> pd.DataFrame:
     """
     Return the daily temperatures for each climate zone.
@@ -67,7 +64,6 @@ def tmpr() -> pd.DataFrame:
     return forallzones(_tmpr)
 
 
-@force_Pf
 def _tmpr_monthlyavg(climate_zone: int) -> pd.Series:
     """
     Return monthly average temperatures for the specified climate zone.
@@ -81,7 +77,6 @@ def _tmpr_monthlyavg(climate_zone: int) -> pd.Series:
     return s.resample("MS").mean()
 
 
-@force_Pf
 def tmpr_monthlyavg() -> pd.DataFrame:
     """
     Return monthly average temperatures for each climate zone.
@@ -94,7 +89,6 @@ def tmpr_monthlyavg() -> pd.DataFrame:
     return forallzones(_tmpr_monthlyavg)
 
 
-@force_Pf
 def _tmpr_monthlymovingavg(climate_zone: int, window: int = 5) -> pd.Series:
     """
     Return monthly moving average temperatures for the specified climate zone.
@@ -117,7 +111,6 @@ def _tmpr_monthlymovingavg(climate_zone: int, window: int = 5) -> pd.Series:
     return mavg
 
 
-@force_Pf
 def tmpr_monthlymovingavg(window: int = 5) -> pd.DataFrame:
     """
     Return monthly moving average temperatures for each climate zone.
@@ -133,7 +126,6 @@ def tmpr_monthlymovingavg(window: int = 5) -> pd.DataFrame:
     return forallzones(lambda cz: _tmpr_monthlymovingavg(cz, window))
 
 
-@force_Pf
 def tmpr_struct(
     year_start: int = 2005, year_end: int = 2019, f: Callable = np.std
 ) -> pd.DataFrame:
@@ -243,15 +235,13 @@ def tmpr_struct(
     return struct
 
 
-@force_Pf
 def fill_gaps(t: pd.DataFrame) -> pd.DataFrame:
     """
     Fills gaps in temperature dataframe. By comparing one climate zone to all
     others.
     """
-    t = t[
-        t.isna().sum(axis=1) < 2
-    ].copy()  # keep only days with at most 1 missing value
+    # Keep only days with at most 1 missing climate zone.
+    t = t[t.isna().sum(axis=1) < 2]
 
     # For each missing value, get estimate. Using average difference to other stations' values.
     complete = t.dropna()  # all days without any missing value

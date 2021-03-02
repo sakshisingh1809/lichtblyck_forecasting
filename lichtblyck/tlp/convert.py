@@ -4,7 +4,7 @@ Convert between various ways that tlp profiles are stored / communicated. Con-
 vert to function consumption[MW] = f(temperature[degC], timestamp).
 """
 
-from ..core.pfseries_pfframe import PfSeries
+from ..core import pfseries_pfframe  # pandas extensions
 from typing import Callable
 from datetime import datetime, date
 import pandas as pd
@@ -104,7 +104,7 @@ def series2function(tlp_s: pd.Series) -> Callable[[pd.Series], pd.Series]:
     if "t" not in right_on:
         raise ValueError('No index level with temperatures (name "t") found.')
 
-    def tlp(t: PfSeries):
+    def tlp(t: pd.Series):
         # Find nearest available temperature (to look up in index of tlp).
         df = pd.DataFrame({"t": t})
         df["t_avail"] = (
@@ -146,7 +146,7 @@ def series2function(tlp_s: pd.Series) -> Callable[[pd.Series], pd.Series]:
         load.sort_index(inplace=True)
         load.index.freq = pd.infer_freq(load.index)
         # TODO: don't just use current temperature, but rather also yesterday's as described in standard process.
-        return PfSeries(load)
+        return load
 
     # Add some attributes that might be helpful.
     tlp.vals_avail = vals_avail
@@ -172,6 +172,6 @@ def function2function(f: Callable[[float], float]) -> Callable[[pd.Series], pd.S
     """
 
     def tlp(t: pd.Series) -> pd.Series:
-        return PfSeries(t.apply(f))
+        return t.apply(f)
 
     return tlp
