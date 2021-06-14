@@ -104,7 +104,19 @@ def series2function(tlp_s: pd.Series) -> Callable[[pd.Series], pd.Series]:
     if "t" not in right_on:
         raise ValueError('No index level with temperatures (name "t") found.')
 
-    def tlp(t: pd.Series):
+    def tlp(t: pd.Series) -> pd.Series:
+        """Find offtake [MW] that belongs to given temperature [degC] timeseries.
+
+        Parameters
+        ----------
+        t : pd.Series
+            Temperature timeseries
+
+        Returns
+        -------
+        pd.Series
+            Offtake timeseries
+        """
         # Find nearest available temperature (to look up in index of tlp).
         df = pd.DataFrame({"t": t})
         df["t_avail"] = (

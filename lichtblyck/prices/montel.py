@@ -3,12 +3,15 @@
 Module to read montel price data from disk.
 """
 
+from . import utils
+from .convert import p_offpeak
 from ..tools import tools
-from .utils import ts_deliv, duration_bpo, p_offpeak
 from typing import Dict
+from pathlib import Path
+import functools
 import pandas as pd
 import numpy as np
-from pathlib import Path
+
 
 _MONTELFILEPATH = Path(__file__).parent / "sourcedata" / "prices_montel.xlsx"
 
@@ -47,45 +50,37 @@ def _excel_gas(
         else:
             raise ValueError("Invalid value for parameter `market_code`.")
         kwargs.update(
-            {"sheet_name": "gas_spot_static", "usecols": startcol + np.array([1, 2])}
+            {"sheet_name": "gas_spot_stat", "usecols": startcol + np.array([1, 2])}
         )
     else:
-        if period_type == "m" or period_type == "a":
-            if market_code == "gpl":
-                startcol = 0
-            elif market_code == "ncg":
-                startcol = 20
-            else:
-                raise ValueError("Invalid value for parameter `market_code`.")
-            if period_type == "m":
-                sheet_name = "gas_M_static"
-            else:
-                sheet_name = "gas_A_static"
-            startcol += (period_start - 1) * 4
-            if period_start > 5:
-                raise NotImplementedError(
-                    "Currently, only frontperiod (1) to (5) are implemented."
-                )
-
-        elif period_type == "q" or period_type == "s":
-            if market_code == "gpl":
-                startcol = 0
-            elif market_code == "ncg":
-                startcol = 24
-            else:
-                raise ValueError("Invalid value for parameter `market_code`.")
-            if period_type == "q":
-                startcol += 6
-            elif period_type == "s":
-                startcol += 12
-            sheet_name = "gas_futures_static"
-            if period_start > 1:
-                raise NotImplementedError(
-                    "Currently, only frontperiod (1) is implemented."
-                )
-
+        if period_type == "m":
+            sheet_name = "gas_M_stat"
+            max_anticipation = 6
+        elif period_type == "q":
+            sheet_name = "gas_Q_stat"
+            max_anticipation = 7
+        elif period_type == "s":
+            sheet_name = "gas_S_stat"
+            max_anticipation = 4
+        elif period_type == "a":
+            sheet_name = "gas_A_stat"
+            max_anticipation = 6
         else:
             raise ValueError("Invalid value for parameter `period_type`.")
+
+        if period_start > max_anticipation:
+            raise NotImplementedError(
+                f"Currently, only frontperiod (1) to ({max_anticipation}) (inclusive) are implemented."
+            )
+
+        if market_code == "gpl":
+            startcol = 0
+        elif market_code == "ncg":
+            startcol = 6
+        else:
+            raise ValueError("Invalid value for parameter `market_code`.")
+        startcol += (period_start - 1) * 12
+
         kwargs.update(
             {"sheet_name": sheet_name, "usecols": startcol + np.array([1, 2])}
         )
@@ -102,7 +97,7 @@ def _excel_power(
     ----------
     period_type : str
         Duration of the product. One of {'h' (hourly, from day-ahead auction), 'm' 
-        (month, default), 'q' (quarter), 's' (season), 'a' (year)}
+        (month, default), 'q' (quarter), 'a' (year)}
     period_start : int
         1 = next/coming (full) period (default), 2 = period after that, etc.
         Ignored for period_type == 'h'.
@@ -119,29 +114,35 @@ def _excel_power(
     product_code = product_code.lower()
 
     if period_type == "h":  # hourly prices from day-ahead market
-        kwargs.update({"sheet_name": "power_spot_static", "usecols": "B:AC"})
+        kwargs.update({"sheet_name": "pwr_spot_stat", "usecols": "B:AC"})
     else:
-        if period_start > 1:
-            raise NotImplementedError("Currently, only front-prices are implemented.")
+        if period_type == "m":
+            sheet_name = "pwr_M_stat"
+            max_anticipation = 9
+        elif period_type == "q":
+            sheet_name = "pwr_Q_stat"
+            max_anticipation = 10
+        elif period_type == "a":
+            sheet_name = "pwr_A_stat"
+            max_anticipation = 6
+        else:
+            raise ValueError("Invalid value for parameter `period_type`.")
+
+        if period_start > max_anticipation:
+            raise NotImplementedError(
+                f"Currently, only frontperiod (1) to ({max_anticipation}) (inclusive) are implemented."
+            )
+
         if product_code == "base":
             startcol = 0
         elif product_code == "peak":
             startcol = 6
         else:
             raise ValueError("Invalid value for parameter `product_code`.")
-        if period_type == "m":
-            startcol += 0
-        elif period_type == "q":
-            startcol += 12
-        elif period_type == "a":
-            startcol += 24
-        else:
-            raise ValueError("Invalid value for parameter `period_type`.")
+        startcol += (period_start - 1) * 12
+
         kwargs.update(
-            {
-                "sheet_name": "power_futures_static",
-                "usecols": startcol + np.array([1, 2]),
-            }
+            {"sheet_name": sheet_name, "usecols": startcol + np.array([1, 2])}
         )
     return kwargs
 
@@ -159,10 +160,8 @@ def power_spot() -> pd.Series:
     pd.Series
     """
     data = pd.read_excel(**_excel_power("h"))
-    data = data.set_index("Date").drop(data.columns[-2:], axis=1)
-    dls_values = data[
-        "DLS"
-    ].dropna()  # prices for second 02:00-03:00 hour on last Sun in Oct.
+    data = data.set_index("Date").drop(["Base", "Peak (09-20)"], axis=1)
+    dls_values = data["DLS"].dropna()  # prices for second 02:00-03:00 hour last Oct Sun
     dls_values.index += pd.Timedelta(hours=2)
     data = data.drop("DLS", axis=1)
     data.columns = pd.to_timedelta([c[:5] + ":00" for c in data.columns])
@@ -206,7 +205,7 @@ def gas_spot(market_code: str = "ncg") -> pd.Series:
     return spot
 
 
-def power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFrame:
+def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFrame:
     """
     Get power futures prices.
 
@@ -216,14 +215,15 @@ def power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFrame
         Duration of the product. One of {'m' (month, default), 'q' (quarter),
         'a' (year)}
     period_start : int
-        1 = next/coming (full) period (default), 2 = period after that, etc.
+        1 = next/coming (full) period (ie., "frontyear", "frontmonth" etc) (default), 
+        2 = period after that, etc.
 
     Returns
     -------
     pd.DataFrame
         with power futures prices. Index: trading day. Columns: p_base, p_peak,
-        p_offpeak (prices), ts_left_deliv, ts_right_deliv (timestamps of delivery),
-        trade_before_deliv (timedelta between trade and delivery start), basehours,
+        p_offpeak (prices), ts_left, ts_right (timestamps of delivery),
+        anticipation (timedelta between trade and delivery start), basehours,
         peakhours, offpeakhours in delivery period.
     """
     # Get values...
@@ -239,42 +239,79 @@ def power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFrame
         b, how="inner", left_index=True, right_index=True, suffixes=("_peak", "_base"),
     )
     # ...add some additional information...
-    deliv = [ts_deliv(ts, period_type, period_start) for ts in df.index]
-    df["ts_left_deliv"], df["ts_right_deliv"] = zip(*deliv)
-    df["trade_before_deliv"] = df["ts_left_deliv"] - df.index
+    @functools.lru_cache
+    def deliv_f(ts):
+        return utils.ts_leftright(ts, period_type, period_start)
+
+    df["ts_left"], df["ts_right"] = zip(*df.index.map(deliv_f))
+    df["anticipation"] = df["ts_left"] - df.index
     # ...get number of peak and base and offpeak hours...
-    h = df[["ts_left_deliv", "ts_right_deliv"]].drop_duplicates().reset_index(drop=True)
-    bpo = duration_bpo(h["ts_left_deliv"], h["ts_right_deliv"])
-    h["basehours"], h["peakhours"], h["offpeakhours"] = bpo
-    df = df.reset_index().merge(h, how="left").set_index(df.index.names)
+    # h = df[["ts_left", "ts_right"]].drop_duplicates().reset_index(drop=True)
+    # bpo = np.vectorize(duration_bpo)(h["ts_left"], h["ts_right"])
+    # h["basehours"], h["peakhours"], h["offpeakhours"] = bpo
+    # df = df.reset_index().merge(h, how="left").set_index(df.index.names)
     # ...and use to calculate offpeak prices.
     df["p_offpeak"] = df.apply(
         lambda row: p_offpeak(
-            row["p_base"], row["p_peak"], row["basehours"], row["peakhours"]
-        )
+            row["p_base"], row["p_peak"], row["ts_left"], row["ts_right"]
+        ),
+        axis=1,
     )
     # Finally, return in correct row and column order.
     df.index = df.index.rename("ts_left_trade")
     return df[
         [
-            "ts_left_deliv",
-            "ts_right_deliv",
-            "trade_before_deliv",
+            "ts_left",
+            "ts_right",
+            "anticipation",
             "p_base",
             "p_peak",
             "p_offpeak",
-            "basehours",
-            "peakhours",
-            "offpeakhours",
+            # "basehours",
+            # "peakhours",
+            # "offpeakhours",
         ]
     ]
 
 
-def gas_futures(
+def power_futures(period_type: str = "m") -> pd.DataFrame:
+    """
+    Power futures prices, indexed by delivery period and trading day.
+
+    Parameters
+    ----------
+    period_type : str
+        Duration of the product. One of {'m' (month, default), 'q' (quarter),
+        'a' (year)}
+
+    Returns
+    -------
+    pd.DataFrame
+        with power futures prices. Multiindex with levels 0 (start of delivery period)
+        and 1 (trading day). Columns: p_base, p_peak, p_offpeak (prices), ts_right 
+        (end of delivery period), anticipation (timedelta between trade and delivery 
+        start), basehours, peakhours, offpeakhours in delivery period.
+    """
+    # Get all trading data and put in big dataframe.
+    pieces = {}
+    for period_start in range(1, 10):
+        try:
+            pieces[period_start] = _power_futures(period_type, period_start)
+        except NotImplementedError:
+            pass
+    fut = pd.concat(pieces.values()).reset_index()
+    # Set index: values and frequency.
+    fut.index = pd.MultiIndex.from_frame(fut[["ts_left", "ts_left_trade"]])
+    fut = fut.drop(columns=["ts_left_trade", "ts_left"]).sort_index()
+    fut.index.levels[0].freq = pd.infer_freq(fut.index.levels[0])
+    return fut
+
+
+def _gas_futures(
     period_type: str = "m", period_start: int = 1, market_code: str = "ncg"
 ) -> pd.DataFrame:
     """
-    Get gas futures prices.
+    Gas futures prices, indexed by trading day.
 
     Parameters
     ----------
@@ -282,15 +319,16 @@ def gas_futures(
         Duration of the product. One of {'m' (month, default), 'q' (quarter), 's'
         (season), 'a' (year)}
     period_start : int
-        1 = next/coming (full) period (default), 2 = period after that, etc.
+        1 = next/coming (full) period (ie., "frontyear", "frontmonth" etc) (default), 
+        2 = period after that, etc.
     market_code : str
         One of {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}.
 
     Returns
     -------
     pd.DataFrame
-        with gas futures prices. Index: trading day. Columns: p (price), ts_left_deliv,
-        ts_right_deliv (timestamps of delivery), trade_before_deliv (timedelta
+        with gas futures prices. Index: trading day. Columns: p (price), ts_left,
+        ts_right (timestamps of delivery), anticipation (timedelta
         between trade and delivery start), hours in delivery period.
     """
     # Get values...
@@ -299,15 +337,53 @@ def gas_futures(
     df.columns = ["ts_left_trade", "p"]
     df = tools.set_ts_index(df, "ts_left_trade")
     # ...add some additional information...
-    deliv = [ts_deliv(ts, period_type, period_start) for ts in df.index]
-    df["ts_left_deliv"], df["ts_right_deliv"] = zip(*deliv)
-    df["trade_before_deliv"] = df["ts_left_deliv"] - df.index
-    df["hours"] = (df["ts_right_deliv"] - df["ts_left_deliv"]).apply(
+    @functools.lru_cache
+    def deliv_f(ts):
+        return utils.ts_leftright(ts, period_type, period_start)
+
+    df["ts_left"], df["ts_right"] = zip(*df.index.map(deliv_f))
+    df["anticipation"] = df["ts_left"] - df.index
+    df["hours"] = (df["ts_right"] - df["ts_left"]).apply(
         lambda dt: dt.total_seconds() / 3600
     )
     # Finally, return in correct row and column order.
     df.index = df.index.rename("ts_left_trade")
-    return df[["ts_left_deliv", "ts_right_deliv", "trade_before_deliv", "p", "hours"]]
+    return df[["ts_left", "ts_right", "anticipation", "p", "hours"]]
+
+
+def gas_futures(period_type: str = "m", market_code: str = "ncg") -> pd.DataFrame:
+    """
+    Gas futures prices, indexed by delivery period and trading day.
+
+    Parameters
+    ----------
+    period_type : str
+        Duration of the product. One of {'m' (month, default), 'q' (quarter), 's'
+        (season), 'a' (year)}
+    market_code : str
+        One of {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}.
+
+    Returns
+    -------
+    pd.DataFrame
+        with gas futures prices. Multiindex with levels 0 (start of delivery period) and
+        1 (trading day). Columns: p (price), ts_right (end of delivery period), 
+        anticipation (timedelta between trade and delivery start), hours in delivery 
+        period.
+    """
+    # Get all trading data and put in big dataframe.
+    pieces = {}
+    for period_start in range(1, 10):
+        try:
+            pieces[period_start] = _gas_futures(period_type, period_start, market_code)
+        except NotImplementedError:
+            pass
+    fut = pd.concat(pieces.values()).reset_index()
+    # Set index: values and frequency.
+    fut.index = pd.MultiIndex.from_frame(fut[["ts_left", "ts_left_trade"]])
+    fut = fut.drop(columns=["ts_left_trade", "ts_left"]).sort_index()
+    fut.index.levels[0].freq = pd.infer_freq(fut.index.levels[0])
+    return fut
 
 
 # From Belvis
@@ -340,7 +416,7 @@ def gas_futures(
 #             product {'y', 'q', 'm'}, 1: time stamp of delivery start, 2: date
 #             of trading). Columns: p_base (base price), p_peak (peak price),
 #             p_offpeak (offpeak price). ts_right_deliv (time stamp of delivery
-#             end), trade_before_deliv (timedelta between trade and delivery
+#             end), anticipation (timedelta between trade and delivery
 #             start), basehours, peakhours, offpeakhours in delivery period.
 #     """
 #     engine = create_engine("mssql+pymssql://sqlbiprod/__Staging")
@@ -379,7 +455,7 @@ def gas_futures(
 #     df["ts_right_deliv"] = df["ts_left_deliv"] + pd.offsets.DateOffset(
 #         months=dur_months
 #     )
-#     df["trade_before_deliv"] = df["ts_left_deliv"] - df["ts_left_trade"]
+#     df["anticipation"] = df["ts_left_deliv"] - df["ts_left_trade"]
 #     # ...get peak and base and offpeak hours...
 #     h = df[["ts_left_deliv", "ts_right_deliv"]].drop_duplicates()
 #     bpo = hours_bpo(h["ts_left_deliv"], h["ts_right_deliv"])
@@ -395,7 +471,7 @@ def gas_futures(
 #     return df[
 #         [
 #             "ts_right_deliv",
-#             "trade_before_deliv",
+#             "anticipation",
 #             "p_base",
 #             "p_peak",
 #             "p_offpeak",

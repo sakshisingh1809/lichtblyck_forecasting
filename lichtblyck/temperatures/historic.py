@@ -236,16 +236,24 @@ def tmpr_struct(
 
 
 def fill_gaps(t: pd.DataFrame) -> pd.DataFrame:
-    """
-    Fills gaps in temperature dataframe. By comparing one climate zone to all
-    others.
+    """Fills gaps in temperature dataframe by comparing one climate zone to all others.
+
+    Parameters
+    ----------
+    t : pd.DataFrame
+        Dataframe with temperature timeseries. Each column is different geographic location.
+
+    Returns
+    -------
+    pd.DataFrame
+        Temperature dataframe with (some) gaps filled.
     """
     # Keep only days with at most 1 missing climate zone.
-    t = t[t.isna().sum(axis=1) < 2]
+    t = t[t.isna().sum(axis=1) < 2].copy() # remove days with >1 missing value. (.copy() only needed to stop 'A value is trying to be set on a copy of a slice' warning.)
 
     # For each missing value, get estimate. Using average difference to other stations' values.
     complete = t.dropna()  # all days without any missing value
-    for col in t.columns:
+    for col in t:
         isna = t[col].isna()
         if not isna.any():
             continue

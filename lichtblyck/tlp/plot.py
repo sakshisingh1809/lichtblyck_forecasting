@@ -44,9 +44,10 @@ def vs_time(tlp: Callable, t: Iterable = (-30, 30), freq: str = "15T") -> plt.Ax
             df.iloc[:, i:].T.drop_duplicates(keep="first"),
         ]
     ).T  # in case exact same curves are drawn multiple times.
-    ax = df_draw.plot(cmap="coolwarm")
+    ax = df_draw.plot(cmap="coolwarm", figsize=(10, 6))
     # myFmt = mdates.DateFormatter('%H:%M')
     # ax.xaxis.set_major_formatter(myFmt)
+    ax.legend(ncol=3)
     ax.set_ylabel("load [MW]")
     ax.set_xlabel("time of day")
     return ax
@@ -59,8 +60,8 @@ def vs_t(tlp: Callable, t: Iterable = (-30, 30)) -> plt.Axes:
     Parameters
     ----------
     tlp : Callable
-        Function that takes temperature [degC] as first argument (and possibly
-        timestamp as second argument), and returns the consumption [MW].
+        Function that takes temperature [degC] timeseries as argument and returns the 
+        offtake [MW].
     t : Iterable, optional
         Temperatures for which the curve must be plot: (min, max, [step=1]).
         The default is (-30, 30).
@@ -70,9 +71,12 @@ def vs_t(tlp: Callable, t: Iterable = (-30, 30)) -> plt.Axes:
     plt.Axes
         Pyplot Axes object containing the plot.
     """
-    t = pd.Series(np.linspace(*t))
-    y = tlp(t)
-    ax = pd.Series(y.values, t.values).plot()
+    t1 = np.linspace(*t)
+    t2 = pd.Series(t1, pd.date_range('2020-01-01', freq='D', periods=len(t1), tz='Europe/Berlin'))
+    y = tlp(t2).resample('D').mean()
+    s = pd.Series(y.values, t2.values)
+    ax = s.plot(figsize=(10, 6))
+    ax.legend(ncol=3)
     ax.set_ylabel("load [MW]")
     ax.set_xlabel("temperature [degC]")
-    return ax
+    return ax, 1

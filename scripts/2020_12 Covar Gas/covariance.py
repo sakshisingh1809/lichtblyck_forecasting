@@ -71,7 +71,11 @@ weights = pd.DataFrame(
 weights = weights["gas"] / weights["gas"].sum()
 
 # Temperature to load.
-gas_btb_kw = {"contingent": 1_790_000, "btb": 440_000, "rlm": 90_000}
+gas_btb_kw = {
+    "contingent": 1_790_000,
+    "btb": 440_000,
+    "rlm": 90_000,
+}  # not offtake in MWh
 tlp = lb.tlp.gas.D14(kw=gas_btb_kw["contingent"])
 lb.tlp.plot.vs_t(tlp)  # quick visual check
 
@@ -109,7 +113,7 @@ act[("offtake", "w")] = tlp(act.envir.t)
 # exp[('envir', 't1')] = t_exp('t_germany').resample('H').ffill()
 # . Variation 2: expected temperature is seasonality and trend (see emrald xlsx file)
 ti = pd.date_range(
-    "2000-01-01", "2020-01-01", freq="D", tz="Europe/Berlin", closed="left"
+    "2000-01-01", "2021-01-01", freq="D", tz="Europe/Berlin", closed="left"
 )
 tau = (ti - pd.Timestamp("1900-01-01", tz="Europe/Berlin")).total_seconds()
 tau = tau / 3600 / 24 / 365.24  # zeit in jahresfractionen seit 1900
@@ -135,7 +139,7 @@ def exp_price(df):
         df = df.sort_values("trade_before_deliv")  # sort suitable.
         df = df.reset_index("ts_left_trade")  # to get 'ts_left_trade' in columns.
         return pd.Series(df[cols].iloc[0])  # keep one.
-    return pd.Series([])
+    return pd.Series([], dtype=pd.Float32Dtype)
 
 
 # Expected spot prices.
@@ -145,12 +149,9 @@ frontmonth = lb.prices.montel.gas_futures("m")
 p_exp1_m = frontmonth.groupby("ts_left_deliv").apply(exp_price).dropna()
 
 # . Use actual spot prices to calculate expected M2D profile: mean but without extremes
-def rolling_av(nums):
-    return sum(np.sort(nums)[3:-3]) / (len(nums) - 6)
-
-
+rolling_av = lambda nums: sum(np.sort(nums)[3:-3]) / (len(nums) - 6)
 p_act_m2d = act.spot_m2d.p
-# .. for each day, find average m2d value for past 52 same weekdays.
+# .. for each day, find average m2d value for past 52 same values.
 p_exp1_m2d = p_act_m2d.groupby(p_act_m2d.index.weekday).apply(
     lambda df: df.rolling(52).apply(rolling_av).shift()
 )
@@ -220,7 +221,7 @@ def price_at_acquisition(index, monthpricefactors, lead_time=1.5):
         if not df.empty:
             df = df.reset_index("ts_left_trade")  # to get 'ts_left_trade' in columns.
             return pd.Series(df[cols].iloc[0])  # keep one.
-        return pd.Series([])
+        return pd.Series([], dtype=pd.Float32Dtype)
 
     # .. yearprice
     p_exp0_m[["p_year", "ts_left_trade"]] = p_exp0_m.apply(
@@ -236,7 +237,7 @@ def price_at_acquisition(index, monthpricefactors, lead_time=1.5):
 monthpricefactors = factor_p_a2m(p_exp1_m.p)
 prices_at_various_leadtimes = [
     price_at_acquisition(p_exp1_m.index, monthpricefactors, lead_time)
-    for lead_time in np.linspace(0.5, 1.5, 5)
+    for lead_time in np.linspace(0.5, 3.5, 5)
 ]
 p0_m = pd.DataFrame([p["p_month"] for p in prices_at_various_leadtimes]).mean().T
 
@@ -259,13 +260,13 @@ daily = (
 )
 
 # Hedge. --> Volume hedge.
-daily[("pf", "hedge", "w")] = lb.hedge(daily.exp.offtake.w)
-
+daily[("pf", "hedge", "w")] = lb.hedge(daily.exp.offtake.w, how="vol")
+daily.pf.hedge.w = daily.pf.hedge.w.apply(lambda v: 20 * (v // 20))  # only buy full MW
 
 # Expected spot quantities.
 daily[("exp", "spot", "w")] = daily.exp.offtake.w - daily.pf.hedge.w
-# check: spot volume should add to 0 for each given month
-assert ((daily.exp.spot.w * daily.duration).resample("MS").sum().abs() < 0.1).all()
+# check: spot volume should add to 0 for each given month (only if hedge not rounded)
+# assert ((daily.exp.spot.w * daily.duration).resample("MS").sum().abs() < 0.1).all()
 
 # Actual spot quantities.
 daily[("act", "spot", "w")] = daily.act.offtake.w - daily.pf.hedge.w
@@ -605,6 +606,82 @@ ax.bar(yearly.index, yearly.par.St.p, width=365 * 0.9, color="green", label="p_p
 ax.legend()
 
 fig.tight_layout()
+
+# %% Just PNL
+
+# Formatting
+plt.style.use("seaborn")
+# positive formatting (costs>0), negative formatting (costs<0)
+
+fig = plt.figure(figsize=(8, 4))
+axes = []
+# Expected and actual.
+#  PNL Par LT
+axes.append(plt.subplot2grid((1, 2), (0, 0), fig=fig))
+#  PNL Par ST
+axes.append(plt.subplot2grid((1, 2), (0, 1), fig=fig, sharex=axes[0], sharey=axes[0]))
+
+# PaR - Lt
+#  Distribution.
+source_vals = yearly.par.Lt.r
+loc, scale = norm.fit(source_vals)
+#  Eur.
+ax = axes[0]
+ax.title.set_text("par costs, long-term component\nper year")
+ax.yaxis.label.set_text("kEur")
+ax.bar(
+    yearly.index,
+    yearly.par.Lt.r / 1000,
+    width=365 * 0.9,
+    color="orange",
+    label=f"long-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
+)
+# ax.legend()
+
+# Par - St
+#  Distribution.
+source_vals = yearly.par.St.r
+loc, scale = norm.fit(source_vals)
+#  Eur.
+ax = axes[1]
+ax.title.set_text("par costs, short-term component\nper year")
+ax.yaxis.label.set_text("kEur")
+ax.bar(
+    yearly.index,
+    yearly.par.St.r / 1000,
+    width=365 * 0.9,
+    color="green",
+    label=f"short-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
+)
+# ax.legend()
+
+fig.tight_layout()
+
+
+# %% Scatter only.
+
+df = monthly
+fig = plt.figure(figsize=(10, 5))
+axes = []
+# Expected and actual
+#  degC
+axes.append(plt.subplot2grid((1, 1), (0, 0), fig=fig))
+#  MW
+ax = axes[0]
+ax.title.set_text("Change in offtake vs short-term change in price")
+ax.xaxis.label.set_text("MW")
+ax.yaxis.label.set_text("Eur/MWh")
+ax.fill_between((min(*df.delta.offtake.w, 0), 0), min(*df.delta.chg12.p, 0), 0, **pos)
+ax.fill_between((max(*df.delta.offtake.w, 0), 0), max(*df.delta.chg12.p, 0), 0, **pos)
+ax.scatter(
+    df.delta.offtake.w,
+    df.delta.chg12.p,
+    c="green",
+    s=10,
+    alpha=0.9,
+    label=f"r_par_st   = {r_par_st/1000:.0f} kEur\nofftake = {q/1000:.0f} GWh\np_par_st = {r_par_st/q:.2f} Eur/MWh",
+)
+# ax.legend()
 
 # %% CALCULATE: conditional value at risk
 

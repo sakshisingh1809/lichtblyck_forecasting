@@ -2,6 +2,7 @@
 Utilities for calculating / manipulating price data.
 """
 
+from ..tools import tools
 from typing import Tuple, Iterable
 import pandas as pd
 import numpy as np
@@ -13,6 +14,7 @@ def is_peak_hour(ts) -> bool:
     periods."""
     if isinstance(ts, Iterable):
         return np.vectorize(is_peak_hour)(ts)
+    ts = pd.Timestamp(ts)
     return ts.hour >= 8 and ts.hour < 20 and ts.isoweekday() < 6
 
 
@@ -21,8 +23,7 @@ def duration_bpo(ts_left, ts_right) -> Tuple[float]:
     Return number of base, peak and offpeak hours in interval [ts_left, ts_right).
     Timestamps must coincide with quarterhour start.
     """
-    # if isinstance(ts_left, Iterable):
-    #     return np.vectorize(duration_bpo)(ts_left, ts_right)
+    ts_left, ts_right = pd.Timestamp(ts_left), pd.Timestamp(ts_right)
     for ts in [ts_left, ts_right]:
         if ts.second != 0 or ts.minute % 15 != 0:
             raise ValueError("Timestamps must cooincide with quarterhour start.")
@@ -44,7 +45,7 @@ def duration_bpo(ts_left, ts_right) -> Tuple[float]:
     return duration_base, duration_peak, duration_base - duration_peak
 
 
-def ts_deliv(ts_trade, period_type: str = "m", period_start: int = 1):
+def ts_leftright(ts_trade, period_type: str = "m", period_start: int = 1):
     """
     Find start and end of delivery period.
 
@@ -63,45 +64,21 @@ def ts_deliv(ts_trade, period_type: str = "m", period_start: int = 1):
         left and right timestamp of delivery period.
     """
     ts_left_trade = ts_trade.floor("d")  # start of day
-    if period_start <= 0:  # to get current period or before: first go to next period
-        plus, minus = 1, period_start - 1
-    else:
-        plus, minus = period_start, 0
-    if period_type == "d":
-        ts_left = ts_left_trade + pd.Timedelta(days=plus) + pd.Timedelta(days=minus)
+
+    if period_type in ["m", "q", "a"]:
+        freq = period_type.upper() + "S"
+        ts_left = tools.floor(ts_left_trade, freq, period_start)
+        ts_right = tools.floor(ts_left, freq, 1)
+    elif period_type == "d":
+        ts_left = ts_trade.floor("d") + pd.Timedelta(days=period_start)
         ts_right = ts_left + pd.Timedelta(days=1)
-    elif period_type == "m":
-        ts_left = (
-            ts_left_trade + pd.offsets.MonthBegin(plus) + pd.offsets.MonthBegin(minus)
-        )
-        ts_right = ts_left + pd.offsets.MonthBegin(1)
-    elif period_type == "q":
-        ts_left = (
-            ts_left_trade
-            + pd.offsets.QuarterBegin(plus, startingMonth=1)
-            + pd.offsets.QuarterBegin(minus, startingMonth=1)
-        )
-        ts_right = ts_left + pd.offsets.QuarterBegin(1, startingMonth=1)
     elif period_type == "s":
-        ts_left, ts_right = ts_deliv(ts_trade, "q", period_start * 2 - 1)
+        ts_left, ts_right = ts_leftright(ts_trade, "q", period_start * 2 - 1)
         nextq = pd.offsets.QuarterBegin(1, startingMonth=1)
         ts_right = ts_right + nextq  # make 6 months long
         if ts_left.month % 2 == 1:  # season must start on even month
             ts_left, ts_right = ts_left + nextq, ts_right + nextq
-    elif period_type == "a":
-        ts_left = (
-            ts_left_trade + pd.offsets.YearBegin(plus) + pd.offsets.YearBegin(minus)
-        )
-        ts_right = ts_left + pd.offsets.YearBegin(1)
     else:
         raise ValueError("Invalid value for parameter `period_type`.")
     return ts_left, ts_right
 
-
-def p_offpeak(p_base, p_peak, duration_base, duration_peak) -> float:
-    """Return offpeak price from base and peak price and number of base and peak hours."""
-    # if isinstance(p_base, Iterable):
-    #     return np.vectorize(p_offpeak)(p_base, p_peak, duration_base, duration_peak)
-    return (p_base * duration_base - p_peak * duration_peak) / (
-        duration_base - duration_peak
-    )

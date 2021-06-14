@@ -1,6 +1,6 @@
 """Testing PfSeries and PfFrame."""
 
-from lichtblyck.core.dev import get_index, get_pfframe, get_pfseries, OK_FREQ
+from lichtblyck.core.dev import get_index, get_dataframe, get_series, OK_FREQ
 import pandas as pd
 import numpy as np
 import pytest
@@ -13,7 +13,7 @@ def assert_all_same_time(ps):
 
 @pytest.mark.parametrize("freq", [*OK_FREQ, "A", "Q", "M", "5T", "T"])
 @pytest.mark.parametrize("tz", ["Europe/Berlin", None])
-@pytest.mark.parametrize("get_obj_func", [get_pfseries, get_pfframe])
+@pytest.mark.parametrize("get_obj_func", [get_series, get_dataframe])
 def test_index(freq, tz, get_obj_func):
     i = get_index(tz=tz, freq=freq)
     pf = get_obj_func(i)
@@ -33,7 +33,7 @@ def test_index(freq, tz, get_obj_func):
             pf.ts_right
 
 
-@pytest.mark.parametrize("get_obj_func", [get_pfseries, get_pfframe])
+@pytest.mark.parametrize("get_obj_func", [get_series, get_dataframe])
 def test_index_wt_st(get_obj_func):
     i = pd.date_range("2020-03-28", freq="D", periods=3, tz="Europe/Berlin")
     ps = get_obj_func(i)
@@ -48,7 +48,7 @@ def test_index_wt_st(get_obj_func):
     assert ps.ts_right[-1].time() == ps.index[0].time()
 
 
-@pytest.mark.parametrize("get_obj_func", [get_pfseries, get_pfframe])
+@pytest.mark.parametrize("get_obj_func", [get_series, get_dataframe])
 def test_index_st_wt(get_obj_func):
     i = pd.date_range("2020-10-24", freq="D", periods=3, tz="Europe/Berlin")
     ps = get_obj_func(i)
@@ -66,24 +66,6 @@ def test_index_st_wt(get_obj_func):
 def test_sameobject():
     i = get_index()
 
-    # # Compare (DataFrame and Series) with (PfFrame and PfSeries).
-    # # Former don't have .duration or .ts_right attribute, but should have equal values.
-
-    # vals = np.random.rand(len(i), 2)
-    # df1 = pd.DataFrame(vals, i, list("wp"))
-    # pf1 = PfFrame(vals, i, list("wp"))
-    # assert ((df1.index - pf1.index) < pd.Timedelta(minutes=1)).all()
-    # assert ((df1.index - pf1.index) > pd.Timedelta(minutes=-1)).all()
-    # np.testing.assert_array_almost_equal(df1.w.values, pf1.w.values)
-    # np.testing.assert_array_almost_equal(df1.p.values, pf1.p.values)
-
-    # vals = np.random.rand(len(i))
-    # s1 = pd.Series(vals, i, name="w")
-    # ps1 = PfSeries(vals, i, name="w")
-    # assert ((s1.index - ps1.index) < pd.Timedelta(minutes=1)).all()
-    # assert ((s1.index - ps1.index) > pd.Timedelta(minutes=-1)).all()
-    # np.testing.assert_array_almost_equal(s1.values, ps1.values)
-
     # Check that creating object from existing object makes a copy.
 
     vals = np.random.rand(len(i), 2)
@@ -100,17 +82,3 @@ def test_sameobject():
     ps1 = pd.Series(vals, i, name="w")
     ps2 = pd.Series(ps1)
     pd.testing.assert_series_equal(ps1, ps2)
-
-
-# def test_conversion():
-#     pf = get_pfframe()
-#     df = pd.DataFrame(pf)
-#     assert type(df) is pd.DataFrame
-#     pf = PfFrame(df)
-#     assert type(pf) is PfFrame
-
-#     ps = get_pfseries()
-#     s = pd.Series(ps)
-#     assert type(s) is pd.Series
-#     ps = PfSeries(s)
-#     assert type(ps) is PfSeries

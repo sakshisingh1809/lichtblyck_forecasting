@@ -4,9 +4,11 @@ from lichtblyck.prices import utils
 import pandas as pd
 import pytest
 
+
 @pytest.fixture(params=[None, "Europe/Berlin"])
 def tz(request):
     return request.param
+
 
 @pytest.mark.parametrize(
     ("value", "ispeak"),
@@ -139,10 +141,10 @@ def test_duration_bpo(left, right, tz, add_left, add_middle, add_right):
         ("2020-12-14", "s", 3, "2022-4-1"),
     ],
 )
-def test_ts_deliv(ts_trade, period_type, period_start, tz, expected_left):
+def test_ts_leftright(ts_trade, period_type, period_start, tz, expected_left):
     ts_trade = pd.Timestamp(ts_trade, tz=tz)
     expected_left = pd.Timestamp(expected_left, tz=tz)
-    ts_deliv = utils.ts_deliv(ts_trade, period_type, period_start)
+    ts_deliv = utils.ts_leftright(ts_trade, period_type, period_start)
     assert ts_deliv[0] == expected_left
     try:
         add = {"m": 1, "q": 3, "s": 6, "a": 12}[period_type]
@@ -150,17 +152,3 @@ def test_ts_deliv(ts_trade, period_type, period_start, tz, expected_left):
     except KeyError:
         assert ts_deliv[1] == expected_left + dt.timedelta(1)
 
-
-@pytest.mark.parametrize(
-    ("p_b", "p_p", "duration_b", "duration_p", "p_op_expected"),
-    [
-        (1, 1, 100, 50, 1),
-        (1, 2, 100, 50, 0),
-        (1, 3, 100, 50, -1),
-        (1.5, 4.5, 200, 50, 0.5),
-        (100, 100, 10, 5, 100),
-        (100, 200, 20, 4, 75),
-    ],
-)
-def test_p_peak(p_b, p_p, duration_b, duration_p, p_op_expected):
-    assert np.isclose(utils.p_offpeak(p_b, p_p, duration_b, duration_p), p_op_expected)
