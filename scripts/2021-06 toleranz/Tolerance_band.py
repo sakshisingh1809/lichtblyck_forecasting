@@ -5,19 +5,21 @@ Calculate the influence on PNL due to deviations from plan volume
 
 #%%
 
+from scipy.stats import norm
+from lichtblyck.prices.utils import is_peak_hour
 from pathlib import Path
 import lichtblyck as lb
 import pandas as pd
 import numpy as np
-from lichtblyck.prices.utils import is_peak_hour
-from scipy.stats import norm
+import matplotlib.pyplot as plt
 
 #%% Prices: yearly base, peak, offpeak prices.
 
 fut_a = lb.prices.power_futures("a")  # year prices, many trading days
 fut_m = lb.prices.power_futures("m")  # month prices, many trading days
-# spot = lb.prices.power_spot()
-# spot_bpo = lb.prices.convert.tseries2bpoframe(spot, "AS")
+spot = lb.prices.power_spot()
+
+#%% At end of step L and at end of step S: create single value for each year.
 
 
 def monthprice_L(monthprices):
@@ -31,11 +33,14 @@ def monthprice_L(monthprices):
 
 
 # Month prices at single trading day.
-fut_m_bpo_stepL = (
+pu_m_stepL = (
     fut_m.groupby(level=0).apply(monthprice_L).unstack().resample("MS").asfreq()
 )
-# Year prices at end of step L (= after LT period).
-fut_a_bpo_stepL = lb.prices.convert.bpoframe2bpoframe(fut_m_bpo_stepL, "AS").iloc[1:-1]
+# Year prices at end of step L.
+pu_a_stepL = lb.prices.convert.bpoframe2bpoframe(pu_m_stepL, "AS").iloc[1:-1]
+
+# Year prices at the end of step S.
+pu_a_stepS = lb.prices.convert.tseries2bpoframe(spot, "AS")
 
 #%% Planned consumption.
 
@@ -52,23 +57,27 @@ qo_step0 = (
 #%% Tolerance band.
 
 
-def pnl_tolband(anticipation, tolerance, delivery_year):
+def pnl_tolband(anticipation_int, tolerance, delivery_year):
     # At acquisition.
     ts_left = pd.Timestamp(f"{delivery_year}-01-01 00:00:00", tz="Europe/Berlin")
-    ts_trade_latest = ts_left - anticipation + pd.Timedelta(days=3)
-    ts_trade_earliest = ts_left - anticipation - pd.Timedelta(days=3)
+    ts_trade_latest = ts_left - pd.Timedelta(days=(anticipation_int-1)*365+3)
+    ts_trade_earliest = ts_trade_latest - pd.Timedelta(days=355)
     mask = (
         (fut_a.index.get_level_values("ts_left") == ts_left)
         & (fut_a.index.get_level_values("ts_left_trade") < ts_trade_latest)
         & (fut_a.index.get_level_values("ts_left_trade") > ts_trade_earliest)
     )
-    df = fut_a[mask].dropna()
+    df = fut_a[mask].dropna() #all trading days in the acquisition year
     if df.empty:
         return None
     pu_step0 = df[["p_peak", "p_offpeak"]].mean()
 
+    # during delivery month.
+    pu_stepS = pu_a_stepS.loc[ts_left][["p_peak", "p_offpeak"]]
+    qo_stepS = (1 + tolerance) * qo_step0
+
     # 3-4 weeks before start of delivery month.
-    pu_stepL = fut_a_bpo_stepL.loc[ts_left][["p_peak", "p_offpeak"]]
+    pu_stepL = pu_a_stepL.loc[ts_left][["p_peak", "p_offpeak"]]
     qo_stepL = (1 + tolerance) * qo_step0
 
     # Tolerance band.
@@ -86,6 +95,7 @@ def pnl_tolband(anticipation, tolerance, delivery_year):
     for key, p, q in [
         ("0", pu_step0, qo_step0),
         ("L", pu_stepL, qo_stepL),
+        ("S", pu_stepS, qo_stepS),
         ("delta_L", delta_pu_stepL, delta_qo_stepL),
     ]:
         dic[key] = {
@@ -98,20 +108,21 @@ def pnl_tolband(anticipation, tolerance, delivery_year):
 
 
 records = []
-for anticipation in [pd.Timedelta(days=180), pd.Timedelta(days=180 + 365)]:
-    for tolerance in [-0.95, -0.5, -0.2, 0, 0.2, 0.5, 1, 1.5, 2]:
-        for delivery_year in range(2003, 2021):
-            result = pnl_tolband(anticipation, tolerance, delivery_year)
-            if result is not None:
-                result = {
-                    **result,
-                    "index": {
-                        "anticipation": anticipation,
-                        "tolerance": tolerance,
-                        "ts_left": delivery_year,
-                    },
-                }
-                records.append(result)
+for tolerance in [-0.95, -0.5, -0.2, 0, 0.2, 0.5, 1, 1.5, 2]:
+    for delivery_year in range(2003, 2021):
+        for anticipation_a in range(1, 3): # 1 = frontyear = acq 0...1 year before del. st.
+            result = pnl_tolband(anticipation_a, tolerance, delivery_year)
+            if result is None:
+                continue
+            result = {
+                **result,
+                "index": {
+                    "anticipation_a": anticipation_a,
+                    "tolerance": tolerance,
+                    "ts_left": pd.Timestamp(f'{delivery_year}-1-1', tz='Europe/Berlin')
+                },
+            }
+            records.append(result)
 records = [
     {(i, j): record[i][j] for i in record.keys() for j in record[i].keys()}
     for record in records
@@ -119,7 +130,7 @@ records = [
 results = pd.DataFrame.from_records(records)
 results.columns = pd.MultiIndex.from_tuples(results.columns)
 results.index = pd.MultiIndex.from_frame(results["index"])
-results = results.drop(columns="index")
+results = results.drop(columns="index").sort_index()
 
 
 # %% Visualise.
@@ -127,23 +138,47 @@ results = results.drop(columns="index")
 # Average PNL impact.
 tol_mean = results["tol"].mean(level=(0, 1))
 print(tol_mean)
-# Positive tolerance band gives negative (average) tolerance band costs. Therefore, prices 
+# Positive tolerance band gives negative (average) tolerance band costs. Therefore, prices
 # must have fallen during the period under consideration. Let's verify:
-selection = results.loc[pd.IndexSlice[:, results.index.get_level_values(1)[0], :]]
+# Visualise prices:
+selection = results.loc[pd.IndexSlice[:, results.index.levels[1][0], :]]
 for prod in ["p_peak", "p_offpeak"]:
-    selection[[("0", prod), ("L", prod)]].unstack(0).plot(figsize=(16, 10))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+    fig.suptitle(prod)
+
+    for i, td in enumerate(selection.index.levels[0]):
+        if i == 0:
+            ax.plot(selection.loc[td, ("L", prod)], label="L")
+            ax.plot(selection.loc[td, ("S", prod)], label="S")
+        ax.plot(
+            selection.loc[td, ("0", prod)], label=f"< {td} year before start of delivery year"
+        )
+    ax.legend()
+# Visualise price changes:
+fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+dt = selection.index.levels[0][0]
+fig.suptitle(f"Long-term price changes\nAcquisition-moment: {dt-1}-{dt} year before delivery start.")
+selection.loc[dt, ("delta_L")][["p_peak", "p_offpeak"]].plot(ax=ax)
+ax.yaxis.label.set_text("Eur/MWh")
+ax.xaxis.label.set_text("Delivery year")
+fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+dt = selection.index.levels[0][1]
+fig.suptitle(f"Long-term price changes\nAcquisition-moment: {dt-1}-{dt} year before delivery start.")
+selection.loc[dt, ("delta_L")][["p_peak", "p_offpeak"]].plot(ax=ax)
+ax.yaxis.label.set_text("Eur/MWh")
+ax.xaxis.label.set_text("Delivery year")
+
 
 # %% Tolerance band needed.
 
 # Find standard deviation and (80%-quantile - mean) from the data.
-std_factor = norm().ppf(0.8)
+std_factor = norm().ppf(0.99)
 tol_distr = results["tol"].groupby(level=(0, 1)).std() * std_factor
+print(tol_distr)
 
 # Compare with sales margin.
 p_sales_margin = 10  # Eur/MWh
 df = lb.core.functions.add_header(tol_distr, "tol")
-df[("margin", "r")] = (
-    results[("L", "q")].groupby(level=(0, 1)).mean() * p_sales_margin
-)
+df[("margin", "r")] = results[("L", "q")].groupby(level=(0, 1)).mean() * p_sales_margin
 df[("margin", "p")] = p_sales_margin
 # %%
