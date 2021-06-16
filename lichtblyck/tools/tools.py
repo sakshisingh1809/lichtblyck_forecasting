@@ -43,19 +43,19 @@ def set_ts_index(
     if bound == "left":
         pass
     elif bound.startswith("right"):
-        if bound == 'right':
+        if bound == "right":
             # At start of DST:
             # . Leftbound timestamps contain 3:00 but not 2:00.
-            # . Rightbound timestamps contain 3:00 but not 2:00 (A), or vice versa (B): try both
-            try: 
-                return set_ts_index(fr, column, 'rightA', tz)            
+            # . Rightbound timestamps: ambiguous. May contain 3:00 but not 2:00 (A), or vice versa (B): try both
+            try:
+                return set_ts_index(fr, column, "rightA", tz)
             except:
-                return set_ts_index(fr, column, 'rightB', tz)
+                return set_ts_index(fr, column, "rightB", tz)
         minutes = (fr.index[1] - fr.index[0]).seconds / 60
-        if bound == 'rightA':
+        if bound == "rightA":
             fr.loc[fr.index[0] + pd.Timedelta(minutes=-minutes)] = np.nan
             fr = pd.concat([fr.iloc[-1:], fr.iloc[:-1]]).shift(-1).dropna()
-        if bound == 'rightB':
+        if bound == "rightB":
             fr.index += pd.Timedelta(minutes=-minutes)
     else:
         raise ValueError("`bound` must be one of {'left' (default), 'right'}.")
@@ -71,7 +71,17 @@ def set_ts_index(
     if fr.index.freq is None:
         fr.index.freq = pd.infer_freq(fr.index)
     if fr.index.freq is None:
-        fr = fr.resample((fr.index[1:] - fr.index[:-1]).median()).asfreq()
+        duration = (fr.index[1:] - fr.index[:-1]).median()
+        for freq, tdelta_range in {
+            "MS": (pd.Timedelta(days=27), pd.Timedelta(days=32)),
+            "QS": (pd.Timedelta(days=89), pd.Timedelta(days=93)),
+            "AS": (pd.Timedelta(days=364), pd.Timedelta(days=367)),
+        }.items():
+            if duration >= tdelta_range[0] and duration <= tdelta_range[1]:
+                break
+        else:
+            freq = duration
+        fr = fr.resample(freq).asfreq()
     if fr.index.freq is None:
         # (infer_freq does not work during summer-to-wintertime changeover)
         fr.index.freq = (fr.index[1:] - fr.index[:-1]).median()
@@ -172,7 +182,7 @@ _is_power = __is("w")
 
 
 def floor(
-    ts: Union[pd.Timestamp, Iterable[pd.Timestamp]], freq="MS", future: int = 0
+    ts: Union[pd.Timestamp, Iterable[pd.Timestamp]], future: int = 0,  freq=None
 ) -> pd.Timestamp:
     """Calculate (timestamp at beginning of) month, quarter, or year that a timestamp
     is in.
@@ -181,25 +191,33 @@ def floor(
     ----------
     ts : Timestamp or Iterable of timestamps.
         Timestamp to floor.
-    freq : frequency
-        What to floor it to. One of {'MS' (default), 'QS', 'AS'} for start of the month,
-        quarter, or year it's contained in.
     future : int
         0 (default) to get start of period that ts in contained in. 1 (-1) to get start 
         of period after (before) that. 2 (-2) .. etc.
+    freq : frequency
+        What to floor it to. One of {'MS' , 'QS', 'AS'} for start of the month, quarter,
+        or year it's contained in. If none specified, use .freq attribute of timestamp.
 
+    Returns
+    -------
+    Timestamp
+        At begin of period.
     """
     if isinstance(ts, Iterable):
-        return np.vectorize(floor)(ts, freq)
-    ts = ts.floor("D")
+        return np.vectorize(floor)(ts, future, freq)
+    if freq is None:
+        freq = ts.freq
+    ts = ts.floor("D")  # make sure we return a midnight value
     if freq == "MS":
         return ts + pd.offsets.MonthBegin(1) + pd.offsets.MonthBegin(future - 1)
-    if freq == "QS":
+    elif freq == "QS":
         return (
             ts
             + pd.offsets.QuarterBegin(1, startingMonth=1)
             + pd.offsets.QuarterBegin(future - 1, startingMonth=1)
         )
-    if freq == "AS":
+    elif freq == "AS":
         return ts + pd.offsets.YearBegin(1) + pd.offsets.YearBegin(future - 1)
-    raise ValueError("Argument 'freq' must be one of {'MS', 'QS', 'AS'}.")
+    else:
+        raise ValueError("Argument 'freq' must be one of {'MS', 'QS', 'AS'}.")
+

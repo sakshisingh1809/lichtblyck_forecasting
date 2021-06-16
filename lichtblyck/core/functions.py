@@ -11,6 +11,7 @@ def add_header(df: pd.DataFrame, header) -> pd.DataFrame:
     """Add column level onto top, with value `header`."""
     return pd.concat([df], keys=[header], axis=1)
 
+
 def concat(dfs: Iterable, axis: int = 0, *args, **kwargs) -> pd.DataFrame:
     """
     Wrapper for `pandas.concat`; concatenate pandas objects even if they have
@@ -57,24 +58,81 @@ def concat(dfs: Iterable, axis: int = 0, *args, **kwargs) -> pd.DataFrame:
     return pd.concat(dfs, axis=axis, *args, **kwargs)
 
 
-def _aggpf(df: pd.DataFrame) -> pd.Series:
-    """
-    Aggregation function for PfFrames.
+# def _aggpf(df: pd.DataFrame) -> pd.Series:
+#     """
+#     Aggregation function for PfFrames.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Dataframe with (at least) 2 of the following columns: (w or q), p, r.
+#     Parameters
+#     ----------
+#     df : pd.DataFrame
+#         Dataframe with (at least) 2 of the following columns: (w or q), p, r.
 
-    Returns
-    -------
-    pd.Series
-        The aggregated series with the aggregated values for q, r, w and p.
-    """
-    duration = df.duration.sum()
-    q = df.q.sum(skipna=False)
-    r = df.r.sum(skipna=False)
-    return pd.Series({"q": q, "r": r, "w": q / duration, "p": r / q})
+#     Returns
+#     -------
+#     pd.Series
+#         The aggregated series with the aggregated values for q, r, w and p.
+#     """
+#     duration = df.duration.sum()
+#     q = df.q.sum(skipna=False)
+#     r = df.r.sum(skipna=False)
+#     return pd.Series({"q": q, "r": r, "w": q / duration, "p": r / q})
+
+
+def _changefreq_general(fr: NDFrame, freq: str = "MS", is_summable: bool = True):
+    """Change frequency of a Series or DataFrame, depending on the type of data it 
+    contains."""
+
+    # Some resampling labels are right-bound by default. Change to make left-bound.
+    if freq in ["M", "A", "Q"]:
+        freq += "S"
+    if freq not in FREQUENCIES:
+        raise ValueError(f"Parameter `freq` must be one of {','.join(FREQUENCIES)}.")
+
+    # Empty frame.
+    if len(fr) == 0:
+        return fr.resample(freq).mean()  # empty frame.
+
+    up_or_down = freq_up_or_down(fr.index.freq, freq)
+
+    # Nothing more needed; portfolio already in desired frequency.
+    if up_or_down == 0:
+        return fr
+
+    # Must downsample.
+    elif up_or_down == -1:
+        if is_summable:
+            # Downsampling is easiest for summable frames: simply sum child values.
+            fr2 = fr.resample(freq).sum()
+            # Discard rows in new frame that are only partially present in original.
+            return fr2[(fr2.index >= fr.index[0]) & (fr2.ts_right <= fr.ts_right[-1])]
+        else:
+            # For averagable frames: first make summable.
+            summable = fr.mul(fr.duration, axis=0)
+            summable2 = _changefreq_general(summable, freq, True)
+            fr2 = summable2.div(summable2.duration, axis=0)
+            return fr2
+
+    # Must upsample.
+    else:
+        if not is_summable:
+            # Upsampling is easiest for averagable frames: simply duplicate parent value.
+            # Workaround to avoid missing final values:
+            fr = fr.copy()
+            # first, add additional row...
+            try:  # fails if series
+                fr.loc[fr.ts_right[-1], :] = None
+            except TypeError:
+                fr.loc[fr.ts_right[-1]] = None
+            # ... then do upsampling ...
+            fr2 = fr.resample(freq).asfreq().ffill()  # duplicate value
+            # ... and then remove final row.
+            return fr2.iloc[:-1]
+        else:
+            # For summable frames: first make averagable.
+            avgable = fr.div(fr.duration, axis=0)
+            avgable2 = _changefreq_general(avgable, freq, False)
+            fr2 = avgable2.mul(avgable2.duration, axis=0)
+            return fr2
 
 
 def changefreq_sum(fr: NDFrame, freq: str = "MS") -> NDFrame:
@@ -100,43 +158,7 @@ def changefreq_sum(fr: NDFrame, freq: str = "MS") -> NDFrame:
     -------
     DataFrame or Series
     """
-
-    # Some resampling labels are right-bound by default. Change to make left-bound.
-    if freq in ["M", "A", "Q"]:
-        freq += "S"
-    if freq not in FREQUENCIES:
-        raise ValueError(f"Parameter `freq` must be one of {','.join(FREQUENCIES)}.")
-
-    # Empty frame.
-    if len(fr) == 0:
-        return fr.resample(freq).mean()  # empty frame.
-
-    up_or_down = freq_up_or_down(fr.index.freq, freq)
-
-    # Nothing more needed; portfolio already in desired frequency.
-    if up_or_down == 0:
-        return fr
-
-    # Must downsample.
-    elif up_or_down == -1:
-        newfr = fr.resample(freq).sum()
-        # Discard rows in new pd.DataFrame that are only partially present in original pd.DataFrame.
-        return newfr[(newfr.index >= fr.index[0]) & (newfr.ts_right <= fr.ts_right[-1])]
-
-    # Must upsample.
-    else:
-        # Workaround to avoid missing final values:
-        fr = fr.copy()
-        # first, add additional row...
-        try:  # fails if series
-            fr.loc[fr.ts_right[-1], :] = None
-        except TypeError:
-            fr.loc[fr.ts_right[-1]] = None
-        # ... then do upsampling ...
-        newfr = fr.resample(freq).asfreq().fillna(0)  # sum correct, but must...
-        newfr = newfr.resample(fr.index.freq).transform(np.mean)  # ...distribute
-        # ... and then remove final row.
-        return newfr.iloc[:-1]
+    return _changefreq_general(fr, freq, True)
 
 
 def changefreq_avg(fr: NDFrame, freq: str = "MS") -> NDFrame:
@@ -161,12 +183,7 @@ def changefreq_avg(fr: NDFrame, freq: str = "MS") -> NDFrame:
     A 'time-averagable' quantity is one that can be averaged to an aggregate value, 
     like power [MW]. When downsampling, the values are weighted with their duration.    
     """
-    summable_fr = fr.mul(fr.duration, axis=0)
-    new_summable_fr = changefreq_sum(summable_fr, freq)
-    new_fr = new_summable_fr.div(new_summable_fr.duration, axis=0)
-    if isinstance(new_fr, pd.Series):
-        new_fr = new_fr.rename(fr.name)
-    return new_fr
+    return _changefreq_general(fr, freq, False)
 
 
 def freq_up_or_down(freq_source, freq_target) -> int:
@@ -230,19 +247,3 @@ def freq_longest(*freqs):
     Returns longest frequency in list.
     """
     return _freq_longestshortest(False, *freqs)
-
-
-# def add(fr1: NDFrame, fr2: NDFrame) -> NDFrame:
-#     """
-#     Add two DataFrames or Series.
-
-#     Args:
-#         fr1, fr2 : Series or DataFrames to add.
-
-#     Returns:
-#         Series or DataFrame.
-#     """
-#     fd = freq_diff(fr1.index.freq, fr2.index.freq)
-#     if fd == 1: # frequency of fr2 is shortest.
-#         fr1 =
-
