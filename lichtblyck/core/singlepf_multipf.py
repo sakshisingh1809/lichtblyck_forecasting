@@ -4,7 +4,7 @@ Dataframe-like classes to hold general energy-related timeseries.
 
 from __future__ import annotations
 from .pfseries_pfframe import FREQUENCIES
-from . import functions
+from . import utils
 from typing import Union, Iterable
 import pandas as pd
 import numpy as np
@@ -311,7 +311,7 @@ def _add(*pfs: _PortfolioBase) -> SingePf:
         )
     add_r = not any(withoutfinancialdata)
     # Upsample to shortest frequency.
-    newfreq = functions.freq_shortest(*[pf.index.freq for pf in pfs])
+    newfreq = utils.freq_shortest(*[pf.index.freq for pf in pfs])
     pfs = [pf.changefreq(newfreq) for pf in pfs]
     # Add, keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
     data = {"q": sum([pf.q for pf in pfs]).dropna().resample(newfreq).asfreq()}
@@ -455,9 +455,9 @@ class SinglePf(_PortfolioBase):
 
     # Resample and aggregate.
 
-    @functools.wraps(functions.changefreq_sum)
+    @functools.wraps(utils.changefreq_sum)
     def changefreq(self, freq: str = "MS") -> SinglePf:
-        new_df = functions.changefreq_sum(self.df("qr"), freq)
+        new_df = utils.changefreq_sum(self.df("qr"), freq)
 
         return SinglePf(new_df, name=self.name)
 
@@ -614,10 +614,10 @@ class MultiPf(_PortfolioBase):
             return pd.DataFrame({attr: getattr(self, attr) for attr in show})
 
         dfs = [
-            functions.add_header(child.df(show, levels - 1), child.name)
+            utils.add_header(child.df(show, levels - 1), child.name)
             for child in self
         ]
-        return functions.concat(dfs, axis=1)
+        return utils.concat(dfs, axis=1)
 
     # Tree view.
 

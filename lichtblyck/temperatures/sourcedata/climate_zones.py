@@ -2,10 +2,10 @@
 Module handle climate zones and return correct (future or historic) data.
 """
 
-from pathlib import Path
-from zipfile import ZipFile
 import pandas as pd
 import numpy as np
+from pathlib import Path
+from zipfile import ZipFile
 from geopy.distance import great_circle
 from typing import Union, Any, Callable
 
@@ -37,24 +37,27 @@ def info(climate_zone: int, info: str = "name") -> Union[pd.Series, Any]:
     )
 
 
-def historicdata(climate_zone: int) -> bytes:
+def historicdata(climate_zone: Union[int, Path]) -> bytes:
     """Return bytes object, i.e., file contents of historic climate data for
-    specified climate zone."""
-    # Find the correct station id...
-    sid = info(climate_zone, "id")
-    # ... then, find the zip archive corresponding to that station...
-    archives = (
-        entry
-        for entry in Path(HISTORICDATAFOLDER).iterdir()
-        if entry.is_file() and entry.suffix == ".zip"
-    )
-    for archive in archives:
-        if f"KL_{sid:05}" in archive.name:
-            break
-    else:
-        raise FileNotFoundError(
-            f"Could not find climate date for station with id {sid}."
+    specified climate zone (if int) or from specified file (if path)."""
+    if isinstance(climate_zone, int):    
+        # Find the correct station id...
+        sid = info(climate_zone, "id")
+        # ... then, find the zip archive corresponding to that station...
+        archives = (
+            entry
+            for entry in Path(HISTORICDATAFOLDER).iterdir()
+            if entry.is_file() and entry.suffix == ".zip"
         )
+        for archive in archives:
+            if f"KL_{sid:05}" in archive.name:
+                break
+        else:
+            raise FileNotFoundError(
+                f"Could not find climate date for station with id {sid}."
+            )
+    else:
+        archive = climate_zone
     # ... then extract the correct file from that zip archive...
     with ZipFile(archive) as zf:
         for filename in zf.namelist():

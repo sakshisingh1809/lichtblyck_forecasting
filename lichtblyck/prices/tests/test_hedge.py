@@ -1,7 +1,7 @@
 from lichtblyck.prices import hedge
-from lichtblyck.prices import utils
+from lichtblyck.prices import utils as putils
 from lichtblyck.core import dev
-from lichtblyck.core import functions
+from lichtblyck.core import utils as cutils
 import numpy as np
 import pandas as pd
 import pytest
@@ -46,7 +46,7 @@ def how(request):
 def get_prices(tz, p_peak, p_offpeak):
     i = dev.get_index(tz, "H")
     mu = {True: p_peak, False: p_offpeak}
-    values = [np.random.normal(mu[utils.is_peak_hour(ts)], 1) for ts in i]
+    values = [np.random.normal(mu[lb.is_peak_hour(ts)], 1) for ts in i]
     return pd.Series(values, i)
 
 @pytest.mark.parametrize(
@@ -72,7 +72,7 @@ def test_basic_volhedge(values, start, notbpo, bpo):
 
 @functools.lru_cache(maxsize=1024)
 def get_hedgeresults(start, freq, length, tz, bpo, aggfreq):
-    if functions.freq_up_or_down(freq, "H") <= 0:
+    if cutils.freq_up_or_down(freq, "H") <= 0:
         return get_hedgeresults_short(start, freq, length, tz, bpo, aggfreq)
     else:
         return get_hedgeresults_long(start, freq, length, aggfreq)
@@ -89,7 +89,7 @@ def get_hedgeresults_short(start, freq, length, tz, bpo, aggfreq):
     if aggfreq is None:
         resultkey = lambda ts: None
     else:  # key is start of delivery period
-        resultkey = lambda ts: utils.ts_leftright(ts, aggfreq.lower()[0], 0)[0]
+        resultkey = lambda ts: putils.ts_leftright(ts, aggfreq.lower()[0], 0)[0]
 
     result = {}
     duration = 0.25 if freq == "15T" else 1
@@ -104,7 +104,7 @@ def get_hedgeresults_short(start, freq, length, tz, bpo, aggfreq):
                 "pd": np.array([0.0, 0.0]),
             }
 
-        if bpo and not utils.is_peak_hour(ts):
+        if bpo and not putils.is_peak_hour(ts):
             result[key]["w.d"] += [0, w * duration]
             result[key]["d"] += [0, duration]
             result[key]["w.pd"] += [0, p * w * duration]
@@ -141,7 +141,7 @@ def get_hedgeresults_long(start, freq, length, aggfreq):
     if aggfreq is None:
         resultkey = lambda ts: None
     else:  # key is start of delivery period
-        resultkey = lambda ts: utils.ts_leftright(ts, aggfreq.lower()[0], 0)[0]
+        resultkey = lambda ts: putils.ts_leftright(ts, aggfreq.lower()[0], 0)[0]
 
     result = {}
     for ts, w, p, duration in zip(i, w_values, p_values, duration_values):
@@ -222,7 +222,7 @@ def test_narrow_bpoTrue(start, freq_bpoTrue, count, tz, aggfreq, how):
     test_result = hedge.hedge(w, p, aggfreq, how, True, True)
     availkeys = np.array([key for key in ref_results.keys()])
     keys = availkeys[np.searchsorted(availkeys, w.index, side="right") - 1]
-    inds = [0 if utils.is_peak_hour(ts) else 1 for ts in w.index]
+    inds = [0 if putils.is_peak_hour(ts) else 1 for ts in w.index]
     ref_values = [ref_results[key][how][ind] for key, ind in zip(keys, inds)]
     ref_result = pd.Series(ref_values, w.index)
     pd.testing.assert_series_equal(test_result, ref_result, check_names=False)

@@ -1,5 +1,5 @@
 from lichtblyck.prices import convert, utils
-from lichtblyck.core import dev, functions
+from lichtblyck.core import dev, utils as cutils
 from lichtblyck.tools import tools
 import numpy as np
 import pandas as pd
@@ -159,7 +159,7 @@ def series_and_frames():
         s = pd.Series(np.where(ispeak, df["p_peak"], df["p_offpeak"]), i0).rename("p")
         tseries[period] = {}
         tseries[period]["H"] = s
-        tseries[period]["15T"] = functions.changefreq_avg(s, "15T")
+        tseries[period]["15T"] = cutils.changefreq_avg(s, "15T")
 
     return tseries, bpoframes
 
@@ -230,7 +230,7 @@ def test_bpoframe2bpoframe(series_and_frames, short_freq, long_freq):
     # long_freq: uniform frequency to convert to {'ms', 'qs', 'as'}
     # after conversion, bpoframe must be same as one provided by fixture.
     tseries, bpoframes = series_and_frames
-    if short_freq == "var" or functions.freq_up_or_down(short_freq, long_freq) > 0:
+    if short_freq == "var" or cutils.freq_up_or_down(short_freq, long_freq) > 0:
         return  # if upsampling, the resulting series will not equal the reference
     df_source = bpoframes[short_freq]
     df_test = convert.bpoframe2bpoframe(df_source, long_freq)
@@ -246,7 +246,7 @@ def test_tseries2bpoframe(series_and_frames, short_freq, long_freq, tseries_freq
     # long_freq: uniform frequency to convert to {'ms', 'qs', 'as'}
     # after conversion, bpoframe must be same as one provided by fixture.
     tseries, bpoframes = series_and_frames
-    if short_freq != "var" and functions.freq_up_or_down(short_freq, long_freq) > 0:
+    if short_freq != "var" and cutils.freq_up_or_down(short_freq, long_freq) > 0:
         return  # if upsampling, the resulting series will not equal the reference
     s_source = tseries[short_freq][tseries_freq]
     df_test = convert.tseries2bpoframe(s_source, long_freq)
@@ -262,7 +262,7 @@ def test_tseries2tseries(series_and_frames, short_freq, long_freq, tseries_freq)
     # long_freq: uniform frequency to convert to {'ms', 'qs', 'as'}
     # after conversion, timeseries must be same as one provided by fixture.
     tseries, bpoframes = series_and_frames
-    if short_freq != "var" and functions.freq_up_or_down(short_freq, long_freq) > 0:
+    if short_freq != "var" and cutils.freq_up_or_down(short_freq, long_freq) > 0:
         return  # if upsampling, the resulting series will not equal the reference
     s_source = tseries[short_freq][tseries_freq]
     s_test = convert.tseries2tseries(s_source, long_freq)

@@ -10,19 +10,20 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 from .sourcedata.climate_zones import historicdata, forallzones
 from ..core import pfseries_pfframe
 from sklearn.linear_model import LinearRegression
-from typing import Callable
+from typing import Callable, Union
 from datetime import datetime
 from io import StringIO
+from pathlib import Path
 import lichtblyck as lb
 import pandas as pd
 import numpy as np
 
 
-def climate_data(climate_zone: int) -> pd.DataFrame:
-    """Return dataframe with historic daily climate data for specified climate
-    zone. Values before 1917 are dropped. Index is gapless with missing values
-    filled with np.nan. Column names not standardized but rather as found in
-    source file."""
+def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
+    """Return dataframe with historic daily climate data for specified climate zone (if
+    int) or from specified file (if path). Values before 1917 are dropped. Index is 
+    gapless with missing values filled with np.nan. Column names not standardized but 
+    rather as found in source file."""
     # Get file content and turn into dataframe...
     bytes_data = historicdata(climate_zone)
     data = StringIO(str(bytes_data, "utf-8"))

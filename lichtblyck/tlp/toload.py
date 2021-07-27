@@ -4,10 +4,10 @@ Converting temperature load profiles into loads with help of a temperature
 timeseries.
 """
 
+from typing import Callable, Union, Iterable
 import pandas as pd
 import numpy as np
 import datetime
-from typing import Callable, Union, Iterable
 import functools
 
 

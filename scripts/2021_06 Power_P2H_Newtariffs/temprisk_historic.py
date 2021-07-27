@@ -83,7 +83,7 @@ stepS[["pu", "pu_m", "pu_m2h"]].loc["2020-11":"2020-12", :].plot()
 t = lb.historic.tmpr()
 t = lb.historic.fill_gaps(t)
 t_act = t.wavg(weights.values, axis=1)
-stepS[("envir", "t")] = lb.core.functions.changefreq_avg(t_act, "H")
+stepS[("envir", "t")] = lb.changefreq_avg(t_act, "H")
 
 # Trim on both sides to discard rows for which temperature and price are missing.
 stepS = stepS.dropna().resample("H").asfreq()

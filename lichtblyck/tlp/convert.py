@@ -166,15 +166,15 @@ def series2function(tlp_s: pd.Series) -> Callable[[pd.Series], pd.Series]:
     return tlp
 
 
-def function2function(f: Callable[[float], float]) -> Callable[[pd.Series], pd.Series]:
+def function2function(f: Callable) -> Callable[[pd.Series], pd.Series]:
     """
     Convert offtake function into tlp-function.
 
     Parameters
     ----------
-    f: Callable[[float], float])
-        Function that takes one input: the temperature [degC], and calculates 
-        one output: the consumption [MW].
+    f: Callable
+        Function that calculates the consumption [MW] from one input (temperature [degC])
+        or from two inputs (temperature [degC] and timestamp).
 
     Returns
     -------
@@ -184,6 +184,14 @@ def function2function(f: Callable[[float], float]) -> Callable[[pd.Series], pd.S
     """
 
     def tlp(t: pd.Series) -> pd.Series:
-        return t.apply(f)
+        try: #works if f takes one argument (temperature)
+            return t.apply(f)
+        except TypeError: 
+            pass
+        try: #works if f takes two arguments (temperature and timestamp)
+            return pd.DataFrame(t).apply(lambda row: f(row[0], row.name), axis=1)
+        except TypeError:
+            pass
+        raise TypeError('f must accept one argument (temperature [deg]) or two arguments (temperature [deg] and timestamp).')
 
     return tlp

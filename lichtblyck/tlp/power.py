@@ -2,26 +2,29 @@
 """
 Standardized temperature load profiles for electricity consumption.
 """
+
 from typing import Union, Callable, Tuple
 from . import convert
+from pathlib import Path
 import pandas as pd
 import datetime as dt
 
-SOURCEPATH = "lichtblyck/tlp/sourcedata/power/"
+
+SOURCEPATH = Path(__file__).parent / "sourcedata" / "power"
 SOURCES = [
-    {"name": "avacon_hz0", "io": SOURCEPATH + "AVACON_HZ0.xlsx"},
-    {"name": "avacon_hzs", "io": SOURCEPATH + "AVACON_HZS.xlsx"},
-    {"name": "bayernwerk_nsp", "io": SOURCEPATH + "BAYERNWERK_NSP.xlsx"},
-    {"name": "bayernwerk_wp", "io": SOURCEPATH + "BAYERNWERK_WP.xlsx"},
-    {"name": "edis_n21", "io": SOURCEPATH + "EDIS_N21.xlsx"},
-    {"name": "edis_w21", "io": SOURCEPATH + "EDIS_W21.xlsx"},
-    {"name": "enmitte_enm", "io": SOURCEPATH + "ENMITTE_ENM.xlsx"},
-    {"name": "netzbw_ez2", "io": SOURCEPATH + "NETZBW_EZ2.xlsx"},
-    {"name": "shnetz_e1", "io": SOURCEPATH + "SHNETZ_E1.xlsx"},
-    {"name": "shnetz_e2", "io": SOURCEPATH + "SHNETZ_E2.xlsx"},
-    {"name": "shnetz_w1", "io": SOURCEPATH + "SHNETZ_W1.xlsx"},
-    {"name": "westnetz_wk2", "io": SOURCEPATH + "WESTNETZ_WK2.xlsx"},
-    {"name": "wwnetz_nsp", "io": SOURCEPATH + "WWNETZ_NSP.xlsx"},
+    {"name": "avacon_hz0", "io": SOURCEPATH / "AVACON_HZ0.xlsx"},
+    {"name": "avacon_hzs", "io": SOURCEPATH / "AVACON_HZS.xlsx"},
+    {"name": "bayernwerk_nsp", "io": SOURCEPATH / "BAYERNWERK_NSP.xlsx"},
+    {"name": "bayernwerk_wp", "io": SOURCEPATH / "BAYERNWERK_WP.xlsx"},
+    {"name": "edis_n21", "io": SOURCEPATH / "EDIS_N21.xlsx"},
+    {"name": "edis_w21", "io": SOURCEPATH / "EDIS_W21.xlsx"},
+    {"name": "enmitte_enm", "io": SOURCEPATH / "ENMITTE_ENM.xlsx"},
+    {"name": "netzbw_ez2", "io": SOURCEPATH / "NETZBW_EZ2.xlsx"},
+    {"name": "shnetz_e1", "io": SOURCEPATH / "SHNETZ_E1.xlsx"},
+    {"name": "shnetz_e2", "io": SOURCEPATH / "SHNETZ_E2.xlsx"},
+    {"name": "shnetz_w1", "io": SOURCEPATH / "SHNETZ_W1.xlsx"},
+    {"name": "westnetz_wk2", "io": SOURCEPATH / "WESTNETZ_WK2.xlsx"},
+    {"name": "wwnetz_nsp", "io": SOURCEPATH / "WWNETZ_NSP.xlsx"},
 ]
 
 

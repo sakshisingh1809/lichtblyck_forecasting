@@ -5,8 +5,9 @@ Module to calculate the Beschaffungskostenaufschlag.
 """
 
 
+# %% PREP
+
 import lichtblyck as lb
-from lichtblyck import tools
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,14 +18,16 @@ from scipy.stats import norm
 # %% OFFTAKE
 
 # Get prognosis, prepare dataframe.
+path = "scripts/2020_10 beschaffungskomponente Ludwig/prognose2021.xlsx"
+path = "prognose2021.xlsx"
 prog = pd.read_excel(
-    "scripts/2020_10 beschaffungskomponente Ludwig/prognose2021.xlsx",
+    path,
     header=0,
     skiprows=1,
     index_col=0,
     names=["ts_local_right", "w_100pct", "w_certain", "p_pfc"],
 )
-prog = tools.set_ts_index(prog)
+prog = lb.set_ts_index(prog, bound="right")
 prog = prog.resample("H").mean()
 p_pfc = prog["p_pfc"]
 prog = prog[["w_100pct", "w_certain"]] / 1000  # kW -> MW
@@ -68,9 +71,9 @@ ax.plot(
 # %% PRICES
 
 # Get prices with correct expectation value (=average).
-p_sims = pd.read_csv(
-    "scripts/2020_10 beschaffungskomponente Ludwig/MC_NL_HOURLY_PWR.csv"
-)
+path = "scripts/2020_10 beschaffungskomponente Ludwig/MC_NL_HOURLY_PWR.csv"
+path = "MC_NL_HOURLY_PWR.csv"
+p_sims = pd.read_csv(path)
 # . Clean: make timezone-aware
 p_sims = p_sims.set_index("deldatetime")
 p_sims.index = pd.DatetimeIndex(p_sims.index)
@@ -84,7 +87,7 @@ p_sims = p_sims.loc[idx_local, :].set_index(
     idx_EuropeBerlin
 )  # Final dataframe with correct timestamps
 # . Rename index
-p_sims = tools.set_ts_index(p_sims)
+p_sims = lb.set_ts_index(p_sims, bound="right")
 # . Make arbitrage-free to pfc
 factor = (p_pfc / p_sims.mean(axis=1)).dropna()
 p_sims = p_sims.multiply(factor, axis=0).dropna()
@@ -189,8 +192,7 @@ r_etl = lb.analyses.expected_shortfall(loc, scale, quantile=quantile)
 ax.text(
     loc + scale,
     0.4,
-    f"if quantile = {quantile:.0%}, then\n"
-    + f"   -> premium = {p_premium:.2f} Eur/MWh\n"
+    f"if quantile = {quantile:.0%}, then\   -> premium = {p_premium:.2f} Eur/MWh\n"
     + "   -> expected shortfall = "
     + f"{r_etl:,.0f}".replace(",", " ")
     + " Eur",

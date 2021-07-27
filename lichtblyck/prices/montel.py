@@ -385,7 +385,6 @@ def gas_futures(period_type: str = "m", market_code: str = "ncg") -> pd.DataFram
     fut.index.levels[0].freq = pd.infer_freq(fut.index.levels[0])
     return fut
 
-
 # From Belvis
 # SPOTPRICEFILE = 'lichtblyck/prices/sourcedata/spot.tsv'
 # def spot() -> pd.Series:

@@ -5,7 +5,7 @@ Hedge an offtake profile with a price profile.
 from typing import  Union, Iterable, Dict
 from .utils import ts_leftright, is_peak_hour
 from .convert import group_function
-from ..core import functions
+from ..core import utils
 import pandas as pd
 import numpy as np
 
@@ -90,7 +90,7 @@ def hedge(
     Series
         Power timeseries with hedge of `w`.
     """
-    if bpo and functions.freq_up_or_down(w.index.freq, "H") > 0:
+    if bpo and utils.freq_up_or_down(w.index.freq, "H") > 0:
         raise ValueError(
             "Split in peak and offpeak only possible for timeseries with frequencies "
             + "of one hour or shorter."

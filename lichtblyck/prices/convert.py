@@ -12,7 +12,7 @@ Convert power price timeseries using base, peak, offpeak times.
 
 from typing import Union, Iterable, Dict
 from .utils import ts_leftright, is_peak_hour, duration_bpo
-from ..core.functions import changefreq_avg
+from ..core.utils import changefreq_avg
 import pandas as pd
 import numpy as np
 

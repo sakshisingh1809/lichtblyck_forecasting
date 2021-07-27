@@ -76,7 +76,7 @@ act[["spot", "spot_m", "spot_m2h"]].loc["2020-11":"2020-12", :].plot()
 t = lb.historic.tmpr()
 t = lb.historic.fill_gaps(t)
 t_act = t.wavg(weights.values, axis=1)
-act[("envir", "t")] = lb.core.functions.changefreq_avg(t_act, "H")
+act[("envir", "t")] = lb.changefreq_avg(t_act, "H")
 
 # Trim on both sides to discard rows for which temperature and price are missing.
 act = act.dropna().resample("H").asfreq()
