@@ -1,8 +1,9 @@
 """
 Module to calculate the Beschaffungskostenaufschlag.
-
-2020_10 RW
 """
+
+# %% IMPORTS
+
 
 import lichtblyck as lb
 import pandas as pd
@@ -10,19 +11,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.stats import norm
+from pathlib import Path
 
 # %% OFFTAKE
 
 # Get prognosis, prepare dataframe.
 prog = pd.read_excel(
-    "scripts/2020_10 Beschaffungskomponente Power B2C/20201005_Input für die Beschaffungskomponente.xlsx",
+    Path(__file__).parent / "20201005_Input für die Beschaffungskomponente.xlsx",
     header=0,
     skiprows=1,
     index_col=0,
     usecols=[0, 1, 2, 3, 4],
     names=["ts_local_right", "w_exp", "w_100pct", "w_certain", "p_pfc"],
 )
-prog = lb.tools.set_ts_index(prog)
+prog = lb.set_ts_index(prog, bound='right')
 p_pfc = prog.pop("p_pfc")
 
 # Get other prognosis curves.
@@ -47,7 +49,7 @@ def w_sim():
 # Quick visual check.
 fig, ax = plt.subplots(2, 1, figsize=(16, 10), sharex=True)
 ref = prog["w_100pct"].resample("D").mean()
-for _ in range(300):
+for sim in range(300):
     w = w_sim().resample("D").mean()
     ax[0].plot(w, alpha=0.03, color="k")
     ax[1].plot(w / ref, alpha=0.03, color="k")
@@ -64,7 +66,7 @@ ax[1].plot(
 
 # Get prices with correct expectation value (=average).
 p_sims = pd.read_csv(
-    "scripts/2020_10 Beschaffungskomponente Ludwig/MC_NL_HOURLY_PWR.csv"
+    Path(__file__).parent.parent / "2020_10 Beschaffungskomponente Ludwig/MC_NL_HOURLY_PWR.csv"
 )
 # . Clean: make timezone-aware
 p_sims = p_sims.set_index("deldatetime")
@@ -79,7 +81,7 @@ p_sims = p_sims.loc[idx_local, :].set_index(
     idx_EuropeBerlin
 )  # Final dataframe with correct timestamps
 # . Rename index
-p_sims = tools.set_ts_index(p_sims)
+p_sims = lb.set_ts_index(p_sims)
 # . Make arbitrage-free to pfc
 # factor = (p_pfc / p_sims.mean(axis=1)).dropna()
 # p_sims = p_sims.multiply(factor, axis=0).dropna()
@@ -94,7 +96,7 @@ def p_sim():
 
 # Quick visual check.
 fig, ax = plt.subplots(figsize=(16, 10))
-for _ in range(300):
+for sim in range(300):
     ax.plot(p_sim().resample("D").mean(), alpha=0.03, color="k")
 ax.plot(p_sim().resample("D").mean(), color="k")  # accent on one
 ax.plot(p_pfc.resample("D").mean(), color="r")
@@ -105,8 +107,8 @@ ax.plot(p_pfc.resample("D").mean(), color="r")
 # Do value hedge to find out, what futures volumes are bought before the start of the year.
 # Option 1: futures procurement at level of certain volume (prog['w_certain'])
 # Option 2: futures procurement at level of expected volume (prog['w_exp'])
-w_hedge = lb.prices.w_hedge_long(prog["w_certain"], p_pfc, "YS")
-p_hedge = tools.wavg(p_pfc, w_hedge)  # 46.80, 44.93
+w_hedge = lb.hedge(prog["w_certain"], p_pfc, "AS")
+p_hedge = lb.tools.wavg(p_pfc, w_hedge)  # 46.80, 44.93
 
 initial = pd.DataFrame(columns=[[], []], index=w_hedge.index)  # 2-level columns
 initial[("offtake", "w")] = prog.w_exp
@@ -114,20 +116,22 @@ initial[("hedge", "w")] = w_hedge
 initial[("hedge", "p")] = p_pfc * 44.93 / p_hedge
 initial[("open", "w")] = initial.offtake.w - initial.hedge.w
 initial[("open", "p")] = p_pfc
+initial[("open", "r")] = initial.open.w * initial.duration * initial.open.p
+initial[("hedge", "r")] = initial.hedge.w * initial.duration * initial.hedge.p
 r_initial = initial.open.r.sum() + initial.hedge.r.sum()
-q_initial = initial.offtake.q.sum()
+q_initial = (initial.offtake.w * initial.duration).sum()
 p_initial = r_initial / q_initial
 
 
 # %% SIMULATIONS (FINAL SITUATION)
 
 sims = []
-for _ in range(10_000):
+for i in range(10_000):
     sim = pd.DataFrame({("spot", "p"): p_sim(), ("offtake", "w"): w_sim()}).dropna()
     sim[("spot", "w")] = sim.offtake.w - initial.hedge.w
-    sim[("spot", "r")] = sim.spot.q * sim.spot.p
+    sim[("spot", "r")] = sim.spot.w * sim.duration * sim.spot.p
     r_final = sim.spot.r.sum() + initial.hedge.r.sum()
-    q_final = sim.offtake.q.sum()
+    q_final = (sim.offtake.w * sim.duration).sum()
     p_final = r_final / q_final
 
     p_premium = p_final - p_initial
@@ -142,8 +146,8 @@ for _ in range(10_000):
             ("premium", "r"): r_premium,
         }
     )
-    if _ % 1000 == 0:
-        print(f"{_}...")
+    if i % 10 == 0:
+        print(f"{i}...")
 sims = pd.DataFrame(sims)
 sims.columns = pd.MultiIndex.from_tuples(sims.columns)
 

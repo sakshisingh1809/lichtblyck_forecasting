@@ -34,6 +34,7 @@ import lichtblyck as lb
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 
 #%% Get input values.
 
@@ -54,7 +55,8 @@ tmpr = tmpr[(tmpr.index >= start) & (tmpr.index < end)]
 
 
 def charvals(distr, q=0.8):
-    return {"mean": distr.mean(), "std": distr.std(), "qtl": distr.quantile(q)}
+    loc, std = norm.fit(distr)
+    return {"mean": loc, "std": std, "qtl": norm(loc, std).ppf(q)}
 
 
 # %% Calculate portfolio prices.
@@ -69,7 +71,7 @@ weights_zones = lb.tmpr.weights()["gas"]
 weights_zones["t_ff"] = 0
 weights_zones /= weights_zones.sum()
 relevant_zones = weights_zones[weights_zones > 0.1].sort_values(ascending=False).index
-relevant_zones = [*relevant_zones, "t_avg"]
+relevant_zones = [*relevant_zones, "t_ff", "t_avg"]
 
 # Calculate yearly portfolio prices for each (climate zone, tlp)-combination...
 offtake_records = {}
@@ -97,7 +99,7 @@ avgtlp = pfprice.groupby(axis=1, level=0).apply(
     lambda df: lb.tools.wavg(df.droplevel(0, axis=1), weights_tlps, axis=1)
 )
 avgtlp.columns = pd.MultiIndex.from_product([avgtlp.columns, ["tlp_avg"]])
-pfprice = pd.concat([pfprice, pfprice_avgtlp], axis=1)
+pfprice = pd.concat([pfprice, avgtlp], axis=1)
 # ... and add average climate zone (for each TLP).
 avgzone = pfprice.groupby(axis=1, level=1).apply(
     lambda df: lb.tools.wavg(df.droplevel(1, axis=1), weights_zones, axis=1)
@@ -213,3 +215,5 @@ for code, ax in zip(relevant_tlps, axes):
     ax.xaxis.label.set_text("Eur/MWh")
     ax.yaxis.set_major_formatter("{:.0%}".format)
     ax.legend()
+
+# %%
