@@ -1,5 +1,14 @@
 """
 Module to calculate the Beschaffungskostenaufschlag.
+
+Abbreviations:
+pu = market price
+ps = sourced price
+rs = sourced cost
+ws = sourced power [MW]
+qs = sourced volume [MWh]
+wo = offtake power [MW]
+wq = offtake volume [MWh]
 """
 
 # %% IMPORTS
@@ -12,28 +21,40 @@ import matplotlib as mpl
 from scipy.stats import norm
 from pathlib import Path
 
-# %% OFFTAKE
+# %% PREPARATIONS
 
-# Get prognosis, prepare dataframe.
-prog = pd.read_excel(
-    Path(__file__).parent / "20210728_144427_Zeitreihenbericht.xlsx",
+# Get current situation, prepare dataframe.
+current = pd.read_excel(
+    Path(__file__).parent / "20210804_090841_Zeitreihenbericht.xlsx",
     header=1,
     index_col=0,
-    usecols=[0, 1, 7],
-    names=["ts_local_right", "p_pfc", "w_exp"],
+    usecols=[0, 1, 4, 6, 8],
+    names=["ts_local_right", "pu", "wo", "ws", "rs"],
 )
-prog = lb.set_ts_index(prog, bound="right")
-p_pfc = prog.pop("p_pfc")
-prog = -prog
+current = lb.set_ts_index(current, bound="right")
+current.wo = -current.wo
+# Correction: the sourced volume is actually for this PF but also for WP and NSP.
+contrib = 0.98
+current.ws *= contrib
+current.rs *= contrib
+current['ps'] = current.rs / (current.ws * current.duration)
+current["wu"] = current.wo - current.ws
+current["ro"] = current.rs + current.wu * current.duration * current.pu
 
-# Get other prognosis curves.
-def w_offtake(churnstart: float = 0, churnend: float = 0.1):
+
+
+#%% OFFTAKE
+
+# Get other offtake curves.
+def wo_withchurn(churnstart: float = 0, churnend: float = 0.1):
     """Function to calculate prognosis paths.
     churnstart: (excess) churn at start of year, i.e., compared to expected path.
     churnend: (excess) churn at end of year, i.e., compared to expected path."""
-    yearfrac = (prog.index - prog.index[0]) / (prog.index[-1] - prog.index[0])
+    yearfrac = (current.index - current.index[0]) / (
+        current.index[-1] - current.index[0]
+    )
     churnpath = churnstart * (1 - yearfrac) + churnend * yearfrac
-    return prog["w_exp"] * (1 - churnpath)
+    return current["wo"] * (1 - churnpath)
 
 
 # Scenarios between which to simulate.
@@ -42,57 +63,53 @@ best = {"churnstart": -0.02, "churnend": -0.1}
 
 
 # Simulate actual offtake path, between lower and upper bound (uniform distribution).
-def w_sim():
+def wo_sim():
     howbad = np.random.uniform()
     start = howbad * worst["churnstart"] + (1 - howbad) * best["churnstart"]
     end = howbad * worst["churnend"] + (1 - howbad) * best["churnend"]
-    return w_offtake(start, end).rename("w")
+    return wo_withchurn(start, end).rename("wo")
 
 
 # Quick visual check.
 fig, ax = plt.subplots(2, 1, figsize=(16, 10), sharex=True)
-ref = prog["w_exp"].resample("D").mean()
+ref = lb.changefreq_avg(current.wo, "D")
 for sim in range(300):
-    w = w_sim().resample("D").mean()
+    w = lb.changefreq_avg(wo_sim(), "D")
     ax[0].plot(w, alpha=0.03, color="k")
     ax[1].plot(w / ref, alpha=0.03, color="k")
 ax[0].plot(w, color="k")  # accent on one
 ax[1].plot(w / ref, color="k")  # accent on one
-ax[0].plot(prog[["w_exp"]].resample("D").mean(), color="r")
+ax[0].plot(lb.changefreq_avg(current.wo, "D"), color="r")
 ax[1].plot(
-    prog[["w_exp"]].resample("D").mean().div(ref, axis=0), color="r",
+    lb.changefreq_avg(current.wo, "D").div(ref, axis=0), color="r",
 )
-ax[0].yaxis.label.set_text('MW')
-ax[1].yaxis.label.set_text('as fraction of expected offtake')
+ax[0].yaxis.label.set_text("MW")
+ax[1].yaxis.label.set_text("as fraction of expected offtake")
 ax[1].yaxis.set_major_formatter("{:.0%}".format)
 
 
 # %% PRICES
 
 # Get prices with correct expectation value (=average).
-p_sims = pd.read_csv(
-    Path(__file__).parent.parent
-    / "2020_10 Beschaffungskomponente Ludwig/MC_NL_HOURLY_PWR.csv"
-)
+p_sims = pd.read_csv(Path(__file__).parent     / "MC_NL_HOURLY_PWR.csv")
 # . Clean: make timezone-aware
 p_sims = p_sims.set_index("deldatetime")
-p_sims.index = pd.DatetimeIndex(p_sims.index)
+p_sims.index = pd.to_datetime(p_sims.index, format='%d-%m-%Y %H:%M')
 p_sims.index.freq = p_sims.index.inferred_freq
-idx = p_sims.index  # original: 24 hours on each day. Not correct
-idx_EuropeBerlin = pd.date_range(
-    idx[0], idx[-1], freq=idx.freq, tz="Europe/Berlin"
-)  # what we want
-idx_local = idx_EuropeBerlin.tz_localize(None)  # corresponding local time
-p_sims = p_sims.loc[idx_local, :].set_index(
-    idx_EuropeBerlin
-)  # Final dataframe with correct timestamps
-# . Rename index
+# . . The goal: timezone-aware index.
+idx = p_sims.index # the original: 24 hours on each day. This is incorrect.
+idx_EuropeBerlin = pd.date_range(idx[0], idx[-1], freq=idx.freq, tz="Europe/Berlin")
+# . . The corresponding local datetime.
+idx_local = idx_EuropeBerlin.tz_localize(None)
+# . . Use local datetime to find correct values for the timezone-aware datetime.
+p_sims = p_sims.loc[idx_local, :].set_index(idx_EuropeBerlin)
+# . . Rename index
 p_sims = lb.set_ts_index(p_sims)
-# . Make arbitrage-free to pfc
-# factor = (p_pfc / p_sims.mean(axis=1)).dropna()
-# p_sims = p_sims.multiply(factor, axis=0).dropna()
-factor = (p_pfc / p_sims.mean(axis=1).resample(p_pfc.index.freq).ffill()).dropna()
-p_sims = p_sims.resample(p_pfc.index.freq).ffill().multiply(factor, axis=0).dropna()
+
+# . Clean: make arbitrage free
+p_sims = lb.changefreq_avg(p_sims, current.pu.index.freq) # correct frequency 
+factor = (current.pu / p_sims.mean(axis=1)).dropna() # find correction factor
+p_sims = p_sims.multiply(factor, axis=0).dropna() # apply
 
 # Get a price simulation.
 def p_sim():
@@ -103,22 +120,42 @@ def p_sim():
 # Quick visual check.
 fig, ax = plt.subplots(figsize=(16, 10))
 for sim in range(300):
-    ax.plot(p_sim().resample("D").mean(), alpha=0.03, color="k")
-ax.plot(p_sim().resample("D").mean(), color="k")  # accent on one
-ax.plot(p_pfc.resample("D").mean(), color="r")
+    ax.plot(lb.changefreq_avg(p_sim(), "D"), alpha=0.03, color="k")
+ax.plot(lb.changefreq_avg(p_sim(), "D"), color="k")  # accent on one
+ax.plot(lb.changefreq_avg(current.pu, 'D'), color="r")
 
 
 # %% OFFER (=INITIAL SITUATION)
 
-# Do value hedge to find out, what futures volumes are bought before the start of the year.
-# Forward procurement at level of expected volume (prog['w_exp'])
-w_hedge = lb.hedge(prog["w_exp"], p_pfc, "AS")
-p_hedge = lb.tools.wavg(p_pfc, w_hedge)  # 46.80, 44.93
+# Find 'eventual' sourced volume at offer time, and current (best-guess) offer price.
+w_hedge_missing = lb.hedge(current.wu, current.pu, "AS", 'val', bpo=True)
+w_hedge = current.ws + w_hedge_missing
+r_hedge = current.rs + w_hedge_missing * w_hedge_missing.duration * current.pu
+p_hedge = r_hedge / (w_hedge * w_hedge.duration)
+ro = r_hedge + (current.wo - w_hedge) * current.duration * current.pu
+po = ro / (current.wo * current.duration)
 
-offer = pd.DataFrame(columns=[[], []], index=w_hedge.index)  # 2-level columns
-offer[("offtake", "w")] = prog.w_exp
+
+offer = current.copy()
+offer['ws'] = w_hedge
+offer['rs'] = r_hedge
+offer['ps'] = p_hedge
+offer['wu'] = offer.wo - offer.ws
+offer['ro'] = ro
+
+#%%%%%%
+
+
+
+
+
+
+
+
+
+offer[("offtake", "w")] = current.wo
 offer[("hedge", "w")] = w_hedge
-offer[("hedge", "p")] = p_pfc * 44.93 / p_hedge
+offer[("hedge", "p")] = current.pu * 44.93 / p_hedge
 offer[("open", "w")] = offer.offtake.w - offer.hedge.w
 offer[("open", "p")] = p_pfc
 offer[("open", "r")] = offer.open.w * offer.duration * offer.open.p
@@ -132,7 +169,7 @@ po_offer = ro_offer / qo_offer
 
 sims = []
 for i in range(1_000):
-    sim = pd.DataFrame({("spot", "p"): p_sim(), ("offtake", "w"): w_sim()}).dropna()
+    sim = pd.DataFrame({("spot", "p"): p_sim(), ("offtake", "w"): wo_sim()}).dropna()
     sim[("spot", "w")] = sim.offtake.w - offer.hedge.w
     sim[("spot", "r")] = sim.spot.w * sim.duration * sim.spot.p
     r_final = sim.spot.r.sum() + offer.hedge.r.sum()

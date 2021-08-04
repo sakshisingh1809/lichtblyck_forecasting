@@ -116,3 +116,5 @@ def _series_fromsource(source: Union[str, int], *, spec: float) -> pd.Series:
     tlp_s = df.stack().swaplevel().sort_index() * spec * 0.001  # kW to MW
     tlp_s.index.rename(["t", "time_left_local"], inplace=True)
     return tlp_s
+
+
