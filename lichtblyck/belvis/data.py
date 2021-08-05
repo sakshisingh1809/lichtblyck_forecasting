@@ -17,10 +17,18 @@ import json
 
 
 __usr = "Ruud.Wijtvliet"
-__pwd = "1'a;cqjkH"
+__pwd = "Ammm1mmm2mmm3mmm"
 __tenant = "PFMSTROM"
 __server = "http://lbbelvis01:8040"
 _session = None
+
+TSNAMES = {
+    "LUD": {
+        "qo": "#LB Saldo aller Prognosegeschäfte +UB",
+        "qs": "#LB Saldo aller Termingeschäfte +UB",
+    }
+    #etc.
+}
 
 
 def _getreq(path, *queryparts) -> requests.request:

@@ -220,7 +220,7 @@ def tseries2bpoframe(p: pd.Series, freq: str = "MS") -> pd.DataFrame:
     2020-12-01 00:00:00+01:00   43.519745   57.872246   35.055449
     12 rows × 3 columns
     """
-    if freq.upper() not in ("MS", "QS", "AS"):
+    if freq not in ("MS", "QS", "AS"):
         raise ValueError("Argument 'freq' must be in {'MS', 'QS', 'AS'}.")
     return p.resample(freq).apply(tseries2singlebpo).unstack()
 
@@ -270,7 +270,7 @@ def bpoframe2tseries(bpoframe: pd.DataFrame, freq: str = "H") -> pd.Series:
     2020-12-31 23:00:00+01:00    35.055449
     Freq: H, Name: p, Length: 8784, dtype: float64
     """
-    if freq.upper() not in ("H", "15T"):
+    if freq not in ("H", "15T"):
         raise ValueError("Argument 'freq' must be in {'H', '15T'}.")
     df = complete_bpoframe(bpoframe)
     df = changefreq_avg(df[["p_peak", "p_offpeak"]], freq)
@@ -327,7 +327,7 @@ def tseries2tseries(p: pd.Series, freq: str = "MS") -> pd.Series:
     2020-12-31 23:00:00+01:00    35.055449
     Freq: H, Name: p, Length: 8784, dtype: float64
     """
-    if p.index.freq not in ["H", "15T"]:
+    if p.index.freq not in ("H", "15T"):
         raise ValueError(
             "Frequency of provided timeseries must be hourly or quarterhourly."
         )

@@ -90,7 +90,7 @@ def test_power_fromsource(source):
         source["name"], spec=2
     )  # should have double the consumption
     w2 = tlp2(t)
-    assert np.allclose(w2, w1 * 2)
+    pd.testing.assert_series_equal(w2, w1 * 2)
     assert_w_vs_w_series(w1b, w1)
 
 
@@ -102,7 +102,7 @@ def test_gas_D14():
     w1b = tlp1(t - 5)
     tlp2 = lb.tlp.gas.D14(kw=2)
     w2 = tlp2(t)  # should have double the consumption
-    assert np.allclose(w2, 2 * w1)
+    pd.testing.assert_series_equal(w2, w1 * 2)
     assert_w_vs_w_series(w1b, w1, 1)
 
 
