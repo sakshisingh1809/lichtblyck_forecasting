@@ -25,7 +25,7 @@ from pathlib import Path
 
 pf = "B2C"  # "LUD" or "B2C"
 
-if pf == "B2C":
+if pf == "LUD":
     usecols = [0, 1, 4, 6, 8]  # B2C
 else:
     usecols = [0, 1, 10, 12, 14]  # Lud
@@ -239,4 +239,3 @@ ax.text(
 )
 
 
-# %%
