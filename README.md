@@ -106,7 +106,7 @@ The name, and the type of data, used for the index, is standardized in order to 
 
 Dataframe column names, as well as Series names, are standardized in order to more quickly identify what its values mean, but also to be able to do a correct resampling of the timeseries (see resampling example below).
 
-## Discrete, time-integrated quantities
+## *"Time-summable"* quantities
 
 These are quantities that only make sense when the *duration* of the time period they apply to is also specified.
 
@@ -117,26 +117,30 @@ These are quantities that only make sense when the *duration* of the time period
   - Name is `r` or starts with `r_`.
   - Unit is always **Eur**.
 
-These quantities that can only be thought of as a *discrete list* instead of as a continuous function *f(t)*. Also, when resampling, the values must be changed, see the example below.
+These quantities can only be thought of as a *discrete list* instead of as a continuous function *f(t)*; each value applies to an entire time period, but not to any one moment within that time period. When downsampling, the values must be summed, see the example below.
 
-## Continuous, time-averaged quantities
+To give another example of a time-summable quantity: consider the distances traveled by a car. This quantity has several characteristics. Firstly, the values do not apply to *moments* in time - to travel a distance, we need a *period* of time. Secondly, in order to judge if the distances are small or large, we must consider how much time it was driven in. Thirdly, if we combine several time periods, the distances must be summed to get the correct distance in the total period.
+
+## *"Time-averagable"* quantities
 
 There are quantities, that can be in principle be thought of as *continuous* functions. Changing the time step of the series does not change the magnitude of the values, see the resampling examples below.
 
 * Power (Vermoegen):
   - Name is `w` or starts with `w_`.
   - Unit is always **MW**.
-  - These values can be integrated over time. In our case this means: by multiplying the values (in MW) with the time step of the index (in h), we get the quantity (in MWh) in each time step. By summing these in a certain time interval, we get the volume in that interval. (See "Quantity, Volume", above.)
+  - These values can be integrated over time. In our case this means: by multiplying the values (in MW) with the duration the corresponding index value (in h), we get the quantity (in MWh) in each time step. By summing these in a certain time interval, we get the volume in that interval. (See "Quantity, Volume", above.)
 * Temperature:
   - Name is `t` or starts with `t_`.
   - Unit is always **degC**.
 
+To give another example of a time-averagable quantity: consider the velocity of a car. This quantity has several characteristics that are different from the distance described above. Firstly, the velocity can be measured at every moment in time. We cannot directly measure the velocity during a period of time, we can only calculate it as the *average* value. Secondly, velocity values can be compared directly, even if they apply to time periods with unequal durations. Thirdly, if we combine several time periods, the velocities must be (weighted-)averaged to get the correct velocity during the total period.
+
 ## Derived quantities
 
-* Speficic price (spezifischer Preis)  
+* Specific price (spezifischer Preis)  
   - Name is `p` or starts with `p_`.
   - Unit is always **Eur/MWh**.
-  - Price is always the revenue (`r`) divided by the quantity (`q`), and must be calculated again after resampling. Alternatively, it can be averaged by using the quantity (`q`) or power (`w`) as weights.
+  - Price is always the revenue (`r`) divided by the quantity (`q`), and must be calculated again after resampling. Alternatively, it can be averaged by using the quantity (`q`) as weights.
 
 # Checklist for timeseries and dataframes containing timeseries
 
@@ -167,7 +171,7 @@ There are quantities, that can be in principle be thought of as *continuous* fun
 
 # Resampling
 
-Often, timeseries need to be resampled, i.e., their time step needs to be changed. E.g.: an hourly timeseries needs to be upsampled to quarterhourly timeseries. Or downsampled to a daily timeseries. What happens with the values in the series depends on the type of quantity (discrete or continuous) they represent.
+Often, timeseries need to be resampled, i.e., their time step needs to be changed. E.g.: an hourly timeseries needs to be upsampled to quarterhourly timeseries. Or downsampled to a daily timeseries. What happens with the values in the series depends on the type of quantity (time-summable, time-averagable, or derived) they represent.
 
 It is assumed that the conventions for column names are followed. That means:
 
@@ -182,50 +186,57 @@ It is assumed that the conventions for column names are followed. That means:
 
 ## Upsampling example
 
-If we have an hour where a customer consumes a volume of 6 MWh (`q = 6`), i.e., has an average power of 6 MW (`w = 6`), and pays a price of 30 Eur/MWh (`p = 30`), then the revenue is 180 Eur (`r = 180`). Let's say the average temperature in that hour is 8 degC (`t = 8`):
+If, in the year 2020, a customer consumes a volume of 1 GWh (`q = 1000`), i.e., has an average power of 0.11 MW (`w = 0.11`), and pays a price of 30 Eur/MWh (`p = 30`), then the revenue is 30 kEur (`r = 30000`). Let's say the average temperature in the year is 7.98 degC (`t = 7.98`):
 
 ```
-                     q  w   p    r  t
-ts_left_local
-2020-01-01 00:00:00  6  6  30  180  8
+                                q         w        r     p     t
+ts_left                                                  
+2020-01-01 00:00:00+01:00  1000.0  0.113843  30000.0  30.0  7.98
 ```
 
-If we resample these values to a higher-frequency timeseries (e.g. quarter-hourly), then the values of the discrete quantities (`q` and `r`) become smaller, as their values need to be spread over the resulting rows. The values of the continuous quantities (`w`, `p` and `t`) are more or less unchanged, as they are averages. 
-If nothing more is known about how the volume is consumed throughout the day, the best estimate for the discrete quantities is to simply divide the values by the number of new rows (4 in this case), and the best estimate for the continous quantities is to simply repeat the value:
+If we resample these values to a higher-frequency timeseries (e.g. quarteryearly), then the values of the summable quantities (`q` and `r`) become smaller, as their values need to be spread over the resulting rows. If nothing more is known about how the volume is consumed, we assume that the consumption rate is constant throughout the period. This means we have to **distribute** the values over the new rows, **in proportion to their duration**. (Because the 3rd and 4th quarter have more days than the 1st and 2nd quarter, they get a larger fraction of the original value.)
+
+The values of the averagable quantities (`w` and `t`) are **unchanged**, i.e., they are simply copies of the original value. Also the value of the derived quantity `p` turns out to be unchanged. The resulting values are therefore:
 
 ```
-                       q  w   p     r  t
-ts_left_local
-2020-01-01 00:00:00  1.5  6  30  45.0  8
-2020-01-01 00:15:00  1.5  6  30  45.0  8
-2020-01-01 00:30:00  1.5  6  30  45.0  8
-2020-01-01 00:45:00  1.5  6  30  45.0  8
+                                q         w        r     p     t
+ts_left                                                                
+2020-01-01 00:00:00+01:00  248.52  0.113843  7455.60  30.0  7.98
+2020-04-01 00:00:00+02:00  248.63  0.113843  7459.02  30.0  7.98
+2020-07-01 00:00:00+02:00  251.37  0.113843  7540.98  30.0  7.98
+2020-10-01 00:00:00+02:00  251.48  0.113843  7544.40  30.0  7.98
 ```
 
-Note that in this case, due to lack of information about the sub-hour granularity, all rows are identical. And also that each row is consistent (i.e., `q` equals `w` times the duration in hours, and `r` equals `p` times `q` ).
+This is the best guess we can make without using any additional information about how the values are distributed throughout the year. Note that each row is consistent, i.e., `q` equals `w` times the duration in hours, and `r` equals `p` times `q`. 
 
 ## Downsampling example
 
-Something similar happens when going in the reverse direction, but a bit more intrecate. Let's start with these quarterhourly values:
+Something similar happens when going in the reverse direction, but a bit more intricate. Let's start with these quarteryearly values:
 
 ```
-                       q  w     p   r   t
-ts_left_local
-2020-01-01 00:00:00  2.0  8  40.0  80   8
-2020-01-01 00:15:00  1.5  6  20.0  30   6
-2020-01-01 00:30:00  1.0  4  25.0  25   7
-2020-01-01 00:45:00  1.5  6  30.0  45  11
+                               q         w        r      p     t
+ts_left                                                        
+2020-01-01 00:00:00+01:00  300.0  0.137426  11330.1  37.77   1.3
+2020-04-01 00:00:00+02:00  180.0  0.082418   4554.0  25.30  12.3
+2020-07-01 00:00:00+02:00  200.0  0.090580   4260.0  21.30  15.1
+2020-10-01 00:00:00+02:00  320.0  0.144862   9856.0  30.80   3.2
 ```
 
-If we resample to a lower-frequency timeseries (hourly), we need to **sum** the values of the discrete quantities. We can **average** the values of the continuous quantities, but, for the price, the average must be weighed with the volume (`q`) or power (`w`) in order to get the correct value. Alternatively, the price is always `r/q` and can be calculated from these values after *they* are upsampled:
+If we resample to a lower-frequency timeseries (e.g. yearly), we need to **sum** the values of the summable quantities `q` and `r` (the duration does not need to be considered). 
+
+For the time-averagable quantities (`w` and `t`), the **average** of the individual values must be calculated, **weighted with the duration** of each row. (Alternatively, for the power `w`: this is always `q/duration` and can always be calculated from these values after *they* are downsampled.)
+
+For the derived quantity `p`, this is also an average of the individual values, but weighted with the volume `q` of each row. (Alternatively: the price is always `r/q` and can always be calculated from these values after *they* are downsampled.)
+
+The resulting downsampled values are:
 
 ```
-                     q  w   p    r  t
-ts_left_local
-2020-01-01 00:00:00  6  6  30  180  8
+                                q         w        r     p     t
+ts_left                                                              
+2020-01-01 00:00:00+01:00  1000.0  0.113843  30000.0  30.0  7.98
 ```
 
-(Note that the 'simple row-average' of the price is the incorrect 28.75 Eur/MWh, instead of the (correct) weighted average of 30 Eur/MWh.)
+(Note that the 'simple row-average' of the power, temperature, and price result in incorrect values.)
 
 ---
 
@@ -235,9 +246,13 @@ Implementation details
 
 # Extended `pandas` functionality
 
-* The `DatetimeIndex` is extended with a `.duration` property, which returns the difference between the current timestamp and the next timestamp (i.e., the duration of its values) in hours.
+* `DataFrame` and `Series` are extended with a `.duration` property, which returns the duration of each current timestamp in hours.
 
-  This removes the necessity of adding a dedicated column to the dataframe just to store this type of data. Which is data that is more closely linked to the index anyway.
+  This removes the necessity of adding a dedicated column to the dataframe just to store this type of data (or to repeatedly calculate it manually).
+
+---
+
+(to do, but in separate object)
 
 * `DataFrame` and `Series` are extended with a `.q` property, which returns a Series with the quantity [MWh] of each timestamp. It calculates these by, for a DataFrame, multiplying its column `'w'` with its`.index.duration`. And for a Series, multiplying it with its `.index.duration`, if its name is `'w'` or starts with `w_`. (For both: unless a column `'q'` exists; in that case, that column is returned.)
 
