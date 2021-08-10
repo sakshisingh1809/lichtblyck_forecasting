@@ -53,21 +53,33 @@ The `Portfolio` object contains all information about a portfolio:
 
 # Roadmap
 
-## Step 1
+## Step 1: Single Portfolio as normal DataFrame
 
-`PfFrame` 
+Construct a DataFrame that contains non-redundant information. 
 
-* is able to correctly calculate `w`, `q`, `r`, and `p`, even if only two of (`w` or `q`), `r`, `p` are present in the dataframe.
+Columns: 
 
-`Portfolio` 
+* `qs` (sourced MWh)
+* `rs` (sourced Eur)
+* `qo` (offtake MWh)
+* `pu` (unhedged price Eur/MWh)
 
-* is able to store an "own" `PfFrame` as well as children portfolios. 
-* is able to create a `PfFrame` containing all levels below it.
+Index: DateTimeIndex.
 
+## Step 2: Single Portfolio as custom object
 
+Create a class `SinglePf` that has additional attributes to more easily work with portfolio data:
 
+* Constructor with parameters `qs`, `rs`, `qo`, `pu`. Checks if data is consistent, i.e., if it uses same frequency etc. Stay close to `DataFrame` constructor if possible. Not all parameters must be supplied: e.g., only `qs` and `rs` may be supplied if this is a portfolio containing sourced volume but no offtake. TBD: save as individual series, or as dataframe?
+* Read-only boolean properties `._hassourced`, `._hasofftake`, `._hasmarketprices`; to classify the portfolio. Calculated on-demand.
+* Properties `.qs`, `.rs`, `.qo`, `.pu`, `.duration`: as originally specified. Return `Series`
+* Properties `.qu`, `.ws`, `.wo`, `.wu`, `.ru`, `.ro`, `.ps`, `.po`: calculated on-demand, from the saved dataframe. Return `Series`.
+* Unit tests
 
+## Step 3: Add relevant methods
 
-
-
-*
+* Attribute `.changefreq()` to up- or downsample to a certain frequency. Returns `SingePf` object.
+* Attribute `.__add__()`: check if `pu` is the same; Return `SingePf` object with summed `qs`, `rs`, `qo` Series. Assume 0 for non-overlapping timestamps? (--> Check how `df1 + df2` works, use same logic if it makes sense here.)
+* Implement *setting* the series (`=`). When setting any of the series, always translate into setting `.qs`, `.rs`, `.qo`, or `.pu`, and save *those* values. Not all series may be set, e.g., `qu` may not be set once both `qs` and `qo` are set, as it's unclear, which of these 2 should be adjusted to remain consistent.
+* To discuss: can we implement a `*=` and `+=` for the series?
+* Unit tests
