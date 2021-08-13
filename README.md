@@ -119,7 +119,7 @@ These are quantities that only make sense when the *duration* of the time period
 
 These quantities can only be thought of as a *discrete list* instead of as a continuous function *f(t)*; each value applies to an entire time period, but not to any one moment within that time period. When downsampling, the values must be summed, see the example below.
 
-To give another example of a time-summable quantity: consider the distances traveled by a car. This quantity has several characteristics. Firstly, the values do not apply to *moments* in time - to travel a distance, we need a *period* of time. Secondly, in order to judge if the distances are small or large, we must consider how much time it was driven in. Thirdly, if we combine several time periods, the distances must be summed to get the correct distance in the total period.
+To give another example of a time-summable quantity: consider the distances traveled by a car during various time intervals. This quantity has several characteristics. Firstly, the values do not apply to *moments* in time - to travel a distance, we need a *period* of time. Secondly, in order to judge if the distances are small or large, we must consider how much time they were driven in. Thirdly, if we combine several time periods, the distances must be summed to get the correct distance in the total period.
 
 ## *"Time-averagable"* quantities
 
