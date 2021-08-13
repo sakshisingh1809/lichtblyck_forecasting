@@ -48,9 +48,9 @@ def set_ts_index(
             # . Leftbound timestamps contain 3:00 but not 2:00.
             # . Rightbound timestamps: ambiguous. May contain 3:00 but not 2:00 (A), or vice versa (B): try both
             try:
-                return set_ts_index(fr, column, "rightA", tz)
+                return set_ts_index(fr, None, "rightA", tz)
             except:
-                return set_ts_index(fr, column, "rightB", tz)
+                return set_ts_index(fr, None, "rightB", tz)
         minutes = (fr.index[1] - fr.index[0]).seconds / 60
         if bound == "rightA":
             fr.loc[fr.index[0] + pd.Timedelta(minutes=-minutes)] = np.nan

@@ -1,2 +1,4 @@
 .pylint.d/
 .spyproject/
+.vscode/
+.pytest_cache/
