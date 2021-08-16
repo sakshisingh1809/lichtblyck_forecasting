@@ -16,6 +16,7 @@ import requests
 import json
 
 
+
 __usr = "Ruud.Wijtvliet"
 __pwd = "Ammm1mmm2mmm3mmm"
 __tenant = "PFMSTROM"
@@ -309,3 +310,10 @@ if __name__ == "__main__":
 
 
 # %%
+
+# Belvis API document: 
+# 1. general info
+# 2.2 finding timeseries
+# 2.3 metadata timeseries
+# 2.5 reading timeseries values
+# 7 how to connect
