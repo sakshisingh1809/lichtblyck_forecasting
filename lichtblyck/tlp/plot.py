@@ -3,7 +3,7 @@
 Plotting of tlp functions.
 """
 
-from ..core import pfseries_pfframe
+from ..core import basics
 from . import toload
 from typing import Callable, Iterable
 import matplotlib.pyplot as plt

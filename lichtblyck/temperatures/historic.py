@@ -8,7 +8,7 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 """
 
 from .sourcedata.climate_zones import historicdata, forallzones
-from ..core import pfseries_pfframe
+from ..core import basics
 from sklearn.linear_model import LinearRegression
 from typing import Callable, Union
 from datetime import datetime

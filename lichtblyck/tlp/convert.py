@@ -4,7 +4,7 @@ Convert between various ways that tlp profiles are stored / communicated. Con-
 vert to function consumption[MW] = f(temperature[degC], timestamp).
 """
 
-from ..core import pfseries_pfframe  # pandas extensions
+from ..core import basics  # pandas extensions
 from typing import Callable
 from datetime import datetime, date
 import pandas as pd

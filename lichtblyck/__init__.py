@@ -1,12 +1,15 @@
-from .core import pfseries_pfframe  # extend functionalty of pandas
-from .core.singlepf_multipf import SinglePf, MultiPf
-from .core.lbpf import LbPf
+# from .core import pfseries_pfframe  # extend functionalty of pandas
+# from .core.singlepf_multipf import SinglePf, MultiPf
+# from .core.lbpf import LbPf
 from .analyses import analyses
 from .tools import tools
 from . import belvis 
 from . import tlp
 from . import temperatures as tmpr
 from . import prices
+
+from .core2 import basics # extend functionalty of pandas
+from .core2.pfline import PfLine
 
 # Methods directly available at package root.
 

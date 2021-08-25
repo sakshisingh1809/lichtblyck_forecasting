@@ -3,7 +3,7 @@ Dataframe-like classes to hold general energy-related timeseries.
 """
 
 from __future__ import annotations
-from .pfseries_pfframe import FREQUENCIES
+from .basics import FREQUENCIES
 from . import utils
 from typing import Union, Iterable
 import pandas as pd

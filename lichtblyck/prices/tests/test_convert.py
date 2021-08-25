@@ -37,7 +37,7 @@ def test_pbaseppeakpoffpeak_explicit(p_b, p_p, p_o, ts_left, ts_right):
                 "p_offpeak": [68.2051282, 69.4736842, 68.9770355, 68.421053],
             },
             pd.date_range("2020", periods=4, freq="MS", tz="Europe/Berlin"),
-        ), 
+        ),
         pd.DataFrame(
             {
                 "p_peak": [100, 100, 100, 100],
@@ -45,7 +45,7 @@ def test_pbaseppeakpoffpeak_explicit(p_b, p_p, p_o, ts_left, ts_right):
                 "p_offpeak": [68.8510638, 68.8699360, 68.9361702, 68.9361702],
             },
             pd.date_range("2020", periods=4, freq="AS", tz="Europe/Berlin"),
-        )
+        ),
     ],
 )
 def test_completebpoframe_explicit(bpoframe):
@@ -64,8 +64,6 @@ def test_completebpoframe_explicit(bpoframe):
     pd.testing.assert_series_equal(p_b, p_b2, atol=0.01, check_dtype=False)
     pd.testing.assert_series_equal(p_o, p_o2, atol=0.01, check_dtype=False)
     pd.testing.assert_series_equal(p_p, p_p2, atol=0.01, check_dtype=False)
-
-
 
 
 @pytest.fixture(params=["var", "MS", "QS", "AS"])
@@ -163,7 +161,9 @@ def series_and_frames():
 
     return tseries, bpoframes
 
+
 _keys = ["p_base", "p_peak", "p_offpeak"]
+
 
 def test_pbaseppeakpoffpeak(series_and_frames, long_freq):
     # long_freq: uniform frequency to start with {'ms', 'qs', 'as'}
@@ -179,11 +179,10 @@ def test_pbaseppeakpoffpeak(series_and_frames, long_freq):
         ("p_base", convert.p_base),
         ("p_offpeak", convert.p_offpeak),
     ]:
-        othervalues = [
-            values_ref[k] for k in _keys if k != key
-        ]
+        othervalues = [values_ref[k] for k in _keys if k != key]
         value_test = f(*othervalues, ts_left, ts_right)
         assert np.isclose(value_test, values_ref[key])
+
 
 def test_completebpoframe(series_and_frames, long_freq):
     # long_freq: uniform frequency to start with {'ms', 'qs', 'as'}

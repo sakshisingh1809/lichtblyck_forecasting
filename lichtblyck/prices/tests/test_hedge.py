@@ -2,6 +2,7 @@ from lichtblyck.prices import hedge
 from lichtblyck.prices import utils as putils
 from lichtblyck.core import dev
 from lichtblyck.core import utils as cutils
+import lichtblyck as lb
 import numpy as np
 import pandas as pd
 import pytest

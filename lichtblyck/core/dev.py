@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from . import pfseries_pfframe
+from . import basics
 from .singlepf_multipf import SinglePf, MultiPf
 from .lbpf import LbPf
 import pandas as pd
@@ -8,22 +8,30 @@ import numpy as np
 
 
 OK_COL_COMBOS = ["w", "q", "pr", "qr", "pq", "wp", "wr"]
-OK_FREQ = ["AS", "QS", "MS", "D", "H", "15T"]
+FREQUENCIES = basics.FREQUENCIES
 
 
-def get_index(tz="Europe/Berlin", freq="D"):
-    """Get index with random length and starting point."""
-    countdict = {"AS": 1, "QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}
-    count = countdict.get(freq, 1001)
-    if count == 1001:
-        count = countdict.get(freq + "S", 1001)
+def get_index(tz="Europe/Berlin", freq="D") -> pd.DatetimeIndex:
+    """Get index with random length and starting point (but always start at midnight)."""
+    if freq not in FREQUENCIES:
+        raise ValueError(f"`freq` must be one of {FREQUENCIES}.")
+    count = {"AS": 1, "QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}[freq]
     periods = np.random.randint(count, count * 10)
-    a, m, d = np.array([2016, 1, 1]) + np.random.randint(0, 12, 3)
+    a, m, d = np.array([2016, 1, 1]) + np.random.randint(0, 12, 3)  # add 0-11 to each
     return pd.date_range(f"{a}-{m}-{d}", freq=freq, periods=periods, tz=tz)
 
 
-def get_dataframe(i=None, columns="wp", factors={"w": 1, "q": 1, "p": 1, "r": 1}):
-    """Get PfFrame with index and certain columns."""
+def get_series(i=None, name="w", factor=1) -> pd.Series:
+    """Get Series with index and certain name."""
+    if i is None:
+        i = get_index()
+    return pd.Series(np.random.rand(len(i)) * 10 * factor, i, name=name)
+
+
+def get_dataframe(
+    i=None, columns="wp", factors={"w": 1, "q": 1, "p": 1, "r": 1}
+) -> pd.DataFrame:
+    """Get DataFrame with index and certain columns. Columns (e.g. `q` and `w`) are not made consistent."""
     if i is None:
         i = get_index()
     return pd.DataFrame(
@@ -31,18 +39,11 @@ def get_dataframe(i=None, columns="wp", factors={"w": 1, "q": 1, "p": 1, "r": 1}
     )
 
 
-def get_series(i=None, name="w", factor=1):
-    """Get PfFrame with index and certain name."""
-    if i is None:
-        i = get_index()
-    return pd.Series(np.random.rand(len(i)) * 10 * factor, i, name=name)
+# Single portfolio line.
 
 
-# Single portfolio.
-
-
-def get_singlepf(i=None, columns: str = "wp", name: str = "test"):
-    """Get portfolio without children."""
+def get_pfline(i=None, columns: str = "wp", name: str = "test"):
+    """Get portfolio line, i.e. without children."""
     return SinglePf(get_dataframe(i, columns), name=name)
 
 
@@ -106,10 +107,10 @@ def get_lbpf_nosubs(i=None, own: str = "os", name: str = "test"):
     if "s" not in own:
         sourced = None
     else:
-        parts = [SinglePf(get_dataframe(i, "qr"), name='Forward')]
-        if np.random.rand() < 0.5: #Sometimes only forward, sometimes also spot.
+        parts = [SinglePf(get_dataframe(i, "qr"), name="Forward")]
+        if np.random.rand() < 0.5:  # Sometimes only forward, sometimes also spot.
             parts[0] *= 0.8
-            parts.append(SinglePf(get_dataframe(i, "qr"), name='Spot') * 0.2)
+            parts.append(SinglePf(get_dataframe(i, "qr"), name="Spot") * 0.2)
         sourced = MultiPf(parts, name="sourced")
 
     return LbPf(offtake=offtake, sourced=sourced, name=name)

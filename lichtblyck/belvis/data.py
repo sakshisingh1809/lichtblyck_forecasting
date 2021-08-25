@@ -2,8 +2,8 @@
 Retrieve data from Belvis using Rest-API.
 """
 
-from ..core.singlepf_multipf import SinglePf, MultiPf
-from .books import find_node
+# from ..core.singlepf_multipf import SinglePf, MultiPf
+# from .books import find_node
 from requests.exceptions import ConnectionError
 from typing import Tuple, Dict, List, Union, Iterable
 from urllib import parse
@@ -224,7 +224,7 @@ def series(id: int, ts_left=None, ts_right=None) -> pd.Series:
     return s
 
 
-def pf_own(pf: str, ts_left=None, ts_right=None) -> MultiPf:
+def pf_own(pf: str, ts_left=None, ts_right=None):
     """Return MultiPf for a the 'own' timeseries of a Belvis portfolio - i.e., excluding 
     children.
 
@@ -237,42 +237,42 @@ def pf_own(pf: str, ts_left=None, ts_right=None) -> MultiPf:
     --------
     .pf_complete
     """
+    pass
+    # # Find relevant timeseries.
+    # tseries = []
+    # for id in find_ids(pf):
+    #     name = info(id)["timeSeriesName"]
+    #     if "#LB FRM" in name:
+    #         tseries.append({"name": name, "id": id, "s": series(id, ts_left, ts_right)})
 
-    # Find relevant timeseries.
-    tseries = []
-    for id in find_ids(pf):
-        name = info(id)["timeSeriesName"]
-        if "#LB FRM" in name:
-            tseries.append({"name": name, "id": id, "s": series(id, ts_left, ts_right)})
+    # def find_data(contains, excl_subpf=True):
+    #     subpf = ("excl" if excl_subpf else "incl") + " subpf"
+    #     relevant = [s for s in tseries if contains in s["name"] and subpf in s["name"]]
+    #     data = {}
+    #     for s in relevant:
+    #         if "- MW -" in s["name"]:
+    #             if "w" in data:
+    #                 raise ValueError(f"Found > 1 MW timeseries with filter {contains}.")
+    #             data["w"] = s["s"]
+    #         if "- EUR (contract" in s["name"]:
+    #             if "r" in data:
+    #                 raise ValueError(
+    #                     f"Found > 1 EUR timeseries with filter {contains}."
+    #                 )
+    #             data["r"] = s["s"]
+    #     return data
 
-    def find_data(contains, excl_subpf=True):
-        subpf = ("excl" if excl_subpf else "incl") + " subpf"
-        relevant = [s for s in tseries if contains in s["name"] and subpf in s["name"]]
-        data = {}
-        for s in relevant:
-            if "- MW -" in s["name"]:
-                if "w" in data:
-                    raise ValueError(f"Found > 1 MW timeseries with filter {contains}.")
-                data["w"] = s["s"]
-            if "- EUR (contract" in s["name"]:
-                if "r" in data:
-                    raise ValueError(
-                        f"Found > 1 EUR timeseries with filter {contains}."
-                    )
-                data["r"] = s["s"]
-        return data
+    # offtake = SinglePf(find_data("Offtake"), "Offtake")
+    # fwd = SinglePf(find_data("Forward"), "Forward")
+    # spotda = SinglePf(find_data("Spot/DA"), "Da")
+    # spotid = SinglePf(find_data("Spot/ID"), "Id")
 
-    offtake = SinglePf(find_data("Offtake"), "Offtake")
-    fwd = SinglePf(find_data("Forward"), "Forward")
-    spotda = SinglePf(find_data("Spot/DA"), "Da")
-    spotid = SinglePf(find_data("Spot/ID"), "Id")
+    # procurement = MultiPf([fwd, MultiPf([spotda, spotid], "Spot")], "Procurement")
 
-    procurement = MultiPf([fwd, MultiPf([spotda, spotid], "Spot")], "Procurement")
-
-    return MultiPf([procurement, offtake], "Own")
+    # return MultiPf([procurement, offtake], "Own")
 
 
-def pf_complete(pf: str, ts_left=None, ts_right=None) -> MultiPf:
+def pf_complete(pf: str, ts_left=None, ts_right=None):
     """Return MultiPf for a complete Belvis portfolio, including children.
 
     Parameters
@@ -292,14 +292,15 @@ def pf_complete(pf: str, ts_left=None, ts_right=None) -> MultiPf:
     --------
     .ts_leftright
     """
-    node = find_node(pf)
+    pass
+    # node = find_node(pf)
 
-    def pf_from_node(n):
-        own = pf_own(n.name, ts_left, ts_right)
-        children = [pf_from_node(childnode) for childnode in n.children]
-        return MultiPf([own, *children], pf)
+    # def pf_from_node(n):
+    #     own = pf_own(n.name, ts_left, ts_right)
+    #     children = [pf_from_node(childnode) for childnode in n.children]
+    #     return MultiPf([own, *children], pf)
 
-    return pf_from_node(node)
+    # return pf_from_node(node)
 
 
 if __name__ == "__main__":
