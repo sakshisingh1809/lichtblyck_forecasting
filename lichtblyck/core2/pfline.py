@@ -36,29 +36,17 @@ def _make_df(data) -> pd.DataFrame:
 
     errormsg = "Must supply (a) only price information, (b) only volume information, or (c) both."
 
-    def get_by_attr_or_key(obj, a):
-        try:
-            return getattr(obj, a)
-        except AttributeError:
-            pass
-        try:
-            return obj[a]
-        except (KeyError, TypeError):
-            return None
-
-    # Extract values from data.
-    q = get_by_attr_or_key(data, "q")
-    w = get_by_attr_or_key(data, "w")
-    r = get_by_attr_or_key(data, "r")
-    p = get_by_attr_or_key(data, "p")
-
-    # Index.
-    indices = [get_by_attr_or_key(obj, "index") for obj in (w, q, p, r)]
+    # Do checks on indices.
+    indices = [getattr(data.get(key, None), 'index', None) for key in 'wqpr']
     indices = [i for i in indices if i is not None]
     if not indices:
         raise ValueError("No index can be found in the data.")
     if len(set([i.freq for i in indices])) != 1:
-        raise ValueError("Passed timeseries do not share same frequency.")
+        raise ValueError("Passed timeseries do not have same frequency; resample first.")
+
+    # Get timeseries.
+    data = pd.DataFrame(data)
+    q, w, r, p = [data.get(key, None) for key in 'qwrp']
 
     # Get price information.
     if p is not None and w is None and q is None and r is None:
@@ -108,9 +96,12 @@ class PfLine:
 
     Notes
     -----
-    When setting an attribute (`w`, `q`, `p`, `r`) and kind == 'all': the revenue has 
-    least priority and is recalculated from the existing and the updated attributes. 
-    If the revenue itself is updated, the price is recalculated and the volume is kept.'  
+    When kind == 'all', updating the PfLine means that we must choose how to recalculate
+    the individual timeseries to keep the data consistent. In general, keeping the 
+    existing price is given priority. So, when multiplying the PfLine by 2, `w`, `q` and
+    `r` are doubled, while `p` stays the same. And, when updating the volume (with 
+    `.set_w` or `.set_q`) the revenue is recalculated and vice versa. When the price is
+    updated, the existing volume is kept.'  
     """
 
     def __init__(self, data):
@@ -159,9 +150,9 @@ class PfLine:
         elif (key == "w" or key == "q") and self.kind in ["p", "all"]:
             data["p"] = self.p
         elif key == "r":
-            if self.kind == "p":
+            if self.kind in ["p", "all"]:
                 data["p"] = self.p
-            elif self.kind in ["q", "all"]:
+            elif self.kind == "q":
                 data["q"] = self.q
         return PfLine(data)
 
