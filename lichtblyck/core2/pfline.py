@@ -105,6 +105,12 @@ class PfLine:
         Left timestamp of row.
     ts_right, duration : pandas.Series
         Right timestamp, and duration [h] of row.
+
+    Notes
+    -----
+    When setting an attribute (`w`, `q`, `p`, `r`) and kind == 'all': the revenue has 
+    least priority and is recalculated from the existing and the updated attributes. 
+    If the revenue itself is updated, the price is recalculated and the volume is kept.'  
     """
 
     def __init__(self, data):
@@ -139,6 +145,25 @@ class PfLine:
         if self.kind == "all":
             return pd.Series(self.r / self.q, name="p")
         return pd.Series(np.nan, self.index, name="p")
+
+    set_q = lambda self, val: self._set_key_val("q", val)
+    set_w = lambda self, val: self._set_key_val("w", val)
+    set_r = lambda self, val: self._set_key_val("r", val)
+    set_p = lambda self, val: self._set_key_val("p", val)
+
+    def _set_key_val(self, key, val) -> PfLine:
+        """Set or update a timeseries and return the modified PfLine."""  
+        data = {key: val}
+        if key == "p" and self.kind in ["q", "all"]:
+            data["q"] = self.q
+        elif (key == "w" or key == "q") and self.kind in ["p", "all"]:
+            data["p"] = self.p
+        elif key == "r":
+            if self.kind == "p":
+                data["p"] = self.p
+            elif self.kind in ["q", "all"]:
+                data["q"] = self.q
+        return PfLine(data)
 
     @property
     def kind(self) -> str:
@@ -213,6 +238,12 @@ class PfLine:
     def __radd__(self, other):
         return self + other
 
+    def __sub__(self, other):
+        return self + -1 * other if other else self
+
+    def __rsub__(self, other):
+        return -1 * self + other
+
     def __mul__(self, other):
         if isinstance(other, float) or isinstance(other, int):
             return PfLine(self.df(self._summable) * other)
@@ -227,11 +258,11 @@ class PfLine:
     def __rmul__(self, other):
         return self * other
 
-    def __sub__(self, other):
-        return self + -1 * other if other else self
-
-    def __rsub__(self, other):
-        return -1 * self + other
+    def __truediv__(self, other):
+        if isinstance(other, float) or isinstance(other, int):
+            return self * (1 / other)
+        if not isinstance(other, PfLine):
+            raise NotImplementedError("This division is not defined.")
 
     def __bool__(self):
         try:
@@ -246,11 +277,13 @@ class PfLine:
         return self._df == other._df  # the same if their dataframes are the same
 
     def __repr__(self):
-        header = f"Lichtblick PfLine object."
+        what = {"p": "price", "q": "volume", "all": "price and volume"}[self.kind]
+        header = f"Lichtblick PfLine object containing {what} information."
         body = repr(self.df(self._available))
         units = _unitsline(body.split("\n")[0])
         loc = body.find("\n\n") + 1
-        if loc == 0:
-            return header + "\n" + body + "\n" + units
+        if not loc:
+            return f"{header}\n{body}\n{units}"
         else:
-            return header + "\n" + body[:loc] + units + body[loc:]
+            return f"{header}\n{body[:loc]}{units}{body[loc:]}"
+
