@@ -5,6 +5,7 @@ Dataframe-like class to hold general energy-related timeseries.
 from __future__ import annotations
 from ..tools.tools import set_ts_index
 from . import utils
+from matplotlib import pyplot as plt
 from typing import Iterable
 import pandas as pd
 import numpy as np
@@ -34,19 +35,20 @@ def _make_df(data) -> pd.DataFrame:
     """From data, create a DataFrame with column `q`, columns `q` and `r`, or column `p`.
     Also, do some data verification."""
 
-    errormsg = "Must supply (a) only price information, (b) only volume information, or (c) both."
-
     # Do checks on indices.
-    indices = [getattr(data.get(key, None), 'index', None) for key in 'wqpr']
+    indices = [
+        *[getattr(data.get(key, None), "index", None) for key in "wqpr"],
+        getattr(data, "index", None),
+    ]  # (final element necessary in case data is a single series)
     indices = [i for i in indices if i is not None]
     if not indices:
         raise ValueError("No index can be found in the data.")
     if len(set([i.freq for i in indices])) != 1:
-        raise ValueError("Passed timeseries do not have same frequency; resample first.")
+        raise ValueError("Passed timeseries have unequal frequency; resample first.")
 
     # Get timeseries.
-    data = pd.DataFrame(data)
-    q, w, r, p = [data.get(key, None) for key in 'qwrp']
+    data = pd.DataFrame(data)  # in case information passed as floats instead of series
+    q, w, r, p = [data.get(key, None) for key in "qwrp"]
 
     # Get price information.
     if p is not None and w is None and q is None and r is None:
@@ -56,7 +58,7 @@ def _make_df(data) -> pd.DataFrame:
     # Get quantity information (and check consistency).
     if q is None and w is None:
         if r is None or p is None:
-            raise ValueError(errormsg)
+            raise ValueError("Must supply (a) volume, (b) price, or (c) both.")
         q = r / p
     if q is None:
         q = w * w.duration
@@ -89,6 +91,8 @@ class PfLine:
     w, q, p, r : pd.Series
         Power [MW], quantity [MWh], price [Eur/MWh], revenue [Eur] timeseries, when 
         available. Can also be accessed by key (e.g., with ['w']).
+    kind : str
+        Kind of information/timeseries included in instance. {'q', 'p', 'all'}.
     index : pandas.DateTimeIndex
         Left timestamp of row.
     ts_right, duration : pandas.Series
@@ -100,8 +104,8 @@ class PfLine:
     the individual timeseries to keep the data consistent. In general, keeping the 
     existing price is given priority. So, when multiplying the PfLine by 2, `w`, `q` and
     `r` are doubled, while `p` stays the same. And, when updating the volume (with 
-    `.set_w` or `.set_q`) the revenue is recalculated and vice versa. When the price is
-    updated, the existing volume is kept.'  
+    `.set_w` or `.set_q`) the revenue is recalculated, and vice versa. Only when the 
+    price is updated, the existing volume is kept.'  
     """
 
     def __init__(self, data):
@@ -121,7 +125,9 @@ class PfLine:
 
     @property
     def w(self):
-        return pd.Series(self.q / self.duration, name="w")
+        if self.kind in ["q", "all"]:
+            return pd.Series(self.q / self.duration, name="w")
+        return pd.Series(np.nan, self.index, name="w")
 
     @property
     def r(self):
@@ -137,13 +143,100 @@ class PfLine:
             return pd.Series(self.r / self.q, name="p")
         return pd.Series(np.nan, self.index, name="p")
 
+    @property
+    def kind(self) -> str:
+        """Kind of data that is stored in the object. Possible values and implications:
+            'q': volume data only. Properties .q [MWh] and .w [MW] are available.
+            'p': price data only. Property .p [Eur/MWh] is available.
+            'all': price and volume data. Properties .q [MWh], .w [MW], .p [Eur/MWh],
+                .r [Eur] are available.
+        """
+        if "q" in self._df:
+            return "all" if "r" in self._df else "q"
+        if "p" in self._df:
+            return "p"
+        raise ValueError("Unexpected value for ._df.")
+
+    @property
+    def _summable(self) -> str:  # which time series can be added to others
+        return {"p": "p", "q": "q", "all": "qr"}[self.kind]
+
+    @property
+    def _available(self) -> str:  # which time series have values
+        return {"p": "p", "q": "qw", "all": "qwrp"}[self.kind]
+
+    # Methods.
+
+    def df(self, cols: str = None) -> pd.DataFrame:
+        """DataFrame for this PfLine.
+        
+        Parameters
+        ----------
+        cols : str, optional
+            The columns to include. Default: include all that are available.
+        
+        Returns
+        -------
+        pd.DataFrame
+        """
+        if cols is None:
+            cols = self._available
+        return pd.DataFrame({col: self[col] for col in cols})
+
+    def plot_to_ax(self, ax: plt.Axes, col: str = None, **kwargs):
+        """Plot a timeseries of the PfLine to a specific axes.
+        
+        Parameters
+        ----------
+        ax : plt.Axes
+            The axes object to which to plot the timeseries.
+        col : str, optional
+            The column to plot. Default: plot volume `w` [MW] (if available) or else
+            price `p` [Eur/MWh].
+        Any additional kwargs are passed to the pd.Series.plot function.
+        """
+        pass  # TODO
+
+    def plot(self, cols: str = "wp") -> plt.Figure:
+        """Plot one or more timeseries of the PfLine.
+        
+        Parameters
+        ----------
+        cols : str, optional
+            The columns to plot. Default: plot volume `w` [MW] and price `p` [Eur/MWh] 
+            (if available).
+
+        Returns
+        -------
+        plt.Figure
+            The figure object to which the series was plotted.
+        """
+        cols = [col for col in cols if col in self._available]
+        fig, axes = plt.subplots(len(cols), 1, True, False, squeeze=False, figsize=(10, len(cols)*5))
+        for col, ax in zip(cols, axes.flatten()):
+            if col == 'p':
+                ax.plot(self[col], color='red')
+                ax.set_ylabel('Eur/MWh')
+            if col == 'w':
+                ax.plot(self[col], color='blue')
+                ax.set_ylabel('MW')
+            if col == 'q':
+                ax.bar(self.index, self[col], color='green')
+                ax.set_ylabel('MWh')
+            if col == 'r':
+                ax.bar(self.index, self[col], color='grey')
+                ax.set_ylabel('Eur')
+        return fig
+
+    # Methods that return new PfLine instance.
+
     set_q = lambda self, val: self._set_key_val("q", val)
     set_w = lambda self, val: self._set_key_val("w", val)
     set_r = lambda self, val: self._set_key_val("r", val)
     set_p = lambda self, val: self._set_key_val("p", val)
 
     def _set_key_val(self, key, val) -> PfLine:
-        """Set or update a timeseries and return the modified PfLine."""  
+        """Set or update a timeseries and return the modified PfLine."""
         data = {key: val}
         if key == "p" and self.kind in ["q", "all"]:
             data["q"] = self.q
@@ -156,44 +249,19 @@ class PfLine:
                 data["q"] = self.q
         return PfLine(data)
 
-    @property
-    def kind(self) -> str:
-        """Kind of data that is stored in the object. Possible values and implications:
-            'q': volume data only. Properties .q [MWh] and .w [MW] are available.
-            'p': price data only. Property .p [Eur/MWh] is available.
-            'all': price and volume data. Properties .q [MWh], .w [MW], .p [Eur/MWh],
-                .r [Eur] are available.
-        """
-        if "q" in self._df:
-            return "all" if "r" in self._df else "q"
-        elif "p" in self._df:
-            return "p"
-        raise ValueError("Object contains no information.")
-
-    @property
-    def _summable(self) -> Iterable[str]:  # which time series can be added to others
-        return {"p": "p", "q": "q", "all": "qr"}[self.kind]
-
-    @property
-    def _available(self) -> Iterable[str]:  # which time series have values
-        return {"p": "p", "q": "qw", "all": "qwrp"}[self.kind]
-
-    # Methods.
-
-    def df(self, cols: Iterable[str] = None) -> pd.DataFrame:
-        """pd.DataFrame for this object."""
-        if cols is None:
-            cols = self._available
-        return pd.DataFrame({attr: getattr(self, attr) for attr in cols})
-
     def changefreq(self, freq: str = "MS") -> PfLine:
-        """Resample the object to a new frequency.
+        """Resample the PfLine to a new frequency.
         
         Parameters
         ----------
         freq : str, optional
             The frequency at which to resample. 'AS' for year, 'QS' for quarter, 'MS' 
             (default) for month, 'D for day', 'H' for hour, '15T' for quarterhour.
+        
+        Returns
+        -------
+        PfLine
+            Resampled at wanted frequency.
         """
         if self.kind == "p":
             raise ValueError(
@@ -209,6 +277,18 @@ class PfLine:
 
     def __len__(self):
         return len(self.index)
+
+    def __bool__(self):
+        try:
+            _ = self.kind
+        except:
+            return False
+        return True
+
+    def __eq__(self, other):
+        if not isinstance(other, PfLine):
+            return False
+        return self._df == other._df  # the same if their dataframes are the same
 
     def __add__(self, other):
         if not other:
@@ -254,18 +334,6 @@ class PfLine:
             return self * (1 / other)
         if not isinstance(other, PfLine):
             raise NotImplementedError("This division is not defined.")
-
-    def __bool__(self):
-        try:
-            _ = self.kind
-        except:
-            return False
-        return True
-
-    def __eq__(self, other):
-        if not isinstance(other, PfLine):
-            return False
-        return self._df == other._df  # the same if their dataframes are the same
 
     def __repr__(self):
         what = {"p": "price", "q": "volume", "all": "price and volume"}[self.kind]
