@@ -10,7 +10,7 @@ from typing import Iterable
 import pandas as pd
 import numpy as np
 
-# Developer notes: we want to be able to...
+# Developer notes: we would like to be able to...
 # ... handle the situation where the volume q == 0 but the revenue r != 0, because this
 #   occasionally arises for the sourced volume, e.g. after buying and selling the same
 #   volume at unequal price. So: we want to be able to store q and r.
