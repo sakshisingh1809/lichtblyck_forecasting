@@ -3,7 +3,7 @@
 Attributes for custom dataframes, series, and indices.
 """
 
-from ..tools.tools import wavg
+from ..tools.frames import wavg
 import pandas as pd
 
 # def _w_ofblock(fr: pd.DataFrame) -> pd.Series:

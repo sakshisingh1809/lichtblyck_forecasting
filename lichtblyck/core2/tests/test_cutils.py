@@ -1,5 +1,6 @@
-from lichtblyck.core import utils
-from lichtblyck.tools import tools
+from lichtblyck.core2 import utils
+from lichtblyck.tools.stamps import freq_up_or_down
+from lichtblyck.tools.frames import set_ts_index, wavg
 from pandas import Series, DataFrame
 import numpy as np
 import pandas as pd
@@ -10,21 +11,10 @@ freqs_small_to_large = ["T", "5T", "15T", "30T", "H", "2H", "D", "MS", "QS", "AS
 
 
 @pytest.fixture(params=freqs_small_to_large)
-def freq1(request):
+def freq(request):
     return request.param
 
-
-@pytest.fixture(params=freqs_small_to_large)
-def freq2(request):
-    return request.param
-
-
-def test_freq_up_or_down(freq1, freq2):
-    i1 = freqs_small_to_large.index(freq1)
-    i2 = freqs_small_to_large.index(freq2)
-    outcome = np.sign(i1 - i2)
-    assert utils.freq_up_or_down(freq1, freq2) == outcome
-
+freq1 = freq2 = freq
 
 
 @functools.lru_cache
@@ -49,7 +39,7 @@ def aggdata():
 
     f = value_func(500, 300, 150, 50)
     values = np.random.normal(f(i_15T), 10)  # added noise
-    source = tools.set_ts_index(pd.Series(values, i_15T))
+    source = set_ts_index(pd.Series(values, i_15T))
 
     # Seperate the values in bins for later aggregation.
     def isstart_f(freq):
@@ -93,12 +83,12 @@ def combis_downsampling():
     for freq, dic in agg_data.items():
         summ = [sum(vals) for vals in dic["values"]]
         avg = [
-            tools.wavg(pd.Series(values), durations)
+            wavg(pd.Series(values), durations)
             for values, durations in zip(dic["values"], dic["durations"])
         ]
 
         for vals, coll in [(summ, summed), (avg, avged)]:
-            coll[freq] = tools.set_ts_index(
+            coll[freq] = set_ts_index(
                 pd.Series(vals, dic["index"]).resample(freq).asfreq()
             )
 
@@ -106,7 +96,7 @@ def combis_downsampling():
     for coll, combis in [(summed, sumcombis), (avged, avgcombis)]:
         for freq1, s1 in coll.items():
             for freq2, s2 in coll.items():
-                if utils.freq_up_or_down(freq1, freq2) > 0:
+                if freq_up_or_down(freq1, freq2) > 0:
                     continue
                 # freq1 to freq2 means downsampling
                 combis.append((s1, s2))
@@ -121,7 +111,7 @@ def combis_upsampling():
     sumcombis, avgcombis = [], []
     for freq1, dic1 in agg_data.items():
         for freq2, dic2 in agg_data.items():
-            if utils.freq_up_or_down(freq1, freq2) < 0:
+            if freq_up_or_down(freq1, freq2) < 0:
                 continue
             # freq1 to freq2 means upsampling
 
@@ -133,7 +123,7 @@ def combis_upsampling():
             ):
                 len1 = len(vals1)
                 sumval1 = sum(vals1)
-                avgval1 = tools.wavg(pd.Series(vals1), durs1)
+                avgval1 = wavg(pd.Series(vals1), durs1)
 
                 # For each datapoint in long frequency, find corresponing datapoints in shorter frequency.
                 tss2, durss2 = [], []
@@ -165,8 +155,8 @@ def combis_upsampling():
                 (sumcombis, sumrecords1, sumrecords2),
                 (avgcombis, avgrecords1, avgrecords2),
             ]:
-                s1 = tools.set_ts_index(pd.Series(records1).resample(freq1).asfreq())
-                s2 = tools.set_ts_index(pd.Series(records2).resample(freq2).asfreq())
+                s1 = set_ts_index(pd.Series(records1).resample(freq1).asfreq())
+                s2 = set_ts_index(pd.Series(records2).resample(freq2).asfreq())
                 combis.append((s1, s2))
 
     return sumcombis, avgcombis

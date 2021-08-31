@@ -2,8 +2,10 @@
 """
 Module with tools to modify and standardize dataframes.
 """
-from typing import Iterable, Callable, Union
+
+from .stamps import FREQUENCIES, freq_up_or_down
 from pandas.core.frame import NDFrame
+from typing import Iterable, Callable, Union
 import pandas as pd
 import numpy as np
 
@@ -38,6 +40,8 @@ def set_ts_index(
     else:
         fr = fr.copy()  # don't change passed-in fr
 
+    # Make leftbound.
+
     fr.index = pd.DatetimeIndex(fr.index)  # turn / try to turn into datetime
 
     if bound == "left":
@@ -61,6 +65,8 @@ def set_ts_index(
         raise ValueError("`bound` must be one of {'left' (default), 'right'}.")
     fr.index.name = "ts_left"
 
+    # Set Europe/Berlin timezone.
+
     if fr.index.tz is None:
         try:
             fr = fr.tz_localize(tz, ambiguous="infer")
@@ -68,28 +74,50 @@ def set_ts_index(
             fr = fr.tz_localize(tz, ambiguous="NaT")
     fr = fr.tz_convert("Europe/Berlin")
 
+    # Set frequency.
+
     if fr.index.freq is None:
         fr.index.freq = pd.infer_freq(fr.index)
     if fr.index.freq is None:
-        duration = (fr.index[1:] - fr.index[:-1]).median()
-        for freq, tdelta_range in {
+        # (infer_freq does not always work, e.g. during summer-to-wintertime changeover)
+        tdelta = (fr.index[1:] - fr.index[:-1]).median()
+        for freq, (tdelta_min, tdelta_max) in {
+            "D": (pd.Timedelta(hours=23), pd.Timedelta(hours=25)),
             "MS": (pd.Timedelta(days=27), pd.Timedelta(days=32)),
             "QS": (pd.Timedelta(days=89), pd.Timedelta(days=93)),
             "AS": (pd.Timedelta(days=364), pd.Timedelta(days=367)),
         }.items():
-            if duration >= tdelta_range[0] and duration <= tdelta_range[1]:
+            if tdelta >= tdelta_min and tdelta <= tdelta_max:
                 break
         else:
-            freq = duration
-        fr = fr.resample(freq).asfreq()
+            freq = tdelta
+        fr2 = fr.resample(freq).asfreq()
+        # If the new dataframe has additional rows, the original dataframe was not gapless.
+        if len(fr2) > len(fr):
+            missing = [i for i in fr2.index if i not in fr.index]
+            raise ValueError(
+                f"`fr` does not have continuous data; missing data for: {missing}."
+            )
+        fr = fr2
+
+    # Check if frequency all ok.
+
     if fr.index.freq is None:
-        # (infer_freq does not work during summer-to-wintertime changeover)
-        fr.index.freq = (fr.index[1:] - fr.index[:-1]).median()
+        raise ValueError("Cannot find a frequency in `fr`.")
+    elif fr.index.freq not in FREQUENCIES:
+        for freq in ["MS", "QS"]:  # Edge case: month-/quarterly but starting != Jan.
+            if freq_up_or_down(fr.index.freq, freq) == 0:
+                fr.index.freq = freq
+                break
+        else:
+            raise ValueError(
+                f"Found unsupported frequency ({fr.index.freq}). Must be one of: {FREQUENCIES}."
+            )
 
     return fr
 
 
-def fill_gaps(fr: NDFrame, maxgap=2) -> NDFrame:
+def fill_gaps(fr: NDFrame, maxgap: int = 2) -> NDFrame:
     """Fill gaps in series by linear interpolation.
     
     Parameters
@@ -161,63 +189,3 @@ def wavg(
     if weights is None:  # return non-weighted average if no weights are provided
         return fr.mean()
     return fr.mul(weights, axis=0).sum(skipna=False) / sum(weights)
-
-
-def __is(letter: str) -> Callable[[str], bool]:
-    """Returns function that tests if its argument is 'letter' or starts with
-    'letter_'."""
-
-    @np.vectorize
-    def check(name):
-        return name == letter or name.startswith(letter + "_")
-
-    return check
-
-
-_is_price = __is("p")
-_is_quantity = __is("q")
-_is_temperature = __is("t")
-_is_revenue = __is("r")
-_is_power = __is("w")
-
-
-def floor(
-    ts: Union[pd.Timestamp, Iterable[pd.Timestamp]], future: int = 0,  freq=None
-) -> pd.Timestamp:
-    """Calculate (timestamp at beginning of) month, quarter, or year that a timestamp
-    is in.
-
-    Parameters
-    ----------
-    ts : Timestamp or Iterable of timestamps.
-        Timestamp to floor.
-    future : int
-        0 (default) to get start of period that ts in contained in. 1 (-1) to get start 
-        of period after (before) that. 2 (-2) .. etc.
-    freq : frequency
-        What to floor it to. One of {'MS' , 'QS', 'AS'} for start of the month, quarter,
-        or year it's contained in. If none specified, use .freq attribute of timestamp.
-
-    Returns
-    -------
-    Timestamp
-        At begin of period.
-    """
-    if isinstance(ts, Iterable):
-        return np.vectorize(floor)(ts, future, freq)
-    if freq is None:
-        freq = ts.freq
-    ts = ts.floor("D")  # make sure we return a midnight value
-    if freq == "MS":
-        return ts + pd.offsets.MonthBegin(1) + pd.offsets.MonthBegin(future - 1)
-    elif freq == "QS":
-        return (
-            ts
-            + pd.offsets.QuarterBegin(1, startingMonth=1)
-            + pd.offsets.QuarterBegin(future - 1, startingMonth=1)
-        )
-    elif freq == "AS":
-        return ts + pd.offsets.YearBegin(1) + pd.offsets.YearBegin(future - 1)
-    else:
-        raise ValueError("Argument 'freq' must be one of {'MS', 'QS', 'AS'}.")
-

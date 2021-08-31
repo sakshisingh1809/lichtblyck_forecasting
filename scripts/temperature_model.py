@@ -6,7 +6,6 @@ Created on Fri Jul 31 11:36:19 2020
 """
 
 import lichtblyck as lb
-from lichtblyck import tools
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -60,5 +59,5 @@ for col in complete.columns:
     isna = act[col].isna()
     filled.loc[isna, col] = act.drop(col, axis=1).loc[isna].mean(axis=1) + diff
 
-filled["t_germany"] = tools.wavg(filled, weights, axis=1)
+filled["t_germany"] = lb.wavg(filled, weights, axis=1)
 filled.t_germany.to_csv("test.csv")

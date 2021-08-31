@@ -2,24 +2,22 @@
 Code to quickly get objects for testing.
 """
 
-from . import basics
 from .pfline import PfLine
 import pandas as pd
 import numpy as np
 
 
 OK_COL_COMBOS = ["w", "q", "p", "pr", "qr", "pq", "wp", "wr"]
-FREQUENCIES = basics.FREQUENCIES
 
 
-def get_index(tz="Europe/Berlin", freq="D") -> pd.DatetimeIndex:
+def get_index(tz="Europe/Berlin", freq="D", start=None) -> pd.DatetimeIndex:
     """Get index with random length and starting point (but always start at midnight)."""
-    if freq not in FREQUENCIES:
-        raise ValueError(f"`freq` must be one of {FREQUENCIES}.")
-    count = {"AS": 1, "QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}[freq]
-    periods = np.random.randint(count, count * 10)
-    a, m, d = np.array([2016, 1, 1]) + np.random.randint(0, 12, 3)  # add 0-11 to each
-    return pd.date_range(f"{a}-{m}-{d}", freq=freq, periods=periods, tz=tz)
+    count = {"AS": 4, "QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}.get(freq, 10)
+    periods = np.random.randint(count, count * 3)
+    if not start:
+        a, m, d = np.array([2016, 1, 1]) + np.random.randint(0, 12, 3)  # each + 0..11
+        start = f"{a}-{m}-{d}"
+    return pd.date_range(start, freq=freq, periods=periods, tz=tz)
 
 
 def get_series(i=None, name="w", factor=1) -> pd.Series:

@@ -1,6 +1,6 @@
 from lichtblyck.prices import convert, utils
 from lichtblyck.core import dev, utils as cutils
-from lichtblyck.tools import tools
+from lichtblyck.tools.frames import set_ts_index
 import numpy as np
 import pandas as pd
 import pytest
@@ -106,8 +106,8 @@ def series_and_frames():
     # (Quarter)hourly timeseries with variable prices.
     tseries = {
         "var": {
-            "15T": tools.set_ts_index(source, "ts")["p"],
-            "H": tools.set_ts_index(
+            "15T": set_ts_index(source, "ts")["p"],
+            "H": set_ts_index(
                 source.groupby(source.index // 4).agg({"p": "mean", "ts": "first"}),
                 "ts",
             )["p"],
@@ -140,7 +140,7 @@ def series_and_frames():
         for key in keys:
             dic[key] = [np.mean(l) if len(l) else np.nan for l in dic[key]]
         df = pd.DataFrame({f"p_{key}": dic[key] for key in keys}, dic["index"])
-        bpoframe = tools.set_ts_index(df.resample(freq).asfreq())
+        bpoframe = set_ts_index(df.resample(freq).asfreq())
         bpoframes[freq] = bpoframe
 
     # (Quarter)hourly timeseries with uniform peak and offpeak prices.
