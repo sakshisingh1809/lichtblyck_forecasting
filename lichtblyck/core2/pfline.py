@@ -3,24 +3,26 @@ Dataframe-like class to hold general energy-related timeseries.
 """
 
 from __future__ import annotations
-from ..tools.tools import set_ts_index
+from ..tools.frames import set_ts_index
 from . import utils
 from matplotlib import pyplot as plt
 from typing import Iterable
 import pandas as pd
 import numpy as np
+import warnings
 
-# Developer notes: we would like to be able to...
+# Developer notes: we would like to be able to handle 2 cases with volume AND financial
+# information. We would like to...
 # ... handle the situation where the volume q == 0 but the revenue r != 0, because this
 #   occasionally arises for the sourced volume, e.g. after buying and selling the same
 #   volume at unequal price. So: we want to be able to store q and r.
 # ... keep price information even if the volume q == 0, because at a later time this price
 #   might still be needed, e.g. if a perfect hedge becomes unperfect. So: we want to be
 #   able to store q and p.
-# Our PfLine class must therefore handle 2 cases when volume AND financial information is
-# available (i.e., when .kind == 'all'). If q and p are stored, r is calculated on-the-
-# fly with r=q*p. If q and r are stored, p is calculated on-the-fly with p=r/q and may
-# be undefined which is correct in that case.
+# It is unpractical to cater to both cases, as it raises questions, e.g. when adding
+# them, how is the result stored?.
+# The first case one is the most important one, and is therefore used. The second case
+# must be handled by storing market prices seperately from volume data.
 
 
 def _unit(attr: str) -> str:
@@ -43,8 +45,8 @@ def _unitsline(headerline: str) -> str:
 
 
 def _make_df(data) -> pd.DataFrame:
-    """From data, create a DataFrame with column `q`, column `p`, columns `q` and `r`,
-    or columns `q` and `p`. Also, do some data verification."""
+    """From data, create a DataFrame with column `q`, column `p`, or columns `q` and `r`.
+    Also, do some data verification."""
 
     # Do checks on indices.
     indices = [
@@ -61,7 +63,8 @@ def _make_df(data) -> pd.DataFrame:
     def series_or_none(df, col):  # remove series that are passed but only contain na
         return (s := df.get(col)) if s and not s.isna().all() else None
 
-    data = pd.DataFrame(data)  # in case information passed as floats instead of series
+    if not isinstance(data, PfLine):
+        data = set_ts_index(pd.DataFrame(data))  # make df in case info passed as float
     q, w, r, p = [series_or_none(data, key) for key in "qwrp"]
 
     # Get price information.
@@ -76,27 +79,25 @@ def _make_df(data) -> pd.DataFrame:
         q = r / p
     if q is None:
         q = w * w.duration
-    elif q is not None and w is not None and not np.allclose(q, w * w.duration):
+    elif w is not None and not np.allclose(q, w * w.duration):
         raise ValueError("Passed values for `q` and `w` not consistent.")
+
+    # Get revenue information (and check consistency).
     if p is None and r is None:
         return set_ts_index(pd.DataFrame({"q": q}))  # kind == 'q'
-
-    # Get revenue or price information (and check consistency).
-    if p is None and r is not None:
-        return set_ts_index(pd.DataFrame({"q": q, "r": r}).dropna())  # kind == 'all'
-    elif p is not None and r is None:
-        return set_ts_index(pd.DataFrame({"q": q, "p": p}).dropna())  # kind == 'all'
-    elif (abs(r - p * q) < 0.001).all():
-        # all consistent; store volume and PRICE.
-        return set_ts_index(pd.DataFrame({"q": q, "p": p}).dropna())  # kind == 'all'
-    else:
-        i = ~p.isna().index
-        if (abs(r.loc[i] - p.loc[i] * q.loc[i]) < 0.001).all():
-            # inconsistency caused by r!=0, q==0, p==na; store volume and REVENUE.
-            return set_ts_index(
-                pd.DataFrame({"q": q, "r": r}).dropna()
-            )  # kind == 'all'
-        raise ValueError("Passed values for `q`, `p` and `r` not consistet.")
+    if r is None:  # must calculate from p
+        r = p * q
+        i = r.isna() # edge case p==nan. If q==0, assume r=0. If q!=0, raise error
+        if i.any() and (abs(q[i]) < 0.001).all():
+            r[i] = 0
+        elif i.any():
+            raise ValueError("Found timestamps with `p`==na, `q`!=0. Unknown `r`.")
+    elif p is not None and not np.allclose(r, p * q):
+        # Edge case: remove lines where p==nan and q==0 before judging consistency.
+        i = p.isna()
+        if not (abs(q[i]) < 0.001).all() or not np.allclose(r[~i], p[~i] * q[~i]):
+            raise ValueError("Passed values for `q`, `p` and `r` not consistent.")
+    return set_ts_index(pd.DataFrame({"q": q, "r": r}).dropna())  # kind == 'all'
 
 
 class PfLine:
@@ -116,7 +117,9 @@ class PfLine:
         Power [MW], quantity [MWh], price [Eur/MWh], revenue [Eur] timeseries, when
         available. Can also be accessed by key (e.g., with ['w']).
     kind : str
-        Kind of information/timeseries included in instance. {'q', 'p', 'all'}.
+        Kind of information/timeseries included in instance. One of {'q', 'p', 'all'}.
+    available : str
+        Columns available in instance. One of {'wq', 'p', 'wqpr'}.
     index : pandas.DateTimeIndex
         Left timestamp of row.
     ts_right, duration : pandas.Series
@@ -189,10 +192,6 @@ class PfLine:
         return {"p": "p", "q": "q", "all": "qr"}[self.kind]
 
     @property
-    def _stored(self) -> str:  # which time series are stored in the internal dataframe
-        return "".join([col for col in "qrp" if col in self._df])
-
-    @property
     def available(self) -> str:  # which time series have values
         return {"p": "p", "q": "qw", "all": "qwrp"}[self.kind]
 
@@ -224,20 +223,15 @@ class PfLine:
 
     def _set_key_val(self, key, val) -> PfLine:
         """Set or update a timeseries and return the modified PfLine."""
+        if self.kind == "all" and key == "r":
+            raise NotImplementedError(
+                "Cannot set `r`; first select `.volume` or `.price`."
+            )
         data = {key: val}
-        if (key == "w" or key == "q") and self.kind in ["p", "all"]:
-            data["p"] = self.p
-        elif key == "p" and self.kind in ["q", "all"]:
-            data["q"] = self.q
-        elif key == "r":
-            if self.kind == "p":
-                data["p"] = self.p
-            elif self.kind == "q":
-                data["q"] = self.q
-            else:
-                raise NotImplementedError(
-                    "Cannot set `r` on this PfLine; first select `.volume` or `.price`."
-                )
+        if key in ["w", "q", "r"] and self.kind in ["p", "all"]:
+            data["p"] = self["p"]
+        elif key in ["p", "r"] and self.kind in ["q", "all"]:
+            data["q"] = self["q"]
         return PfLine(data)
 
     def changefreq(self, freq: str = "MS") -> PfLine:
