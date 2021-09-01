@@ -31,7 +31,7 @@ def _unitsline(headerline: str) -> str:
 
 
 def _make_df(data) -> pd.DataFrame:
-    """From data, create a DataFrame with column `q`, columns `q` and `r`, or column `p`.
+    """From data, create a DataFrame with column `q`, columns `w` and `r`, or column `p`.
     Also, do some data verification."""
 
     errormsg = "Must supply (a) only price information, (b) only volume information, or (c) both."
