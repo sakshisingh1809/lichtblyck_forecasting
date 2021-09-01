@@ -61,7 +61,8 @@ def _make_df(data) -> pd.DataFrame:
 
     # Get timeseries.
     def series_or_none(df, col):  # remove series that are passed but only contain na
-        return (s := df.get(col)) if s and not s.isna().all() else None
+        s = df.get(col)
+        return s if s is not None and not s.isna().all() else None
 
     if not isinstance(data, PfLine):
         data = set_ts_index(pd.DataFrame(data))  # make df in case info passed as float
