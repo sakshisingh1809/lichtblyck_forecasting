@@ -16,7 +16,6 @@ import requests
 import json
 
 
-
 __usr = "Ruud.Wijtvliet"
 __pwd = "Ammm1mmm2mmm3mmm"
 __tenant = "PFMSTROM"
@@ -28,7 +27,7 @@ TSNAMES = {
         "qo": "#LB Saldo aller Prognosegeschäfte +UB",
         "qs": "#LB Saldo aller Termingeschäfte +UB",
     }
-    #etc.
+    # etc.
 }
 
 
@@ -308,11 +307,12 @@ if __name__ == "__main__":
     i = info(id)
     r = records(id)
     s = series(id, "2020-02")
+    print(s)
 
 
 # %%
 
-# Belvis API document: 
+# Belvis API document:
 # 1. general info
 # 2.2 finding timeseries
 # 2.3 metadata timeseries
