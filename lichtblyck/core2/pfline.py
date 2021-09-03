@@ -4,6 +4,7 @@ Dataframe-like class to hold general energy-related timeseries.
 
 from __future__ import annotations
 from ..tools.frames import set_ts_index
+from ..visualize import visualize as vis
 from . import utils
 from matplotlib import pyplot as plt
 from typing import Iterable
@@ -88,7 +89,7 @@ def _make_df(data) -> pd.DataFrame:
         return set_ts_index(pd.DataFrame({"q": q}))  # kind == 'q'
     if r is None:  # must calculate from p
         r = p * q
-        i = r.isna() # edge case p==nan. If q==0, assume r=0. If q!=0, raise error
+        i = r.isna()  # edge case p==nan. If q==0, assume r=0. If q!=0, raise error
         if i.any() and (abs(q[i]) < 0.001).all():
             r[i] = 0
         elif i.any():
@@ -270,7 +271,13 @@ class PfLine:
             price `p` [Eur/MWh].
         Any additional kwargs are passed to the pd.Series.plot function.
         """
-        pass  # TODO
+        if not col:
+            col = 'w' if 'w' in self.available else 'p'
+        how = {"r": "bar", "q": "bar", "p": "step", "w": "line"}.get(col)
+        if not how:
+            raise ValueError("`col` must be one of {'w', 'q', 'p', 'r'}")
+        s = self[col]
+        vis.plot_timeseries(ax, s, how=how, **kwargs)
 
     def plot(self, cols: str = "wp") -> plt.Figure:
         """Plot one or more timeseries of the PfLine.
@@ -288,21 +295,14 @@ class PfLine:
         """
         cols = [col for col in cols if col in self.available]
         fig, axes = plt.subplots(
-            len(cols), 1, True, False, squeeze=False, figsize=(10, len(cols) * 5)
+            len(cols), 1, True, False, squeeze=False, figsize=(10, len(cols) * 3)
         )
+
         for col, ax in zip(cols, axes.flatten()):
-            if col == "p":
-                ax.plot(self[col], color="red")
-                ax.set_ylabel("Eur/MWh")
-            if col == "w":
-                ax.plot(self[col], color="blue")
-                ax.set_ylabel("MW")
-            if col == "q":
-                ax.bar(self.index, self[col], color="green")
-                ax.set_ylabel("MWh")
-            if col == "r":
-                ax.bar(self.index, self[col], color="grey")
-                ax.set_ylabel("Eur")
+            color = getattr(vis.Colors.Wqpr, col)
+            unit = _unit(col)
+            self.plot_to_ax(ax, col, color=color)
+            ax.set_ylabel(unit)
         return fig
 
     # Dunder methods.

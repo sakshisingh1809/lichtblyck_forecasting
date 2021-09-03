@@ -104,7 +104,11 @@ def _changefreq_general(fr: NDFrame, freq: str = "MS", is_summable: bool = True)
             # Downsampling is easiest for summable frames: simply sum child values.
             fr2 = fr.resample(freq).sum()
             # Discard rows in new frame that are only partially present in original.
-            return fr2[(fr2.index >= fr.index[0]) & (fr2.ts_right <= fr.ts_right[-1])]
+            fr2 = fr2[(fr2.index >= fr.index[0]) & (fr2.ts_right <= fr.ts_right[-1])]
+            # Return if any values found
+            if not len(fr2):
+                raise ValueError("There are no 'full' time periods at this frequency.")
+            return fr2
         else:
             # For averagable frames: first make summable.
             summable = fr.mul(fr.duration, axis=0)
