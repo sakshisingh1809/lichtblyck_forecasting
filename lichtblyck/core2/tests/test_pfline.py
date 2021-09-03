@@ -17,7 +17,7 @@
 # . . pflines covering same or different time periods
 
 from lichtblyck.core2.pfline import _make_df
-from lichtblyck.core2 import dev, utils
+from lichtblyck.core2 import dev
 from lichtblyck.tools import tools
 import pandas as pd
 import numpy as np

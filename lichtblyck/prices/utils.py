@@ -2,7 +2,7 @@
 Utilities for calculating / manipulating price data.
 """
 
-from ..tools import tools
+from ..tools.stamps import floor_ts
 from typing import Tuple, Iterable
 import pandas as pd
 import numpy as np
@@ -67,8 +67,8 @@ def ts_leftright(ts_trade, period_type: str = "m", period_start: int = 1):
 
     if period_type in ["m", "q", "a"]:
         freq = period_type.upper() + "S"
-        ts_left = tools.floor(ts_left_trade, period_start, freq)
-        ts_right = tools.floor(ts_left, 1, freq)
+        ts_left = floor_ts(ts_left_trade, period_start, freq)
+        ts_right = floor_ts(ts_left, 1, freq)
     elif period_type == "d":
         ts_left = ts_trade.floor("d") + pd.Timedelta(days=period_start)
         ts_right = ts_left + pd.Timedelta(days=1)

@@ -1,6 +1,6 @@
 """Functions to work with pandas dataframes."""
 
-from .basics import FREQUENCIES
+from ..tools.stamps import FREQUENCIES, freq_up_or_down
 from pandas.core.frame import NDFrame
 from typing import Iterable
 import pandas as pd
@@ -184,66 +184,3 @@ def changefreq_avg(fr: NDFrame, freq: str = "MS") -> NDFrame:
     like power [MW]. When downsampling, the values are weighted with their duration.    
     """
     return _changefreq_general(fr, freq, False)
-
-
-def freq_up_or_down(freq_source, freq_target) -> int:
-    """
-    Compare source frequency with target frequency to see if it needs up- or downsampling.
-
-    Parameters
-    ----------
-    freq_source, freq_target : frequencies to compare.
-
-    Returns
-    -------
-    1 (-1, 0) if source frequency must be upsampled (downsampled, no change) to obtain
-        target frequency.
-
-    Notes
-    -----
-    Arbitrarily using a time point as anchor to calculate the length of the time period
-    from. May have influence on the ratio (duration of a month, quarter, year etc are
-    influenced by this), but, for most common frequencies, not on which is larger.
-    """
-    common_ts = pd.Timestamp("2020-01-01")
-    ts1 = common_ts + pd.tseries.frequencies.to_offset(freq_source)
-    ts2 = common_ts + pd.tseries.frequencies.to_offset(freq_target)
-    if ts1 > ts2:
-        return 1
-    elif ts1 < ts2:
-        return -1
-    return 0
-
-
-def _freq_longestshortest(shortest: bool, *freqs):
-    """
-    Determine which frequency denotes the shortest or longest time period.
-
-    Parameters
-    ----------
-    shortest : bool
-        True to find shortest, False to find longest frequency.
-    *freqs : frequencies to compare (as string or other object).
-
-    Returns
-    -------
-    Frequency.
-    """
-    common_ts = pd.Timestamp("2020-01-01")
-    ts = [common_ts + pd.tseries.frequencies.to_offset(fr) for fr in freqs]
-    i = (np.argmin if shortest else np.argmax)(ts)
-    return freqs[i]
-
-
-def freq_shortest(*freqs):
-    """
-    Returns shortest frequency in list.
-    """
-    return _freq_longestshortest(True, *freqs)
-
-
-def freq_longest(*freqs):
-    """
-    Returns longest frequency in list.
-    """
-    return _freq_longestshortest(False, *freqs)

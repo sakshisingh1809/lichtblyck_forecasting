@@ -9,7 +9,6 @@ Or, more precise: 1/Quantitiy * d(Quantity) / d(Temperature) in [1/degC]
 import numpy as np
 import pandas as pd
 import lichtblyck as lb
-from lichtblyck.tools import tools
 
 # Get temperatures...
 tmpr = lb.future.tmpr_standardized()
@@ -42,7 +41,7 @@ weights = pd.DataFrame(
 weights = (
     weights["power"] / weights["power"].sum() + weights["gas"] / weights["gas"].sum()
 )
-tmpr["t_germany"] = tools.wavg(tmpr, weights, axis=1)
+tmpr["t_germany"] = lb.wavg(tmpr, weights, axis=1)
 
 # Get the tlp profile...
 t2l = 0.9 * lb.tlp.standardized_tmpr_loadprofile(

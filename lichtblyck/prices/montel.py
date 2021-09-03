@@ -5,7 +5,7 @@ Module to read montel price data from disk.
 
 from . import utils
 from .convert import p_offpeak
-from ..tools import tools
+from ..tools.frames import set_ts_index
 from typing import Dict
 from pathlib import Path
 import functools
@@ -179,7 +179,7 @@ def power_spot() -> pd.Series:
         except KeyError:
             to_insert = pd.Series(spot[ts], [ts])
         spot = pd.concat([spot[:ts], to_insert, spot[ts:][1:]])
-    spot = tools.set_ts_index(spot).rename("p")
+    spot = set_ts_index(spot).rename("p")
     spot = spot.resample("H").asfreq()
     return spot
 
@@ -198,10 +198,10 @@ def gas_spot(market_code: str = "ncg") -> pd.Series:
     pd.Series
     """
     data = pd.read_excel(**_excel_gas("da", market_code=market_code))
-    data = tools.set_ts_index(data.dropna(), data.columns[0])
+    data = set_ts_index(data.dropna(), data.columns[0])
     s = data.iloc[:, 0]  # turn one-column df into series
     s.index = s.ts_right  # shift up one, so delivery (not trade) day is shown.
-    spot = tools.set_ts_index(s).rename("p")
+    spot = set_ts_index(s).rename("p")
     return spot
 
 
@@ -232,8 +232,8 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
     for df in (b, p):
         df.dropna(inplace=True)
         df.columns = ["ts_left_trade", "p"]
-    b = tools.set_ts_index(b, "ts_left_trade")
-    p = tools.set_ts_index(p, "ts_left_trade")
+    b = set_ts_index(b, "ts_left_trade")
+    p = set_ts_index(p, "ts_left_trade")
     # ...put into one object...
     df = p.merge(
         b, how="inner", left_index=True, right_index=True, suffixes=("_peak", "_base"),
@@ -335,7 +335,7 @@ def _gas_futures(
     df = pd.read_excel(**_excel_gas(period_type, period_start, market_code))
     df.dropna(inplace=True)
     df.columns = ["ts_left_trade", "p"]
-    df = tools.set_ts_index(df, "ts_left_trade")
+    df = set_ts_index(df, "ts_left_trade")
     # ...add some additional information...
     @functools.lru_cache
     def deliv_f(ts):
