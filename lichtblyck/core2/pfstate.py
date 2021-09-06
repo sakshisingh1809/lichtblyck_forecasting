@@ -3,133 +3,68 @@ Dataframe-like class to hold energy-related timeseries, specific to portfolios, 
 certain moment in time (e.g., at the current moment, without any historic data).
 """
 
+from __future__ import annotations
 from .pfline import PfLine
-from typing import Optional
+from typing import Optional, Iterable, Union
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import warnings
 
-# Complete set of PfLines:
-# offtake has volume. Price is not regarded.
-# sourced has volume and price.
-# unsourced has volume and price.
 
-def _validate_consistency(
-    offtake=Optional[PfLine], sourced=Optional[PfLine], unsourced=Optional[PfLine]
-):
-    if not offtake or not sourced or not unsourced:
-        return
-    if not all(['q' in obj.available for obj in [offtake, sourced, unsourced]]):
-        return
-    if (abs((offtake.volume + sourced.volume + unsourced.volume).q) < 0.001).all():
-       return
-    raise ValueError('Offtake, sourced and unsourced volumes not consistent.')
-
-def _calculate_and_validate_offtake(
-    offtake=Optional[PfLine], sourced=Optional[PfLine], unsourced=Optional[PfLine]
-) -> PfLine:
-    """Check characteristics of PfLine representing offtake. If values are missing, cal-
-    culate from sourced and unsourced PfLines, if possible."""
-    if not offtake:
-        offtake = -(sourced.volume + unsourced.volume)
-    if offtake.kind not in ['q', 'all']:
-        raise ValueError("Offtake volume not known.")
-    if not (offtake.q <= 0.001).all():
-        raise ValueError("Offtake volume must be <= 0 for all timestamps.")
-    return offtake
-
-def _calculate_and_validate_sourced(
-    offtake=Optional[PfLine], sourced=Optional[PfLine], unsourced=Optional[PfLine]
-) -> PfLine:
-    """Check characteristics of PfLine representing sourced volume. If values are
-    missing, calculate from offtake and unsourced PfLines, if possible."""
-    if not sourced:
-        sourced = -(offtake.volume + unsourced.volume)
-    if sourced.kind == 'q' and (abs(sourced.q) < 0.001).all():
-        sourced = sourced.set_r(0) # assume that revenue is 0 if volume is 0.
-    if sourced.kind != 'all':
-        raise ValueError("Sourced volume and/or price not known.")
-    if not (sourced.q >= -0.001).all():
-        raise ValueError("Sourced volume must be >= 0 for all timestamps.")
-    return sourced
-
-def _calculate_and_validate_unsourced(
-    offtake=Optional[PfLine], sourced=Optional[PfLine], unsourced=Optional[PfLine]
-) -> PfLine:
-    """Check characteristics of PfLine representing unsourced volume. If values are
-    missing, calculate from offtake and sourced PfLines, if possible."""
-    if not unsourced:
-        unsourced = -(offtake.volume + sourced.volume)
-    if unsourced.kind == 'q' and (abs(sourced.q) < 0.001).all():
-        unsourced = unsourced.set_r(0)
-    if unsourced.kind not in ['p', 'all']:
-        raise ValueError("Cannot calculate revenue/price of unsourced volume.")
-    return unsourced
-
-
-def _from_series(qo, pu, qs, rs) -> Iterable[pd.Series]:
-    """Take offtake volume `qo`, market prices `pu` (= price of unsourced volume), 
-    sourced volume `qs`, sourced revenue `rs` (= cost of sourced volume). Do some 
-    data verification and return same 4 pd.Series."""
-
-    # First, turn all into PfLines.
-    qo_pfl = PfLine({"q": qo})
-    pu_pfl = PfLine({"p": pu})
-    if qs is not None and rs is not None:
-        s_pfl = PfLine(pd.DataFrame({"q": qs, "r": rs}))
-    elif qs is None and rs is None:  # Sourced volume assumed 0 if not passed.
-        i = qo_pfl.index.union(pu_pfl.index)  # largest possible index
-        s_pfl = PfLine(pd.DataFrame({"q": 0, "r": 0}, i))
+def _make_sourced(qs: Optional[pd.Series], rs: Optional[pd.Series]) -> Optional[PfLine]:
+    """Turn sourced volume `qs` and revenue (cost) `rs` into a portfolio frame."""
+    if qs is None and rs is None:
+        return None
+    elif qs is not None and rs is not None:
+        return PfLine(pd.DataFrame({"q": qs, "r": rs}))
     else:
         raise ValueError("Must specifty both sourced volume and revenue, or none.")
 
-    # Do checks on indices. Lengths may differ, but frequency should be equal.
-    indices = [obj.index for obj in (qo_pfl, pu_pfl, s_pfl) if obj is not None]
-    if len(set([i.freq for i in indices])) != 1:
-        raise ValueError("Passed timeseries have unequal frequency; resample first.")
 
-    return qo_pfl.q, pu_pfl.p, s_pfl.q, s_pfl.r
+def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
+    """Take offtake, unsourced, sourced information. Do some data massaging and return
+    3 PfLines: for offtake volume, unsourced price, and sourced price and volume."""
 
-
-def _from_pflines(offtake, unsourced, sourced) -> Iterable[pd.Series]:
-    """Take offtake, unsourced, sourced PfLine instances. Do some date verification and
-    return 4 pd.Series (qo, pu, qs, rs)."""
-
-    # If unsourced is not specified, we have no way of finding the prices.
-    if not unsourced:
-        if offtake and sourced and offtake.volume != -sourced.volume:
-            raise ValueError("Unsourced volume, but no prices.")
-
-    # If all are specified, we need to check consistency.
-    if offtake and unsourced and sourced:
-        if "q" in offtake.available and "q" in unsourced.available:
-            pass
-
-    # Sourced.
-    if sourced is None:
-        qs = rs = 0
-    else:
-        qs, rs = sourced.q, sourced.r
+    # Make sure unsourced and offtake are specified.
+    if not offtakevolume or not unsourcedprice:
+        raise ValueError("Must specify offtake volume and unsourced prices.")
 
     # Offtake volume.
-    if offtake is not None:
-        if offtake.kind != "q":
-            raise ValueError("Offtake should only contain volume.")
-        qo = offtake.q
-        if unsourced.kind == "all" and not np.allclose(qo, -unsourced.q - qs):
-            raise ValueError("Inconsistent information for offtake volume.")
-    elif unsourced.kind == "all":
-        qo = -unsourced.q - qs
-    else:
-        raise ValueError("No offtake volume information.")
+    if isinstance(offtakevolume, Union[pd.Series, pd.DataFrame]):
+        offtakevolume = PfLine(offtakevolume)  # using column names or series names
+    if isinstance(offtakevolume, PfLine):
+        if offtakevolume.kind == "p":
+            raise ValueError("Must specify offtake volume.")
+        elif offtakevolume.kind == "all":
+            warnings.warn("offtake also contains price infomation; this is discarded.")
+            offtakevolume = offtakevolume.volume
 
     # Unsourced prices.
-    if unsourced.kind in ["p", "all"]:
-        pu = unsourced.p
-    else:
-        raise ValueError("No price information for the unsourced volume.")
+    if isinstance(unsourcedprice, Union[pd.Series, pd.DataFrame]):
+        unsourcedprice = PfLine(unsourcedprice)  # using column names or series names
+    if isinstance(unsourcedprice, PfLine):
+        if unsourcedprice.kind == "q":
+            raise ValueError("Must specify unsourced prices.")
+        elif unsourcedprice.kind == "all":
+            warnings.warn(
+                "Unsourced also contains volume infomation; this is discarded."
+            )
+            unsourcedprice = unsourcedprice.price
 
-    return qo, pu, qs, rs
+    # Sourced volume and prices.
+    if not sourced:
+        i = offtakevolume.index.union(unsourcedprice.index)  # largest possible index
+        sourced = PfLine(pd.DataFrame({"q": 0, "r": 0}, i))
+
+    # Do checks on indices. Lengths may differ, but frequency should be equal.
+    indices = [
+        obj.index for obj in (offtakevolume, unsourcedprice, sourced) if obj is not None
+    ]
+    if len(set([i.freq for i in indices])) != 1:
+        raise ValueError("PfLines have unequal frequency; resample first.")
+
+    return offtakevolume, unsourcedprice, sourced
 
 
 class PfState:
@@ -137,9 +72,9 @@ class PfState:
 
     Parameters
     ----------
-    qo, pu, qs (optional), rs (optional) : pd.Series
-        Offtake volume `qo`, price of unsourced volume `pu` (= market price), 
-        sourced volume `qs`, sourced revenue `rs` (= cost of sourced volume).
+    offtakevolume, unsourcedprices, sourced : PfLine
+        Offtake volume may also be passed as pd.Series with name `q` or `w`. Unsourced
+        prices may also be passed as pd.Series. 
 
     Attributes
     ----------
@@ -151,7 +86,11 @@ class PfState:
     unsourced : PfLine ('all')
         Procurement/trade that is still necessary until delivery. Volumes (and normally,
         revenues) are >0 if more volume must be bought, <0 if volume must be sold for a 
-        given timestamp (see 'Notes' below).
+        given timestamp (see 'Notes' below). NB: if volume for a timestamp is 0, its 
+        price is undefined (NaN) - to get the market prices in this portfolio, use the 
+        property `.unsourcedprice` instead.
+    unsourcedprice : PfLine ('p')
+        Prices of the unsourced volume.
     netposition : PfLine ('all')
         Net portfolio positions. Convenience property for users with a "traders' view".
         Does not follow sign conventions (see 'Notes' below); volumes are <0 if 
@@ -176,32 +115,49 @@ class PfState:
     """
 
     @classmethod
-    def from_pflines(
+    def from_series(
         cls,
-        offtake: Optional[PfLine],
-        unsourced: Optional[PfLine],
-        sourced: Optional[PfLine],
+        pu: pd.Series,
+        qo: Optional[pd.Series],
+        qs: Optional[pd.Series],
+        rs: Optional[pd.Series],
+        wo: Optional[pd.Series],
+        ws: Optional[pd.Series],
+        ps: Optional[pd.Series]
     ):
-        """Create Portfolio instance from several PfLine instances (all optional)."""
-        return cls(*_from_pflines(offtake, unsourced, sourced))
+        """Create Portfolio instance from pd.Series instances for offtake volume (`qo`
+        [MWh]), unsourced prices (`pu` [Eur/MWh]), sourced volume (`qs` [MWh]) and 
+        sourced revenue (`rs` [Eur])."""
+        if ws is None 
+        ws, qs, rs, ps =
+        return cls(PfLine({"q": qo, "w": wo}), PfLine({"p": pu}), _make_sourced(qs, rs))
 
     def __init__(
-        self, qo: pd.Series, pu: pd.Series, qs: pd.Series = None, rs: pd.Series = None,
+        self,
+        offtakevolume: Union[PfLine, pd.Series],
+        unsourcedprice: Union[PfLine, pd.Series],
+        sourced: Optional[PfLine],
     ):
-        # The only internal data of this class.
-        self._qo, self._pu, self._qs, self._rs = _from_series(qo, pu, qs, rs)
+        # The only internal data of this class is stored as PfLines.
+        self._offtakevolume, self._unsourcedprice, self._sourced = _make_pflines(
+            offtakevolume, unsourcedprice, sourced
+        )
 
     @property
     def offtake(self) -> PfLine:
-        return PfLine({"q": self._qo})
+        return self._offtakevolume
 
     @property
     def sourced(self) -> PfLine:
-        return PfLine({"q": self._qs, "r": self._rs})
+        return self._sourced
 
     @property
     def unsourced(self) -> PfLine:
-        return PfLine({"q": -(self._qo + self._qs), "p": self._pu})
+        return -(self._offtakevolume + self._sourced.volume) * self._unsourcedprice
+
+    @property
+    def unsourcedprice(self) -> PfLine:
+        return self._unsourcedprice
 
     @property
     def netposition(self) -> PfLine:
@@ -250,20 +206,20 @@ class PfState:
 
     # Methods that return new Portfolio instance.
 
-    def set_offtakevolume(self, qo: pd.Series) -> PfState:
+    def set_offtakevolume(self, offtakevolume: PfLine) -> PfState:
         warnings.warn(
             "This changes the unsourced volume and causes inaccuracies in its price, if the portfolio has a frequency that is longer than the spot market."
         )
-        return PfState(qo, self._pu, self._qs, self._rs)
+        return PfState(offtakevolume, self._unsourcedprice, self._sourced)
 
-    def set_unsourcedprices(self, pu: pd.Series) -> PfState:
-        return PfState(self._qo, pu, self._qs, self._rs)
+    def set_unsourcedprice(self, unsourcedprice: PfLine) -> PfState:
+        return PfState(self._offtakevolume, unsourcedprice, self._sourced)
 
-    def set_sourced(self, qs: pd.Series, rs: pd.Series) -> PfState:
+    def set_sourced(self, sourced: PfLine) -> PfState:
         warnings.warn(
             "This changes the unsourced volume and causes inaccuracies in its price, if the portfolio has a frequency that is longer than the spot market."
         )
-        return PfState(self._qo, self._pu, qs, rs)
+        return PfState(self._offtakevolume, self._unsourcedprice, sourced)
 
     def changefreq(self, freq: str = "MS") -> PfState:
         """Resample the Portfolio to a new frequency.
@@ -280,8 +236,7 @@ class PfState:
             Resampled at wanted frequency.
         """
         # pu resampling is most important, so that prices are correctly weighted.
-        qo = self.offtake.changefreq(freq).q
-        pu = self.unsourced.changefreq(freq).p
+        offtakevolume = self.offtake.changefreq(freq).volume
+        unsourcedprice = self.unsourced.changefreq(freq).price  # important for wavg.
         sourced = self.sourced.changefreq(freq)
-        qs, rs = sourced.q, sourced.r
-        return PfState(qo, pu, qs, rs)
+        return PfState(offtakevolume, unsourcedprice, sourced)
