@@ -7,7 +7,7 @@ from ..tools.frames import set_ts_index
 from ..visualize import visualize as vis
 from . import utils
 from matplotlib import pyplot as plt
-from typing import Iterable
+from typing import Iterable, Union
 import pandas as pd
 import numpy as np
 import warnings
@@ -223,8 +223,10 @@ class PfLine:
     set_r: PfLine = lambda self, val: self._set_key_val("r", val)
     set_p: PfLine = lambda self, val: self._set_key_val("p", val)
 
-    def _set_key_val(self, key, val) -> PfLine:
+    def _set_key_val(self, key: str, val: Union[PfLine, pd.Series]) -> PfLine:
         """Set or update a timeseries and return the modified PfLine."""
+        if isinstance(val, PfLine):
+            val = val[key]  # Get pd.Series
         if self.kind == "all" and key == "r":
             raise NotImplementedError(
                 "Cannot set `r`; first select `.volume` or `.price`."
@@ -272,7 +274,7 @@ class PfLine:
         Any additional kwargs are passed to the pd.Series.plot function.
         """
         if not col:
-            col = 'w' if 'w' in self.available else 'p'
+            col = "w" if "w" in self.available else "p"
         how = {"r": "bar", "q": "bar", "p": "step", "w": "line"}.get(col)
         if not how:
             raise ValueError("`col` must be one of {'w', 'q', 'p', 'r'}")

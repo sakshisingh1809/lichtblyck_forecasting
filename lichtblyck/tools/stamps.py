@@ -2,7 +2,8 @@
 Module for doing basic timestamp and frequency operations.
 """
 
-from typing import Iterable, Union
+from typing import Iterable, Union, Tuple
+import datetime as dt
 import pandas as pd
 import numpy as np
 
@@ -115,3 +116,58 @@ def freq_longest(*freqs):
     Returns longest frequency in list.
     """
     return _freq_longestshortest(False, *freqs)
+
+
+
+def ts_leftright(ts_left=None, ts_right=None) -> Tuple:
+    """Makes 2 timestamps coherent to one another.
+
+    Parameters
+    ----------
+    ts_left : timestamp, optional
+    ts_right : timestamp, optional
+
+    If no value for ts_left is given, the beginning of the year of ts_right is given.
+    If no value for ts_right is given, the end of the year of ts_left is given.
+    If no values is given for either, the entire current year is given. If no time
+    zone is provided for either timestamp, the Europe/Berlin timezone is assumed.
+
+    Returns
+    -------
+    (localized timestamp, localized timestamp)
+    """
+
+    def start(middle):
+        return middle + pd.offsets.YearBegin(0) + pd.offsets.YearBegin(-1)
+
+    def end(middle):
+        return middle + pd.offsets.YearBegin(1)
+
+    ts_left, ts_right = pd.Timestamp(ts_left), pd.Timestamp(ts_right)
+
+    if ts_right is pd.NaT:
+        if ts_left is pd.NaT:
+            return ts_leftright(start(dt.date.today()))
+        if ts_left.tz is None:
+            return ts_leftright(ts_left.tz_localize("Europe/Berlin"))
+        return ts_leftright(ts_left, end(ts_left))
+
+    # if we land here, we at least know ts_right.
+    if ts_left is pd.NaT:
+        return ts_leftright(start(ts_right), ts_right)
+
+    # if we land here, we know ts_left and ts_right.
+    if ts_right.tz is None:
+        if ts_left.tz is None:
+            return ts_leftright(ts_left.tz_localize("Europe/Berlin"), ts_right)
+        return ts_leftright(ts_left, ts_right.tz_localize(ts_left.tz))
+
+    # if we land here, we know ts_left and localized ts_right.
+    if ts_left.tz is None:
+        return ts_leftright(ts_left.tz_localize(ts_right.tz), ts_right)
+
+    # if we land here, we know localized ts_left and localized ts_right.
+    if ts_left.tz != ts_right.tz:
+        raise ValueError("Timestamps have non-matching timezones.")
+
+    return ts_left, ts_right
