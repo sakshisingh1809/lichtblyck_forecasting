@@ -45,11 +45,10 @@ def _unitsline(headerline: str) -> str:
 
 
 def _make_df(data) -> pd.DataFrame:
-<<<<<<< HEAD
     """From data, create a DataFrame with column `q`, columns `w` and `r`, or column `p`.
-=======
-    """From data, create a DataFrame with column `q`, column `p`, or columns `q` and `r`.
->>>>>>> e3e606376f42bae3d77c9859b3110212a8c06d91
+    =======
+    From data, create a DataFrame with column `q`, column `p`, or columns `q` and `r`.
+
     Also, do some data verification."""
 
     # Do checks on indices.
@@ -92,7 +91,7 @@ def _make_df(data) -> pd.DataFrame:
         return set_ts_index(pd.DataFrame({"q": q}))  # kind == 'q'
     if r is None:  # must calculate from p
         r = p * q
-        i = r.isna() # edge case p==nan. If q==0, assume r=0. If q!=0, raise error
+        i = r.isna()  # edge case p==nan. If q==0, assume r=0. If q!=0, raise error
         if i.any() and (abs(q[i]) < 0.001).all():
             r[i] = 0
         elif i.any():
