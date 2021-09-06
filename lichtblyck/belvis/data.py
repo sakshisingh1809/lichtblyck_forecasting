@@ -303,11 +303,10 @@ def pf_complete(pf: str, ts_left=None, ts_right=None):
 
 
 if __name__ == "__main__":
-    id = find_id("LUD", "#LB FRM Procurement/Forward - MW - excl subpf")
+    id = find_id("LUD", "#LB FRM Procurement/Forward - MW - incl subpf")
     i = info(id)
     r = records(id)
-    s = series(id, "2020-02")
-    print(s)
+    s = series(id, "2021-02")
 
 
 # %%
