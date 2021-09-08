@@ -5,21 +5,14 @@ certain moment in time (e.g., at the current moment, without any historic data).
 
 from __future__ import annotations
 from .pfline import PfLine
+from .pfstate_as_str import time_as_cols, time_as_rows
 from typing import Optional, Iterable, Union
+import functools
+import textwrap
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
-
-
-def _make_sourced(qs: Optional[pd.Series], rs: Optional[pd.Series]) -> Optional[PfLine]:
-    """Turn sourced volume `qs` and revenue (cost) `rs` into a portfolio frame."""
-    if qs is None and rs is None:
-        return None
-    elif qs is not None and rs is not None:
-        return PfLine(pd.DataFrame({"q": qs, "r": rs}))
-    else:
-        raise ValueError("Must specifty both sourced volume and revenue, or none.")
 
 
 def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
@@ -31,17 +24,19 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
         raise ValueError("Must specify offtake volume and unsourced prices.")
 
     # Offtake volume.
-    if isinstance(offtakevolume, Union[pd.Series, pd.DataFrame]):
+    if isinstance(offtakevolume, pd.Series) or isinstance(offtakevolume, pd.DataFrame):
         offtakevolume = PfLine(offtakevolume)  # using column names or series names
     if isinstance(offtakevolume, PfLine):
         if offtakevolume.kind == "p":
             raise ValueError("Must specify offtake volume.")
         elif offtakevolume.kind == "all":
-            warnings.warn("offtake also contains price infomation; this is discarded.")
+            warnings.warn("Offtake also contains price infomation; this is discarded.")
             offtakevolume = offtakevolume.volume
 
     # Unsourced prices.
-    if isinstance(unsourcedprice, Union[pd.Series, pd.DataFrame]):
+    if isinstance(unsourcedprice, pd.Series) or isinstance(
+        unsourcedprice, pd.DataFrame
+    ):
         unsourcedprice = PfLine(unsourcedprice)  # using column names or series names
     if isinstance(unsourcedprice, PfLine):
         if unsourcedprice.kind == "q":
@@ -72,9 +67,10 @@ class PfState:
 
     Parameters
     ----------
-    offtakevolume, unsourcedprices, sourced : PfLine
-        Offtake volume may also be passed as pd.Series with name `q` or `w`. Unsourced
-        prices may also be passed as pd.Series. 
+    offtakevolume, unsourcedprice, sourced : PfLine
+        `offtakevolume` may also be passed as pd.Series with name `q` or `w`. 
+        `unsourcedprice` may also be passed as pd.Series. 
+        `sourced` is optional; if non is specified, assume no sourcing has taken place.
 
     Attributes
     ----------
@@ -123,14 +119,32 @@ class PfState:
         rs: Optional[pd.Series],
         wo: Optional[pd.Series],
         ws: Optional[pd.Series],
-        ps: Optional[pd.Series]
+        ps: Optional[pd.Series],
     ):
-        """Create Portfolio instance from pd.Series instances for offtake volume (`qo`
-        [MWh]), unsourced prices (`pu` [Eur/MWh]), sourced volume (`qs` [MWh]) and 
-        sourced revenue (`rs` [Eur])."""
-        if ws is None 
-        ws, qs, rs, ps =
-        return cls(PfLine({"q": qo, "w": wo}), PfLine({"p": pu}), _make_sourced(qs, rs))
+        """Create Portfolio instance from timeseries.
+
+        Parameters
+        ----------
+        unsourced prices:
+            `pu` [Eur/MWh]
+        offtake volume: one of
+            `qo` [MWh]
+            `wo` [MW]
+        sourced volume and revenue: two of 
+            (`qs` [MWh] or `ws` [MW])
+            `rs` [Eur]
+            `ps` [Eur/MWh]
+            If no volume has been sourced, all 4 sourced timeseries may be None.
+        
+        Returns
+        -------
+        PfState
+        """
+        if ws or qs or rs or ps:
+            sourced = PfLine({"w": ws, "q": qs, "r": rs, "p": ps})
+        else:
+            sourced = None
+        return cls(PfLine({"q": qo, "w": wo}), PfLine({"p": pu}), sourced)
 
     def __init__(
         self,
@@ -164,10 +178,52 @@ class PfState:
         return -self.unsourced
 
     @property
-    def pnl_costs(self):
+    def pnl_cost(self):
         return self.sourced + self.unsourced
 
     # Methods.
+
+    def _as_str(
+        self,
+        time_axis: int = 0,
+        colorful: bool = True,
+        cols: str = "qp",
+        num_of_ts: int = 7,
+    ) -> str:
+        """Treeview of the portfolio state.
+
+        Parameters
+        ----------
+        time_axis : int, optional (default: 0)
+            Put timestamps along vertical axis (0), or horizontal axis (1).
+        colorful : bool, optional (default: True)
+            Make tree structure clearer by including colors. May not work on all output
+            devices.
+        cols : str, optional (default: "qp")
+            The values to show when time_axis == 1 (ignored if 0).
+        num_of_ts : int, optional (default: 7)
+            How many timestamps to show when time_axis == 0 (ignored if 1).
+
+        Returns
+        -------
+        str
+        """
+        if time_axis == 1:
+            return time_as_cols(self, cols, colorful)
+        else:
+            return time_as_rows(self, num_of_ts=num_of_ts, colorful=colorful)
+
+    @functools.wraps(_as_str)
+    def print(self, *args, **kwargs) -> None:
+        i = self.offtake.index  # TODO: fix
+        txt = textwrap.dedent(
+            f"""\
+        . Timestamps: first: {i[0] }      timezone: {i.tz}
+                       last: {i[-1]}          freq: {i.freq}
+        . Treeview:
+        """
+        )
+        print(txt + self._as_str(*args, **kwargs))
 
     def plot_to_ax(
         self, ax: plt.Axes, part: str = "offtake", col: str = None, **kwargs
@@ -240,3 +296,61 @@ class PfState:
         unsourcedprice = self.unsourced.changefreq(freq).price  # important for wavg.
         sourced = self.sourced.changefreq(freq)
         return PfState(offtakevolume, unsourcedprice, sourced)
+
+    # Dunder methods.
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+    # def __len__(self):
+    #     return len(self.index)
+
+    # def __bool__(self):
+    #     return len(self) != 0
+
+    def __eq__(self, other):
+        if not isinstance(other, PfState):
+            return False
+        return all(
+            [self[part] == other[part] for part in ["offtake", "unsourced", "sourced"]]
+        )
+
+    def __add__(self, other):
+        if not isinstance(other, PfState):
+            raise NotImplementedError("This addition is not defined.")
+        offtakevolume = self.offtake.volume + other.offtake.volume
+        unsourcedprice = (self.unsourced + other.unsourced).price  # weighted average
+        sourced = self.sourced + other.sourced
+        return PfState(offtakevolume, unsourcedprice, sourced)
+
+    def __radd__(self, other):
+        return self + other
+
+    def __sub__(self, other):
+        return self + -1 * other
+
+    def __rsub__(self, other):
+        return -1 * self + other
+
+    def __mul__(self, other):
+        if not isinstance(other, float) and not isinstance(other, int):
+            raise NotImplementedError("This multiplication is not defined.")
+        offtakevolume = self.offtake.volume * other
+        unsourcedprice = self.unsourcedprice
+        sourced = self.sourced * other
+        return PfState(offtakevolume, unsourcedprice, sourced)
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __neg__(self):
+        return self * -1
+
+    def __truediv__(self, other):
+        if not isinstance(other, float) and not isinstance(other, int):
+            raise NotImplementedError("This division is not defined.")
+        return self * (1 / other)
+
+    def __repr__(self):
+        return "Lichtblick PfState object.\n" + self._as_str(0, False)
+
