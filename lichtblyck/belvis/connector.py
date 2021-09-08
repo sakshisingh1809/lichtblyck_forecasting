@@ -27,6 +27,7 @@ __tenant = "PFMSTROM"
 __server = "http://lbbelvis01:8040"
 _session = None
 
+
 def _getreq(path, *queryparts) -> requests.request:
     if _session is None:
         _startsession_and_authenticate()
@@ -60,6 +61,12 @@ def connection_alive():
     return _getreq("/rest/belvis/internal/heartbeat/ping").status_code == 200
 
 
+def info(id: int) -> Dict:
+    """Get dictionary with information about timeseries with id `id`."""
+    response = _getreq(f"/rest/energy/belvis/{__tenant}/timeSeries/{id}")
+    return _object(response)
+
+
 def all_ids_in_pf(pf: str) -> List[int]:
     """Gets ids of all timeseries in offtake portfolio `pf`.
 
@@ -83,6 +90,10 @@ def all_ids_in_pf(pf: str) -> List[int]:
     return ids
 
 
+def find_pf(pf_partialname: str) -> int:
+    pass
+
+
 def find_id(pf: str, name: str) -> int:
     """In offtake portfolio `pf`, find id of timeseries with name `name`.
 
@@ -100,10 +111,31 @@ def find_id(pf: str, name: str) -> int:
         id of found timeseries.
     """
     # Get all ids belonging to pf.
+    all_ids = all_ids_in_pf(pf)
 
     # Get info of each id.
+    metadata = []
+    for ids in all_ids:
+        record = info(ids)
+        metadata.append({key: record[key] for key in ["id", "timeSeriesName"]})
 
     # Keep ids where name includes partialname
+    hits = [record for record in metadata if name in record["timeSeriesName"]]
+
+    if len(hits) == 0:
+        raise Error
+    if len(hits) > 1:
+        raise Error("Mr")
+
+    return hits[0]["id"]
+    ids = []
+    timeSeriesName = []
+    for series_name in metadata:
+        if (series_name["timeSeriesName"].find(name)) != -1:
+            ids.append(series_name["id"])
+            timeSeriesName.append(series_name["timeSeriesName"])
+            if len(ids) > 1:
+                print(series_name["id"], ":", series_name["timeSeriesName"])
 
     # response = _getreq(
     #     f"/rest/energy/belvis/{__tenant}/timeseries",
@@ -112,7 +144,7 @@ def find_id(pf: str, name: str) -> int:
     # )
     # restlist = _object(response)
     # ids = [int(entry.split("/")[-1]) for entry in restlist]
-    
+
     # Raise error if 0 or >1 found.
     if not ids:
         raise ValueError(
@@ -125,11 +157,6 @@ def find_id(pf: str, name: str) -> int:
     # Return id.
     return ids[-1]
 
-
-def info(id: int) -> Dict:
-    """Get dictionary with information about timeseries with id `id`."""
-    response = _getreq(f"/rest/energy/belvis/{__tenant}/timeSeries/{id}")
-    return _object(response)
 
 def records(id: int, ts_left=None, ts_right=None) -> Iterable[Dict]:
     """Return values from timeseries with id `id` in given delivery time interval.
@@ -176,7 +203,11 @@ def series(id: int, ts_left=None, ts_right=None) -> pd.Series:
 
 
 if __name__ == "__main__":
-    id = find_id("LUD", "#LB FRM Procurement/Forward - MW - excl subpf")
+    pf = find_pf("Ludwig")  # returs 'LUD' or VolueError if 0 of > 1
+    id = find_id(
+        "LUD", "#LB FRM Procurement/Forward - MW - excl subpf"
+    )  # returns id or ValueError if 0 or > 1
+
     i = info(id)
     r = records(id)
     s = series(id, "2020-02")
@@ -189,7 +220,6 @@ if __name__ == "__main__":
 # . use token instead of password
 # . function to get QHPFC
 # . function to find PF-abbrev (e.g. 'LUD') from part of pf-name (e.g. 'udwig')
-
 
 
 # I don't know pf abbreviation:
