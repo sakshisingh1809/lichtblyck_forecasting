@@ -3,6 +3,7 @@ Code to quickly get objects for testing.
 """
 
 from .pfline import PfLine
+from .pfstate import PfState
 import pandas as pd
 import numpy as np
 
@@ -20,27 +21,45 @@ def get_index(tz="Europe/Berlin", freq="D", start=None) -> pd.DatetimeIndex:
     return pd.date_range(start, freq=freq, periods=periods, tz=tz)
 
 
-def get_series(i=None, name="w", factor=1) -> pd.Series:
-    """Get Series with index and certain name."""
+def get_series(i=None, name="w", min=10, max=20) -> pd.Series:
+    """Get Series with index `i` and name `name`. Values between min (default: 10) and
+    max (default: 20)."""
     if i is None:
         i = get_index()
-    return pd.Series((1 + np.random.rand(len(i))) * 10 * factor, i, name=name)
+    return pd.Series(min + np.random.rand(len(i)) * (max - min), i, name=name)
 
 
 def get_dataframe(
-    i=None, columns="wp", factors={"w": 1, "q": 1, "p": 1, "r": 1}
+    i=None,
+    columns="wp",
+    min={"w": 100, "q": 1000, "p": 40, "r": 40_000},
+    max={"w": 150, "q": 1500, "p": 80, "r": 120_000},
 ) -> pd.DataFrame:
-    """Get DataFrame with index and certain columns. Columns (e.g. `q` and `w`) are not made consistent."""
+    """Get DataFrame with index `i` and columns `columns`. Columns (e.g. `q` and `w`) 
+    are not made consistent."""
     if i is None:
         i = get_index()
     return pd.DataFrame(
-        {col: get_series(i, col, factors.get(col, 1)) for col in columns}
+        {col: get_series(i, col, min.get(col, 10), max.get(col, 20)) for col in columns}
     )
 
 
 # Portfolio line.
 
 
-def get_pfline(i=None, columns: str = "wp", name: str = "test"):
+def get_pfline(i=None, kind: str = "all"):
     """Get portfolio line, i.e. without children."""
+    columns = {"q": "q", "p": "p", "all": "qr"}[kind]
     return PfLine(get_dataframe(i, columns))
+
+
+# Portfolio state.
+
+
+def get_pfstate(i=None):
+    if i is None:
+        i = get_index()
+    offtakevolume = get_pfline(i, "q") * -2
+    unsourcedprice = get_pfline(i, "p") * 2
+    sourced = get_pfline(i, "all")
+    return PfState(offtakevolume, unsourcedprice, sourced)

@@ -24,7 +24,7 @@ def floor_ts(
     ts : Timestamp or DatetimeIndex.
         Timestamp(s) to floor.
     future : int, optional
-        0 (default) to get start of period that ts in contained in. 1 (-1) to get start 
+        0 (default) to get start of period that `ts` in contained in. 1 (-1) to get start 
         of period after (before) that. 2 (-2) .. etc.
     freq : frequency, optional
         What to floor it to. One of {'D', 'MS', 'QS', 'AS'} for start of the day, month, 
@@ -38,6 +38,12 @@ def floor_ts(
     """
     if freq is None:
         freq = ts.freq
+
+    if freq == "15T":
+        return ts.floor("15T") + pd.Timedelta(minutes=future * 15)
+    elif freq == "H":
+        return ts.floor("H") + pd.Timedelta(hours=future)
+
     ts = ts.floor("D")  # make sure we return a midnight value
     if freq == "D":
         return ts + pd.Timedelta(days=future)
@@ -52,7 +58,59 @@ def floor_ts(
     elif freq == "AS":
         return ts + pd.offsets.YearBegin(1) + pd.offsets.YearBegin(future - 1)
     else:
-        raise ValueError("Argument `freq` must be one of {'D', 'MS', 'QS', 'AS'}.")
+        raise ValueError(f"Argument `freq` must be one of {FREQUENCIES}.")
+
+
+def ts_leftright(left=None, right=None) -> Tuple:
+    """Makes 2 timestamps coherent to one another.
+
+    Parameters
+    ----------
+    left : timestamp, optional
+    right : timestamp, optional
+        If no value for ts_left is given, the beginning of the year of ts_right is given.
+        If no value for ts_right is given, the end of the year of ts_left is given.
+        If no values is given for either, the entire next year is given. 
+        If a value is given for each, they are swapped if their order is incorrect.
+        If no time zone is provided for either timestamp, the Europe/Berlin timezone is 
+        assumed.
+
+    Returns
+    -------
+    (localized timestamp, localized timestamp)
+    """
+
+    left, right = pd.Timestamp(left), pd.Timestamp(right)
+
+    if right is pd.NaT:
+        if left is pd.NaT:
+            return ts_leftright(floor_ts(pd.Timestamp.now(), 1, "AS"))
+        if left.tz is None:
+            return ts_leftright(left.tz_localize("Europe/Berlin"))
+        return ts_leftright(left, floor_ts(left, 1, "AS"))
+
+    # if we land here, we at least know ts_right.
+    if left is pd.NaT:
+        back = -1 if right == floor_ts(right, 0, "AS") else 0
+        return ts_leftright(floor_ts(right, back, "AS"), right)
+
+    # if we land here, we know ts_left and ts_right.
+    if right.tz is None:
+        if left.tz is None:
+            return ts_leftright(left.tz_localize("Europe/Berlin"), right)
+        return ts_leftright(left, right.tz_localize(left.tz))
+
+    # if we land here, we know ts_left and localized ts_right.
+    if left.tz is None:
+        return ts_leftright(left.tz_localize(right.tz), right)
+
+    # if we land here, we know localized ts_left and localized ts_right 
+    if left > right:
+        left, right = right, left
+
+    # return values possibly with distinct timezones. We cannot easily avoid this, 
+    # because summer- and wintertime are also distinct timezones.
+    return left, right
 
 
 def freq_up_or_down(freq_source, freq_target) -> int:
@@ -74,7 +132,7 @@ def freq_up_or_down(freq_source, freq_target) -> int:
     from. May have influence on the ratio (duration of a month, quarter, year etc are
     influenced by this), but, for most common frequencies, not on which is larger.
     """
-    common_ts = pd.Timestamp("2020-01-01")
+    common_ts = pd.Timestamp("2020-01-01 0:00")
     ts1 = common_ts + pd.tseries.frequencies.to_offset(freq_source)
     ts2 = common_ts + pd.tseries.frequencies.to_offset(freq_target)
     if ts1 > ts2:
@@ -117,57 +175,3 @@ def freq_longest(*freqs):
     """
     return _freq_longestshortest(False, *freqs)
 
-
-
-def ts_leftright(ts_left=None, ts_right=None) -> Tuple:
-    """Makes 2 timestamps coherent to one another.
-
-    Parameters
-    ----------
-    ts_left : timestamp, optional
-    ts_right : timestamp, optional
-
-    If no value for ts_left is given, the beginning of the year of ts_right is given.
-    If no value for ts_right is given, the end of the year of ts_left is given.
-    If no values is given for either, the entire current year is given. If no time
-    zone is provided for either timestamp, the Europe/Berlin timezone is assumed.
-
-    Returns
-    -------
-    (localized timestamp, localized timestamp)
-    """
-
-    def start(middle):
-        return middle + pd.offsets.YearBegin(0) + pd.offsets.YearBegin(-1)
-
-    def end(middle):
-        return middle + pd.offsets.YearBegin(1)
-
-    ts_left, ts_right = pd.Timestamp(ts_left), pd.Timestamp(ts_right)
-
-    if ts_right is pd.NaT:
-        if ts_left is pd.NaT:
-            return ts_leftright(start(dt.date.today()))
-        if ts_left.tz is None:
-            return ts_leftright(ts_left.tz_localize("Europe/Berlin"))
-        return ts_leftright(ts_left, end(ts_left))
-
-    # if we land here, we at least know ts_right.
-    if ts_left is pd.NaT:
-        return ts_leftright(start(ts_right), ts_right)
-
-    # if we land here, we know ts_left and ts_right.
-    if ts_right.tz is None:
-        if ts_left.tz is None:
-            return ts_leftright(ts_left.tz_localize("Europe/Berlin"), ts_right)
-        return ts_leftright(ts_left, ts_right.tz_localize(ts_left.tz))
-
-    # if we land here, we know ts_left and localized ts_right.
-    if ts_left.tz is None:
-        return ts_leftright(ts_left.tz_localize(ts_right.tz), ts_right)
-
-    # if we land here, we know localized ts_left and localized ts_right.
-    if ts_left.tz != ts_right.tz:
-        raise ValueError("Timestamps have non-matching timezones.")
-
-    return ts_left, ts_right
