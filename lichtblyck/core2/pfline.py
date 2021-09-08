@@ -4,6 +4,7 @@ Dataframe-like class to hold general energy-related timeseries.
 
 from __future__ import annotations
 from ..tools.frames import set_ts_index
+from ..tools import stamps 
 from ..visualize import visualize as vis
 from . import utils
 from matplotlib import pyplot as plt
@@ -20,8 +21,9 @@ import warnings
 # ... keep price information even if the volume q == 0, because at a later time this price
 #   might still be needed, e.g. if a perfect hedge becomes unperfect. So: we want to be
 #   able to store q and p.
-# It is unpractical to cater to both cases, as it raises questions, e.g. when adding
-# them, how is the result stored?.
+# It is unpractical to cater to both cases, as we'd need to constantly check which case 
+# we are dealing with, and it also raises questions without a natural answer, e.g. when 
+# adding them, how is the result stored?
 # The first case one is the most important one, and is therefore used. The second case
 # must be handled by storing market prices seperately from volume data.
 
@@ -195,7 +197,7 @@ class PfLine:
 
     @property
     def available(self) -> str:  # which time series have values
-        return {"p": "p", "q": "qw", "all": "qwrp"}[self.kind]
+        return {"p": "p", "q": "qw", "all": "wqpr"}[self.kind]
 
     def df(self, cols: str = None) -> pd.DataFrame:
         """DataFrame for this PfLine.
@@ -237,6 +239,12 @@ class PfLine:
         elif key in ["p", "r"] and self.kind in ["q", "all"]:
             data["q"] = self["q"]
         return PfLine(data)
+
+    def concat(self, other) -> PfLine:
+        """Concatenate two PfLines (along index)."""
+        if self.kind != other.kind:
+            raise ValueError("Cannot concatenate pflines of unequal kind.")
+        pass #TODO
 
     def changefreq(self, freq: str = "MS") -> PfLine:
         """Resample the PfLine to a new frequency.
@@ -333,7 +341,7 @@ class PfLine:
         if self.kind != other.kind:
             raise ValueError("Cannot add portfolio lines of unequal kind.")
         # Upsample to shortest frequency.
-        freq = utils.freq_shortest(self.index.freq, other.index.freq)
+        freq = stamps.freq_shortest(self.index.freq, other.index.freq)
         dfs = [pfl.changefreq(freq).df(pfl._summable) for pfl in [self, other]]
         # Get addition and keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
         df = sum(dfs).dropna().resample(freq).asfreq()
@@ -350,8 +358,8 @@ class PfLine:
 
     def __mul__(self, other):
         if isinstance(other, float) or isinstance(other, int):
-            if self.kind in ["p", "q"]:
-                return PfLine(self._df * other)
+            # multiply price p (kind == 'p'), volume q (kind == 'q'), or volume q and revenue r (kind == 'all').
+            return PfLine(self._df * other)
         elif isinstance(other, PfLine):
             if self.kind == "p" and other.kind == "q":
                 return PfLine({"q": other.q, "p": self.p})
@@ -362,11 +370,14 @@ class PfLine:
 
     def __rmul__(self, other):
         return self * other
+    
+    def __neg__(self):
+        return self * -1
 
     def __truediv__(self, other):
-        if isinstance(other, float) or isinstance(other, int):
-            return self * (1 / other)
-        raise NotImplementedError("This division is not defined.")
+        if not isinstance(other, float) and not isinstance(other, int):
+            raise NotImplementedError("This division is not defined.")
+        return self * (1 / other)
 
     def __repr__(self):
         what = {"p": "price", "q": "volume", "all": "price and volume"}[self.kind]
