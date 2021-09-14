@@ -18,7 +18,7 @@
 
 from lichtblyck.core2.pfline import _make_df
 from lichtblyck.core2 import dev
-from lichtblyck.tools import tools
+from lichtblyck.tools.frames import set_ts_index
 import pandas as pd
 import numpy as np
 import pytest
@@ -71,6 +71,30 @@ def assert_p_q_r_compatible(r, p, q):
     pd.testing.assert_series_equal(r, q * p, check_names=False)
 
 
+def combination_of_two(choice, df):
+    if choice == "wp":
+        df["q"] = df.w * df.w.duration
+        df["r"] = df.p * df.q
+
+    elif choice == "rp":
+        df["q"] = df.r / df.p
+        df["w"] = df.q / df.duration
+
+    elif choice == "pq":
+        df["r"] = df.p * df.q
+        df["w"] = df.q / df.duration
+
+    elif choice == "wr":
+        df["q"] = df.w * df.w.duration
+        df["p"] = df.r / df.q
+
+    else:
+        df["p"] = df.r / df.q
+        df["w"] = df.q / df.duration
+
+    return df
+
+
 # . check with various combinations of keys: p, q, w, p and q, q and w, etc.
 # . check that inconsistent data raises error.
 @pytest.mark.parametrize("tz", ["Europe/Berlin", None])
@@ -95,7 +119,7 @@ def assert_p_q_r_compatible(r, p, q):
         "qwpr",
     ],
 )
-def test_combinations(tz, freq, choice):
+def test_makedf_consistency(tz, freq, choice):
     i = dev.get_index(tz, freq)
     df = dev.get_dataframe(i, choice)
     # dic = {key: df[key] for key in choice}
@@ -109,21 +133,22 @@ def test_combinations(tz, freq, choice):
 
     elif choice == "p":  # kind == "p"
         result = _make_df(df)
-        expectedresult = tools.set_ts_index(pd.DataFrame({"p": df.p}))
+        expectedresult = set_ts_index(pd.DataFrame({"p": df.p}))
 
     elif choice == "q":  # kind == "q"
         result = _make_df(df)
-        expectedresult = tools.set_ts_index(pd.DataFrame({"q": df.q}))
+        expectedresult = set_ts_index(pd.DataFrame({"q": df.q}))
 
     elif choice == "w":  # kind == "q"
         result = _make_df(df)
         df["q"] = df.w * df.w.duration
         assert_w_q_compatible(freq, df.w, result["q"])
-        expectedresult = tools.set_ts_index(pd.DataFrame({"q": df.q}))
+        expectedresult = set_ts_index(pd.DataFrame({"q": df.q}))
 
     elif choice in ["rp", "pq", "wp", "qr", "wr"]:  # kind == "all"
-        # df = combination_of_two(choice, df)
         # calculate r, w and q first
+        # df = combination_of_two(choice, df)
+
         if choice == "wp":
             df["q"] = df.w * df.w.duration
             df["r"] = df.p * df.q
@@ -143,13 +168,12 @@ def test_combinations(tz, freq, choice):
         else:
             df["p"] = df.r / df.q
             df["w"] = df.q / df.duration
+
         result = _make_df(df)
         assert_p_q_r_compatible(result.r, df.p, result.q)
         assert_w_q_compatible(freq, df.w, result.q)
 
-        expectedresult = tools.set_ts_index(
-            pd.DataFrame({"q": df.q, "r": df.r})
-        ).dropna()
+        expectedresult = set_ts_index(pd.DataFrame({"q": df.q, "r": df.r})).dropna()
 
     pd.testing.assert_frame_equal(result, expectedresult)
 
@@ -165,34 +189,76 @@ def freq(request):
 freq1 = freq2 = freq
 
 
-# . check with keys having unequal indexes: unequal freq, timeperiod.
-@pytest.mark.parametrize("tz", ["Europe/Berlin", None])
-@pytest.mark.parametrize("freq", ["MS", "D"])
-@pytest.mark.parametrize("choice", ["qw", "rp", "wp", "pq", "qr", "wr"])
-def test_pfline_equalindexes(tz, freq1, freq2, choice):
-    i1 = pd.date_range(start="2020", end="2021", freq=freq1, closed="left")
-    i2 = pd.date_range(start="2020", end="2021", freq=freq2, closed="left")
+# . check with keys having unequal indexes: unequal frequency
+@pytest.mark.parametrize("freq1", ["15T", "H", "2H", "D", "MS", "QS", "AS"])
+@pytest.mark.parametrize("freq2", ["15T", "H", "2H", "D", "MS", "QS", "AS"])
+@pytest.mark.parametrize("choice", ["rp", "wp", "pq", "qr", "wr"])
+def test_pfline_unequalfrequencies(freq1, freq2, choice):
+
+    i1 = pd.date_range(
+        start="2020", end="2021", freq=freq1, closed="left", tz="Europe/Berlin"
+    )
+    i2 = pd.date_range(
+        start="2020", end="2021", freq=freq2, closed="left", tz="Europe/Berlin"
+    )
 
     s1 = dev.get_series(i1, choice[0])
     s2 = dev.get_series(i2, choice[1])
 
-    result = _make_df({"r": s1, "q": s2})
-    expectedresult = tools.set_ts_index(pd.DataFrame({"q": s1, "r": s2})).dropna()
-
     # CASE 1 : UNEQUAL FREQUENCY
     if freq1 != freq2:
         with pytest.raises(ValueError):
-            _make_df({"r": s1, "q": s2})
+            result = _make_df({choice[0]: s1, choice[1]: s2})
         return
 
-    # if result.index.freq != expectedresult.index.freq:  # different frequencies
-    #     raise ValueError("Passed frequencies for two timeseries are not consistent.")
+
+# . check with keys having unequal indexes: unequal timeperiod.
+@pytest.mark.parametrize("freq", ["MS", "D"])
+@pytest.mark.parametrize("choice", ["rp", "wp", "pq", "qr", "wr"])
+def test_pfline_unequaltimeperiods(freq, choice):
+
+    i1 = pd.date_range(
+        start="01-01-2020",
+        end="01-06-2020",
+        freq=freq,
+        closed="left",
+        tz="Europe/Berlin",
+    )
+    i2 = pd.date_range(
+        start="01-03-2020",
+        end="01-09-2020",
+        freq=freq,
+        closed="left",
+        tz="Europe/Berlin",
+    )
+    s1 = dev.get_series(i1, choice[0])
+    s2 = dev.get_series(i2, choice[1])
 
     # CASE 2 : UNEQUAL TIMESERIES
-    intersection = result.index.intersection(expectedresult)
+    intersection = s1.index.intersection(s2.index)
 
     if intersection is None:
-        raise ValueError("The two timeseries do not have anything in common.")
-    else:
-        # check result have same intersection result
-        pass
+        # raise ValueError("The two timeseries do not have anything in common.")
+        with pytest.raises(ValueError):
+            result = _make_df({choice[0]: s1, choice[1]: s2})
+        return
+
+    result = _make_df({choice[0]: s1, choice[1]: s2})
+
+    if choice == "qr":
+        pd.testing.assert_series_equal(result[choice[0]], s1.loc[intersection])
+        pd.testing.assert_series_equal(result[choice[1]], s2.loc[intersection])
+    # check result have same intersection as that of expected result
+    pd.testing.assert_index_equal(result.index, intersection, check_names=False)
+
+
+# Assert correct working of pfline:
+# . initialisation with dictionary, with dataframe, with named tuple.
+# . initialisation with pfline returns identical pfline.
+# . .kind property always correctly set.
+# . timeseries can be accessed with .q, .p, .r, .w, ['q'], ['p'], etc.
+# . check correct working of attributes .df() and .changefreq().
+# . check correct working of dunder methods. E.g. assert correct addition:
+# . . pflines having same or different kind
+# . . pflines having same or different frequency
+# . . pflines covering same or different time periods

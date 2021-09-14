@@ -1,26 +1,25 @@
 {
-    "python.linting.pylintEnabled": false,
-    "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true,
-    "python.linting.flake8Args": [
-        "--max-line-length=88",
-        "--ignore=E402,F841,E302,E305,E203,E731",
-    ],
-    "cornflakes.linter.run": "onType",
-    "python.pythonPath": "C:\\ProgramData\\Anaconda3\\envs\\py38b\\python.exe",
-    "python.testing.unittestEnabled": false,
-    "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.testing.pytestArgs": [
-        "."
-    ],
-    "python.testing.autoTestDiscoverOnSaveEnabled": true,
-    "python.venvFolders": [
-        "${workspaceRoot}",
-        "C:\\ProgramData\\Anaconda3\\envs\\"
-    ],
-    "python.autoComplete.addBrackets": true,
-    "python.formatting.provider": "black",
-    "cornflakes.linter.executablePath": "C:\\ProgramData\\Anaconda3\\envs\\py38b\\lib\\site-packages\\flake8",
-    "python.analysis.completeFunctionParens": true
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": true,
+  "python.linting.enabled": true,
+  "python.linting.flake8Args": [
+    "--max-line-length=88",
+    "--ignore=E402,F841,E302,E305,E203,E731"
+  ],
+  "cornflakes.linter.run": "onType",
+  "python.pythonPath": "C:\\ProgramData\\Anaconda3\\envs\\py38b\\python.exe",
+  "python.testing.unittestEnabled": false,
+  "python.testing.nosetestsEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["."],
+  "python.testing.autoTestDiscoverOnSaveEnabled": true,
+  "python.venvFolders": [
+    "${workspaceRoot}",
+    "C:\\ProgramData\\Anaconda3\\envs\\"
+  ],
+  "python.autoComplete.addBrackets": true,
+  "python.formatting.provider": "black",
+  "cornflakes.linter.executablePath": "C:\\ProgramData\\Anaconda3\\envs\\py38b\\lib\\site-packages\\flake8",
+  "python.analysis.completeFunctionParens": true,
+  "jupyter.jupyterServerType": "local"
 }

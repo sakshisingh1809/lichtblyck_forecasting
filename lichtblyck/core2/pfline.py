@@ -21,8 +21,8 @@ import warnings
 # ... keep price information even if the volume q == 0, because at a later time this price
 #   might still be needed, e.g. if a perfect hedge becomes unperfect. So: we want to be
 #   able to store q and p.
-# It is unpractical to cater to both cases, as we'd need to constantly check which case 
-# we are dealing with, and it also raises questions without a natural answer, e.g. when 
+# It is unpractical to cater to both cases, as we'd need to constantly check which case
+# we are dealing with, and it also raises questions without a natural answer, e.g. when
 # adding them, how is the result stored?
 # The first case one is the most important one, and is therefore used. The second case
 # must be handled by storing market prices seperately from volume data.
@@ -239,7 +239,7 @@ class PfLine:
         """Concatenate two PfLines (along index)."""
         if self.kind != other.kind:
             raise ValueError("Cannot concatenate pflines of unequal kind.")
-        pass #TODO
+        pass  # TODO
 
     def changefreq(self, freq: str = "MS") -> PfLine:
         """Resample the PfLine to a new frequency.
@@ -365,7 +365,7 @@ class PfLine:
 
     def __rmul__(self, other):
         return self * other
-    
+
     def __neg__(self):
         return self * -1
 
