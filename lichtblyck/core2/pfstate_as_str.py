@@ -2,8 +2,9 @@
 Module to create a string of the portfolio state as a tree structure.
 """
 
-from .pfline import PfLine
-from typing import List, Callable, Dict
+from .pfline import PfLine, _unitsline
+from ..tools import units
+from typing import List, Callable, Dict, Tuple
 import colorama
 
 # Unique colors for the various levels.
@@ -11,6 +12,7 @@ STYLES = [
     colorama.Style.__dict__["BRIGHT"] + colorama.Fore.__dict__[f]
     for f in ["WHITE", "YELLOW", "GREEN", "BLUE", "MAGENTA", "RED", "CYAN", "BLACK"]
 ]
+
 
 def _style(level: int) -> str:
     """Style for given tree level."""
@@ -21,25 +23,6 @@ def _remove_styles(text: str) -> str:
     """Remove all styles from text."""
     for style in [colorama.Style.RESET_ALL, *STYLES]:
         text = text.replace(style, "")
-    return text
-
-
-def _unit(attr: str) -> str:
-    units = {"q": "MWh", "w": "MW", "p": "Eur/MWh", "r": "Eur", "t": "degC"}
-    return units.get(attr, "")
-
-
-def _unitsline(headerline: str) -> str:
-    """Return a line of text with units that line up with the provided header."""
-    text = headerline
-    for col in ("w", "q", "p", "r"):
-        unit = _unit(col)
-        insert = f" [{unit}]"
-        text = text.replace(col.rjust(len(insert)), insert)
-        while insert not in text and len(unit) > 1:
-            unit = unit[:-3] + ".." if len(unit) > 2 else "."
-            insert = f" [{unit}]"
-            text = text.replace(col.rjust(len(insert)), insert)
     return text
 
 
@@ -57,7 +40,7 @@ def _makelen(txt: str, goal: int, rjust: bool = True, from_middle: bool = False)
         return txt[: goal - 1] + "…"
 
 
-def _treegraphs(drawprev: List[bool], has_children: bool, is_last: bool) -> List[str]:
+def _treegraphs(drawprev: List[bool], has_children: bool, is_last: bool) -> Tuple[str]:
     """Return 2-element list with tree lines and coloring. One for first row, 
     and one for all subsequent rows."""
     # continuation of parent lines
@@ -65,14 +48,14 @@ def _treegraphs(drawprev: List[bool], has_children: bool, is_last: bool) -> List
     # current level
     level = len(drawprev)
     # make the lines for current level
-    graphs = [base, base]
-    graphs[0] += _style(level) + ("└─" if is_last else "├─")
-    graphs[0] += (_style(level + 1) + "Σ") if has_children else (_style(level) + "─")
-    graphs[0] += _style(level) + "─ "
-    graphs[1] += _style(level) + ("  " if is_last else "│ ")
-    graphs[1] += _style(level + 1) + "│" if has_children else " "
-    graphs[1] += " " + _style(level)
-    return graphs
+    graphs0 = graphs1 = base
+    graphs0 += _style(level) + ("└─" if is_last else "├─")
+    graphs0 += (_style(level + 1) + "Σ") if has_children else (_style(level) + "─")
+    graphs0 += _style(level) + "─ "
+    graphs1 += _style(level) + ("  " if is_last else "│ ")
+    graphs1 += _style(level + 1) + "│" if has_children else " "
+    graphs1 += " " + _style(level)
+    return graphs0, graphs1
 
 
 def _width(
@@ -122,7 +105,7 @@ def _datablockfn_time_as_cols(
         line = " " + _makelen(col, indexwidth - 1, False, False)  # index (column)
         for ts, colwidth in zip(stamps, colwidths):
             line += _formatval(pfl, col, colwidth, ts)  # datavalues
-        line += " " + _makelen(f"[{_unit(col)}]", tailwidth, False, True)  # unit
+        line += " " + _makelen(f"[{units.BU(col)}]", tailwidth, False, True)  # unit
         return line
 
     def datablockfn(pfl: PfLine):
@@ -174,7 +157,7 @@ def _bodyblock(pfl_bodyfn, pfs, parts):
     return body(parts)
 
 
-def time_as_rows(pfs, cols="wqpr", num_of_ts=5, colorful:bool=True) -> str:
+def time_as_rows(pfs, cols="wqpr", num_of_ts=5, colorful: bool = True) -> str:
     """Print portfolio structure, with attributes as columns, and timestamps as rows."""
 
     stamps = pfs.offtake.index  # TODO fix
@@ -203,7 +186,7 @@ def time_as_rows(pfs, cols="wqpr", num_of_ts=5, colorful:bool=True) -> str:
     return text if colorful else _remove_styles(text)
 
 
-def time_as_cols(pfs, cols="qp", colorful:bool=True) -> str:
+def time_as_cols(pfs, cols="qp", colorful: bool = True) -> str:
     """Print portfolio structure, with timestamps as columns, and attributes as rows."""
 
     stamps = pfs.offtake.index  # TODO fix

@@ -243,7 +243,7 @@ def find_id(pf: str, name: str) -> int:
     return hits[0]["id"]
 
 
-def records(id: int, ts_left=None, ts_right=None) -> Iterable[Dict]:
+def records(id: int, ts_left, ts_right) -> Iterable[Dict]:
     """Return values from timeseries with id `id` in given delivery time interval.
 
     See also
@@ -259,15 +259,15 @@ def records(id: int, ts_left=None, ts_right=None) -> Iterable[Dict]:
     return _object(response)
 
 
-def series(id: int, ts_left=None, ts_right=None) -> pd.Series:
+def series(id: int, ts_left, ts_right) -> pd.Series:
     """Return series from timeseries with id `id` in given delivery time interval.
 
     Parameters
     ----------
     id : int
         Timeseries id.
-    ts_left : timestamp, optional
-    ts_right : timestamp, optional
+    ts_left : timestamp
+    ts_right : timestamp
 
     Returns
     -------
@@ -309,7 +309,7 @@ if __name__ == "__main__":
 # . function to find PF-abbrev (e.g. 'LUD') from part of pf-name (e.g. 'udwig')
 
 # I don't know pf abbreviation:
-# . find_pf: partial_or_exact_pf_name -> pf
+# . find_pf: partial_or_exact_pf_name -> j
 
 # I know exact name or partial name of the ts:
 # . find_id: pf, name -> id

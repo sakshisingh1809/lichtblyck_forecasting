@@ -4,7 +4,7 @@ Dataframe-like class to hold general energy-related timeseries.
 
 from __future__ import annotations
 from ..tools.frames import set_ts_index
-from ..tools import stamps
+from ..tools import stamps, units
 from ..visualize import visualize as vis
 from . import utils
 from matplotlib import pyplot as plt
@@ -28,22 +28,17 @@ import warnings
 # must be handled by storing market prices seperately from volume data.
 
 
-def _unit(attr: str) -> str:
-    units = {"q": "MWh", "w": "MW", "p": "Eur/MWh", "r": "Eur", "t": "degC"}
-    return units.get(attr, "")
-
-
 def _unitsline(headerline: str) -> str:
     """Return a line of text with units that line up with the provided header."""
     text = headerline
-    for att in ("w", "q", "p", "r"):
-        unit = _unit(att)
+    for col in "wqpr":
+        unit = units.BU(col)
         to_add = f" [{unit}]"
-        text = text.replace(att.rjust(len(to_add)), to_add)
+        text = text.replace(col.rjust(len(to_add)), to_add)
         while to_add not in text and len(unit) > 1:
             unit = unit[:-3] + ".." if len(unit) > 2 else "."
             to_add = f" [{unit}]"
-            text = text.replace(att.rjust(len(to_add)), to_add)
+            text = text.replace(col.rjust(len(to_add)), to_add)
     return text
 
 
@@ -310,7 +305,7 @@ class PfLine:
 
         for col, ax in zip(cols, axes.flatten()):
             color = getattr(vis.Colors.Wqpr, col)
-            unit = _unit(col)
+            unit = units.BU(col)
             self.plot_to_ax(ax, col, color=color)
             ax.set_ylabel(unit)
         return fig
