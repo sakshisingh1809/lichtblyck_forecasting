@@ -32,7 +32,7 @@ def _unitsline(headerline: str) -> str:
     """Return a line of text with units that line up with the provided header."""
     text = headerline
     for col in "wqpr":
-        unit = units.BU(col)
+        unit = str(units.BU(col))
         to_add = f" [{unit}]"
         text = text.replace(col.rjust(len(to_add)), to_add)
         while to_add not in text and len(unit) > 1:

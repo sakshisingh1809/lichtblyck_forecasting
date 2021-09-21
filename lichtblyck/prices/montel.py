@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 
 
-_MONTELFILEPATH = Path(__file__).parent / "sourcedata" / "prices_montel.xlsx"
+_MONTELFILEPATH = Path(__file__).parent / "sourcedata" / "prices_montel.xlsm"
 
 
 def _excel_gas(
@@ -335,7 +335,7 @@ def _gas_futures(
     df = pd.read_excel(**_excel_gas(period_type, period_start, market_code))
     df.dropna(inplace=True)
     df.columns = ["ts_left_trade", "p"]
-    df = set_ts_index(df, "ts_left_trade")
+    df = set_ts_index(df, "ts_left_trade", continuous=False)
     # ...add some additional information...
     @functools.lru_cache
     def deliv_f(ts):
