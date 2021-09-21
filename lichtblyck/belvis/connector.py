@@ -156,7 +156,7 @@ def store_all_pfinfo(ids: List):
         if record not in metadata:
             metadata.append(record)
 
-    with open("belvis/memoized/metadata.txt", "w") as outfile:
+    with open("metadata.txt", "w") as outfile:
         json.dump(metadata, outfile)
 
 
@@ -179,8 +179,13 @@ def find_pf(partial_or_exact_pf_name: str) -> str:
             Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
     """
     # Get info of each id.
-    with open("belvis/memoized/metadata.txt") as json_file:
-        metadata = json.load(json_file)
+    with open("metadata.txt") as json_file:
+        data = json.load(json_file)
+
+    # Convert data(list of list) into list of dictionaries
+    metadata = {}
+    for d in data:
+        metadata[d[0]] = d[1]
 
     # Keep ids where name includes partialname
     hits = [
@@ -191,9 +196,7 @@ def find_pf(partial_or_exact_pf_name: str) -> str:
     if len(hits) == 0:
         raise ValueError("No timeseries found. Check parameters; use .find_id")
     elif len(hits) > 1:
-        raise ValueError(
-            'Found more than 1 timeseries, i.e. with ids {",".join(hits)}.'
-        )
+        raise ValueError("Found more than 1 timeseries, i.e. with ids: {", hits, "}")
 
     return hits[0]
 
@@ -285,10 +288,10 @@ def series(id: int, ts_left, ts_right) -> pd.Series:
 
 
 if __name__ == "__main__":
-    fetch_pfinfo()
-    pf = find_pf("udwig")  # returs 'LUD' or ValueError if 0 of > 1
+    # fetch_pfinfo()
+    # pf = find_pf("udwig")  # returs 'LUD' or ValueError if 0 of > 1
     id = find_id(
-        pf, "#LB FRM Procurement/Forward - MW - excl subpf"
+        "LUD", "#LB FRM Procurement/Forward - MW - excl subpf"
     )  # returns id or ValueError if 0 or > 1
 
     i = info(id)
