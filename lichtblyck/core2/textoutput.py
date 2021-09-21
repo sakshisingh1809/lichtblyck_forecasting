@@ -1,16 +1,23 @@
 """
-Module to create a string of the portfolio state as a tree structure.
+Module with mixins, to add 'text-functionality' to PfLine and PfState classes.
 """
 
-from .pfline import PfLine, _unitsline
+from __future__ import annotations
 from ..tools import units
-from typing import List, Callable, Dict, Tuple
+from typing import List, Callable, Dict, Tuple, TYPE_CHECKING
 import colorama
+import functools
+import textwrap
+
+if TYPE_CHECKING:  # needed to avoid circular imports
+    from .pfstate import PfState
+    from .pfline import PfLine
+
 
 # Unique colors for the various levels.
 STYLES = [
     colorama.Style.__dict__["BRIGHT"] + colorama.Fore.__dict__[f]
-    for f in ["WHITE", "YELLOW", "GREEN", "BLUE", "MAGENTA", "RED", "CYAN", "BLACK"]
+    for f in ["WHITE", "GREEN", "YELLOW", "BLUE", "MAGENTA", "RED", "CYAN", "BLACK"]
 ]
 
 
@@ -38,6 +45,20 @@ def _makelen(txt: str, goal: int, rjust: bool = True, from_middle: bool = False)
         return txt[: goal // 2] + "…" + txt[-(goal - 1) // 2 :]
     else:
         return txt[: goal - 1] + "…"
+
+
+def _unitsline(headerline: str) -> str:
+    """Return a line of text with units that line up with the provided header."""
+    text = headerline
+    for col in "wqpr":
+        unit = str(units.BU(col))
+        to_add = f" [{unit}]"
+        text = text.replace(col.rjust(len(to_add)), to_add)
+        while to_add not in text and len(unit) > 1:
+            unit = unit[:-3] + ".." if len(unit) > 2 else "."
+            to_add = f" [{unit}]"
+            text = text.replace(col.rjust(len(to_add)), to_add)
+    return text
 
 
 def _treegraphs(drawprev: List[bool], has_children: bool, is_last: bool) -> Tuple[str]:
@@ -157,7 +178,7 @@ def _bodyblock(pfl_bodyfn, pfs, parts):
     return body(parts)
 
 
-def time_as_rows(pfs, cols="wqpr", num_of_ts=5, colorful: bool = True) -> str:
+def _time_as_rows(pfs: PfState, cols="wqpr", num_of_ts=5, colorful: bool = True) -> str:
     """Print portfolio structure, with attributes as columns, and timestamps as rows."""
 
     stamps = pfs.offtake.index  # TODO fix
@@ -186,7 +207,7 @@ def time_as_rows(pfs, cols="wqpr", num_of_ts=5, colorful: bool = True) -> str:
     return text if colorful else _remove_styles(text)
 
 
-def time_as_cols(pfs, cols="qp", colorful: bool = True) -> str:
+def _time_as_cols(pfs: PfState, cols="qp", colorful: bool = True) -> str:
     """Print portfolio structure, with timestamps as columns, and attributes as rows."""
 
     stamps = pfs.offtake.index  # TODO fix
@@ -214,3 +235,64 @@ def time_as_cols(pfs, cols="qp", colorful: bool = True) -> str:
     # Return.
     text = "\n".join([*pfs_headers, *pfs_body])
     return text if colorful else _remove_styles(text)
+
+
+class PfLineTextOutput:
+    def __repr__(self: PfLine):
+        what = {"p": "price", "q": "volume", "all": "price and volume"}[self.kind]
+        header = f"Lichtblick PfLine object containing {what} information."
+        body = repr(self.df(self.available))
+        units = _unitsline(body.split("\n")[0])
+        loc = body.find("\n\n") + 1
+        if not loc:
+            return f"{header}\n{body}\n{units}"
+        else:
+            return f"{header}\n{body[:loc]}{units}{body[loc:]}"
+
+
+class PfStateTextOutput:
+    def _as_str(
+        self: PfState,
+        time_axis: int = 0,
+        colorful: bool = True,
+        cols: str = "qp",
+        num_of_ts: int = 7,
+    ) -> str:
+        """Treeview of the portfolio state.
+
+        Parameters
+        ----------
+        time_axis : int, optional (default: 0)
+            Put timestamps along vertical axis (0), or horizontal axis (1).
+        colorful : bool, optional (default: True)
+            Make tree structure clearer by including colors. May not work on all output
+            devices.
+        cols : str, optional (default: "qp")
+            The values to show when time_axis == 1 (ignored if 0).
+        num_of_ts : int, optional (default: 7)
+            How many timestamps to show when time_axis == 0 (ignored if 1).
+
+        Returns
+        -------
+        str
+        """
+        if time_axis == 1:
+            return _time_as_cols(self, cols, colorful)
+        else:
+            return _time_as_rows(self, num_of_ts=num_of_ts, colorful=colorful)
+
+    @functools.wraps(_as_str)
+    def print(self: PfState, *args, **kwargs) -> None:
+        i = self.offtake.index  # TODO: fix
+        txt = textwrap.dedent(
+            f"""\
+        . Timestamps: first: {i[0] }      timezone: {i.tz}
+                       last: {i[-1]}          freq: {i.freq}
+        . Treeview:
+        """
+        )
+        print(txt + self._as_str(*args, **kwargs))
+
+    def __repr__(self: PfState):
+        return "Lichtblick PfState object.\n" + self._as_str(0, False)
+

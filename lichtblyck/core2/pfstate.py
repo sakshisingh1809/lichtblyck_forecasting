@@ -5,13 +5,10 @@ certain moment in time (e.g., at the current moment, without any historic data).
 
 from __future__ import annotations
 from .pfline import PfLine
-from .pfstate_as_str import time_as_cols, time_as_rows
+from .textoutput import PfStateTextOutput
+from .plotoutput import PfStatePlotOutput
 from typing import Optional, Iterable, Union
-import functools
-import textwrap
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import warnings
 
 
@@ -62,7 +59,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
     return offtakevolume, unsourcedprice, sourced
 
 
-class PfState:
+class PfState(PfStateTextOutput, PfStatePlotOutput):
     """Class to hold timeseries information of an energy portfolio, at a specific moment. 
 
     Parameters
@@ -181,86 +178,7 @@ class PfState:
     def pnl_cost(self):
         return self.sourced + self.unsourced
 
-    # Methods.
-
-    def _as_str(
-        self,
-        time_axis: int = 0,
-        colorful: bool = True,
-        cols: str = "qp",
-        num_of_ts: int = 7,
-    ) -> str:
-        """Treeview of the portfolio state.
-
-        Parameters
-        ----------
-        time_axis : int, optional (default: 0)
-            Put timestamps along vertical axis (0), or horizontal axis (1).
-        colorful : bool, optional (default: True)
-            Make tree structure clearer by including colors. May not work on all output
-            devices.
-        cols : str, optional (default: "qp")
-            The values to show when time_axis == 1 (ignored if 0).
-        num_of_ts : int, optional (default: 7)
-            How many timestamps to show when time_axis == 0 (ignored if 1).
-
-        Returns
-        -------
-        str
-        """
-        if time_axis == 1:
-            return time_as_cols(self, cols, colorful)
-        else:
-            return time_as_rows(self, num_of_ts=num_of_ts, colorful=colorful)
-
-    @functools.wraps(_as_str)
-    def print(self, *args, **kwargs) -> None:
-        i = self.offtake.index  # TODO: fix
-        txt = textwrap.dedent(
-            f"""\
-        . Timestamps: first: {i[0] }      timezone: {i.tz}
-                       last: {i[-1]}          freq: {i.freq}
-        . Treeview:
-        """
-        )
-        print(txt + self._as_str(*args, **kwargs))
-
-    def plot_to_ax(
-        self, ax: plt.Axes, part: str = "offtake", col: str = None, **kwargs
-    ):
-        """Plot a timeseries of the Portfolio to a specific axes.
-        
-        Parameters
-        ----------
-        ax : plt.Axes
-            The axes object to which to plot the timeseries.
-        part : str, optional
-            The part to plot. One of {'offtake' (default), 'sourced', 'unsourced', 
-            'netposition', 'pnl_costs'}.
-        col : str, optional
-            The column to plot. Default: plot volume `w` [MW] (if available) or else
-            price `p` [Eur/MWh].
-        Any additional kwargs are passed to the pd.Series.plot function.
-        """
-        pass  # TODO
-
-    def plot(self, cols: str = "wp") -> plt.Figure:
-        """Plot one or more timeseries of the Portfolio.
-        
-        Parameters
-        ----------
-        cols : str, optional
-            The columns to plot. Default: plot volume `w` [MW] and price `p` [Eur/MWh] 
-            (if available).
-
-        Returns
-        -------
-        plt.Figure
-            The figure object to which the series was plotted.
-        """
-        pass  # TODO
-
-    # Methods that return new Portfolio instance.
+    # Methods that return new class instance.
 
     def set_offtakevolume(self, offtakevolume: PfLine) -> PfState:
         warnings.warn(
@@ -350,7 +268,3 @@ class PfState:
         if not isinstance(other, float) and not isinstance(other, int):
             raise NotImplementedError("This division is not defined.")
         return self * (1 / other)
-
-    def __repr__(self):
-        return "Lichtblick PfState object.\n" + self._as_str(0, False)
-

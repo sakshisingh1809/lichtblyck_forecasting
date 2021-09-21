@@ -58,26 +58,6 @@ def concat(dfs: Iterable, axis: int = 0, *args, **kwargs) -> pd.DataFrame:
     return pd.concat(dfs, axis=axis, *args, **kwargs)
 
 
-# def _aggpf(df: pd.DataFrame) -> pd.Series:
-#     """
-#     Aggregation function for PfFrames.
-
-#     Parameters
-#     ----------
-#     df : pd.DataFrame
-#         Dataframe with (at least) 2 of the following columns: (w or q), p, r.
-
-#     Returns
-#     -------
-#     pd.Series
-#         The aggregated series with the aggregated values for q, r, w and p.
-#     """
-#     duration = df.duration.sum()
-#     q = df.q.sum(skipna=False)
-#     r = df.r.sum(skipna=False)
-#     return pd.Series({"q": q, "r": r, "w": q / duration, "p": r / q})
-
-
 def _changefreq_general(fr: NDFrame, freq: str = "MS", is_summable: bool = True):
     """Change frequency of a Series or DataFrame, depending on the type of data it 
     contains."""

@@ -1,17 +1,17 @@
 """
-Dataframe-like class to hold general energy-related timeseries.
+Dataframe-like class to hold general energy-related timeseries; either volume ([MW] or
+[MWh]), price ([Eur/MWh]) or both.
 """
 
 from __future__ import annotations
 from ..tools.frames import set_ts_index
-from ..tools import stamps, units
-from ..visualize import visualize as vis
-from . import utils
-from matplotlib import pyplot as plt
-from typing import Iterable, Union
+from ..tools import stamps
+from .textoutput import PfLineTextOutput
+from .plotoutput import PfLinePlotOutput
+from .utils import changefreq_sum
+from typing import Union
 import pandas as pd
 import numpy as np
-import warnings
 
 # Developer notes: we would like to be able to handle 2 cases with volume AND financial
 # information. We would like to...
@@ -26,21 +26,6 @@ import warnings
 # adding them, how is the result stored?
 # The first case one is the most important one, and is therefore used. The second case
 # must be handled by storing market prices seperately from volume data.
-
-
-def _unitsline(headerline: str) -> str:
-    """Return a line of text with units that line up with the provided header."""
-    text = headerline
-    for col in "wqpr":
-        unit = str(units.BU(col))
-        to_add = f" [{unit}]"
-        text = text.replace(col.rjust(len(to_add)), to_add)
-        while to_add not in text and len(unit) > 1:
-            unit = unit[:-3] + ".." if len(unit) > 2 else "."
-            to_add = f" [{unit}]"
-            text = text.replace(col.rjust(len(to_add)), to_add)
-    return text
-
 
 def _make_df(data) -> pd.DataFrame:
     """From data, create a DataFrame with column `q`, column `p`, or columns `q` and `r`.
@@ -64,7 +49,7 @@ def _make_df(data) -> pd.DataFrame:
 
     if not isinstance(data, PfLine):
         data = set_ts_index(pd.DataFrame(data))  # make df in case info passed as float
-    q, w, r, p = [series_or_none(data, key) for key in "qwrp"]
+    w, q, p, r = [series_or_none(data, key) for key in "wqpr"]
 
     # Get price information.
     if p is not None and w is None and q is None and r is None:
@@ -99,7 +84,7 @@ def _make_df(data) -> pd.DataFrame:
     return set_ts_index(pd.DataFrame({"q": q, "r": r}).dropna())  # kind == 'all'
 
 
-class PfLine:
+class PfLine(PfLineTextOutput, PfLinePlotOutput):
     """Class to hold a related energy timeseries. This can be volume timeseries q
     [MWh] and w [MW], or a price timeseries p [Eur/MWh] or both.
 
@@ -210,7 +195,7 @@ class PfLine:
             cols = self.available
         return pd.DataFrame({col: self[col] for col in cols})
 
-    # Methods/Properties that return new PfLine instance.
+    # Methods/Properties that return new class instance.
 
     volume: PfLine = property(lambda self: PfLine({"q": self.q}))  # possibly nan-Series
     price: PfLine = property(lambda self: PfLine({"p": self.p}))  # possibly nan-Series
@@ -259,56 +244,8 @@ class PfLine:
             raise ValueError(
                 "Cannot change frequency of price information (because this will introduce errors if volume is not flat)."
             )
-            # More correct: allow downsampling, and upsampling if all values are equal.
-        return PfLine(utils.changefreq_sum(self.df(self._summable), freq))
-
-    # Visualisation methods.
-
-    def plot_to_ax(self, ax: plt.Axes, col: str = None, **kwargs):
-        """Plot a timeseries of the PfLine to a specific axes.
-
-        Parameters
-        ----------
-        ax : plt.Axes
-            The axes object to which to plot the timeseries.
-        col : str, optional
-            The column to plot. Default: plot volume `w` [MW] (if available) or else
-            price `p` [Eur/MWh].
-        Any additional kwargs are passed to the pd.Series.plot function.
-        """
-        if not col:
-            col = "w" if "w" in self.available else "p"
-        how = {"r": "bar", "q": "bar", "p": "step", "w": "line"}.get(col)
-        if not how:
-            raise ValueError("`col` must be one of {'w', 'q', 'p', 'r'}")
-        s = self[col]
-        vis.plot_timeseries(ax, s, how=how, **kwargs)
-
-    def plot(self, cols: str = "wp") -> plt.Figure:
-        """Plot one or more timeseries of the PfLine.
-
-        Parameters
-        ----------
-        cols : str, optional
-            The columns to plot. Default: plot volume `w` [MW] and price `p` [Eur/MWh]
-            (if available).
-
-        Returns
-        -------
-        plt.Figure
-            The figure object to which the series was plotted.
-        """
-        cols = [col for col in cols if col in self.available]
-        fig, axes = plt.subplots(
-            len(cols), 1, True, False, squeeze=False, figsize=(10, len(cols) * 3)
-        )
-
-        for col, ax in zip(cols, axes.flatten()):
-            color = getattr(vis.Colors.Wqpr, col)
-            unit = units.BU(col)
-            self.plot_to_ax(ax, col, color=color)
-            ax.set_ylabel(unit)
-        return fig
+            # More correct: allow upsampling, and allow downsampling if all values are equal.
+        return PfLine(changefreq_sum(self.df(self._summable), freq))
 
     # Dunder methods.
 
@@ -374,14 +311,4 @@ class PfLine:
             raise NotImplementedError("This division is not defined.")
         return self * (1 / other)
 
-    def __repr__(self):
-        what = {"p": "price", "q": "volume", "all": "price and volume"}[self.kind]
-        header = f"Lichtblick PfLine object containing {what} information."
-        body = repr(self.df(self.available))
-        units = _unitsline(body.split("\n")[0])
-        loc = body.find("\n\n") + 1
-        if not loc:
-            return f"{header}\n{body}\n{units}"
-        else:
-            return f"{header}\n{body[:loc]}{units}{body[loc:]}"
 
