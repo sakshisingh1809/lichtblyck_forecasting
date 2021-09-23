@@ -5,6 +5,7 @@ from . import connector
 from typing import Optional, Union
 import functools
 import datetime as dt
+import pandas as pd
 
 
 # Intermediate goals:
@@ -23,32 +24,63 @@ TSNAMES = {
         "rs": "#LB Wert aller Termingeschäfte +UB",
     },
     "LUD": {},  # any
-    "PKG": {}
+    "PKG": {"wo": "#FRM offtake - MW"}
     # etc.
 }
 
 
 def offtakevolume(
-    pf="LUD",
+    pfname,
+    tsname_wo,
     ts_left: Optional[Union[str, dt.dt.datetime]] = None,
     ts_right: Optional[Union[str, dt.dt.datetime]] = None,
 ) -> PfLine:
+    """[summary]
+
+    Args:
+        pfname ([type]): [description]
+        tsname_wo ([type]): [description]
+        ts_left (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
+        ts_right (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
+
+    Returns:
+        PfLine: [description]
+    """
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
-    id_wo = connector.find_id("LUD", "name of offtake volume timeseries")
+    id_wo = connector.find_id(pfname, tsname_wo)
     wo = connector.series(id_wo, ts_left, ts_left)
+
     return PfLine({"w": wo})
 
 
 def sourced(
-    pf="LUD",
+    pf,
     ts_left: Optional[Union[str, dt.dt.datetime]] = None,
     ts_right: Optional[Union[str, dt.dt.datetime]] = None,
 ) -> PfLine:
+    """[summary]
+
+    Args:
+        pfname ([type]): [description]
+        tsname_ws ([type]): [description]
+        tsname_rs ([type]): [description]
+        ts_left (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
+        ts_right (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
+
+    Returns:
+        PfLine: [description]
+    """
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
-    id_ws = connector.find_id("LUD", "name of sourced volume timeseries")
-    id_rs = connector.find_id("LUD", "name of sourced revenue timeseries")
+    tsname = get_tsnames(pf)
+    id_ws = connector.find_id(
+        pfname, tsname["ws"]
+    )  # "name of sourced volume timeseries"
+    id_rs = connector.find_id(
+        pfname, tsname["rs"]
+    )  # "name of sourced revenue timeseries"
     ws = connector.series(id_ws, ts_left, ts_left)
     rs = connector.series(id_rs, ts_left, ts_left)
+
     return PfLine({"w": ws, "r": rs})
 
 
@@ -100,3 +132,21 @@ def givemepfstate(
     pf="LUD", viewon="2021-04-01", deliveryperiod=["2022-01-01", "2022-02-01"]
 ) -> PfState:
     pass
+
+
+def get_tsnames(pf):
+
+    dic = TSNAMES[pf]
+    for key in ["wo", "ws", "rs"]:
+        if key not in dic:
+            dic[key] = TSNAMES["DEFAULT"][key]
+
+    return dic
+
+
+if __name__ == "__main__":
+
+    pfname = "udwig"
+    tsname = "#LB FRM Procurement/Forward - MW - incl subpf"
+
+    pfstate()
