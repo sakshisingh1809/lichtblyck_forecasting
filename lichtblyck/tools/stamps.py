@@ -16,16 +16,16 @@ FREQUENCIES = ["AS", "QS", "MS", "D", "H", "15T"]
 def floor_ts(
     ts: Union[pd.Timestamp, pd.DatetimeIndex], future: int = 0, freq=None
 ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
-    """Calculate (timestamp at beginning of) month, quarter, or year that a timestamp
-    is in.
+    """Floor timestamp to start of month, quarter, or year that contains it. I.e., find
+    (largest) start of period that is smaller than or equal to the timestamp.
 
     Parameters
     ----------
     ts : Timestamp or DatetimeIndex.
         Timestamp(s) to floor.
     future : int, optional
-        0 (default) to get start of period that `ts` in contained in. 1 (-1) to get start 
-        of period after (before) that. 2 (-2) .. etc.
+        0 (default) to get latest period start that is `ts` or earlier. 1 (-1) to get 
+        start of period after (before) that. 2 (-2) .. etc.
     freq : frequency, optional
         What to floor it to. One of {'D', 'MS', 'QS', 'AS'} for start of the day, month, 
         quarter, or year it's contained in. If none specified, use .freq attribute of 
@@ -35,6 +35,10 @@ def floor_ts(
     -------
     Timestamp(s)
         At begin of period.
+
+    Notes
+    -----
+    Except if `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor(ts, 1).
     """
     if freq is None:
         freq = ts.freq
@@ -59,6 +63,37 @@ def floor_ts(
         return ts + pd.offsets.YearBegin(1) + pd.offsets.YearBegin(future - 1)
     else:
         raise ValueError(f"Argument `freq` must be one of {FREQUENCIES}.")
+
+
+def ceil_ts(
+    ts: Union[pd.Timestamp, pd.DatetimeIndex], future: int = 0, freq=None
+) -> Union[pd.Timestamp, pd.DatetimeIndex]:
+    """Find (smallest) start of month, quarter, or year that is larger than or equal to
+    the timestamp.
+
+    Parameters
+    ----------
+    ts : Timestamp or DatetimeIndex.
+        Timestamp(s) to ceil.
+    future : int, optional
+        0 (default) to get earliest period start that is `ts` or later. 1 (-1) to get 
+        start of period after (before) that. 2 (-2) .. etc.
+    freq : frequency, optional
+        What to ceil it to. One of {'D', 'MS', 'QS', 'AS'} for start of the day, month, 
+        quarter, or year it's contained in. If none specified, use .freq attribute of 
+        timestamp.
+
+    Returns
+    -------
+    Timestamp(s)
+        At begin of period.
+
+    Notes
+    -----
+    Except if `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor(ts, 1).
+    """
+    offset = 1 if ts != floor_ts(ts, 0, freq) else 0 # if ts at start of period, ceil==floor
+    return floor_ts(ts, future + offset, freq)
 
 
 def ts_leftright(left=None, right=None) -> Tuple:
@@ -104,11 +139,11 @@ def ts_leftright(left=None, right=None) -> Tuple:
     if left.tz is None:
         return ts_leftright(left.tz_localize(right.tz), right)
 
-    # if we land here, we know localized ts_left and localized ts_right 
+    # if we land here, we know localized ts_left and localized ts_right
     if left > right:
         left, right = right, left
 
-    # return values possibly with distinct timezones. We cannot easily avoid this, 
+    # return values possibly with distinct timezones. We cannot easily avoid this,
     # because summer- and wintertime are also distinct timezones.
     return left, right
 

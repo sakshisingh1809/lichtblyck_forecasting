@@ -11,10 +11,14 @@ import numpy as np
 
 
 def set_ts_index(
-    fr: NDFrame, column: str = None, bound: str = "left", tz: str = "Europe/Berlin"
+    fr: NDFrame,
+    column: str = None,
+    bound: str = "left",
+    tz: str = "Europe/Berlin",
+    continuous: bool = True,
 ) -> NDFrame:
     """
-    Create and add a standardized timestamp index to a dataframe.
+    Create and add a standardized, continuous timestamp index to a dataframe.
 
     Parameters
     ----------
@@ -25,9 +29,11 @@ def set_ts_index(
         otherwise. Use existing index if none specified.
     bound : {'left' (default), 'right'}
         If 'left' ('right'), specifies that input timestamps are left-(right-)bound.
-    tz : str, optional
+    tz : str, optional (default: "Europe/Berlin")
         Timezone of the input frame; used only if input contains timezone-agnostic
-        timestamps. The default is "Europe/Berlin".
+        timestamps.
+    continuous : bool, optional (default: True)
+        If true, raise error if data has missing values (i.e., gaps).
 
     Returns
     -------
@@ -93,7 +99,7 @@ def set_ts_index(
             freq = tdelta
         fr2 = fr.resample(freq).asfreq()
         # If the new dataframe has additional rows, the original dataframe was not gapless.
-        if len(fr2) > len(fr):
+        if continuous and len(fr2) > len(fr):
             missing = [i for i in fr2.index if i not in fr.index]
             raise ValueError(
                 f"`fr` does not have continuous data; missing data for: {missing}."

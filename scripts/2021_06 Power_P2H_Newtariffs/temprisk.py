@@ -44,7 +44,7 @@ weights = pd.DataFrame(
 )  # GWh/a in each zone
 weights = weights["gas"] / weights["gas"].sum()
 
-# Temperature to load.
+# Temperature to offtake.
 p2h_details = {"rh": {"source": 2, "spec": 612620}, "hp": {"source": 3, "spec": 53388}}
 tlp = {
     pf: lb.tlp.power.fromsource(details["source"], spec=details["spec"])

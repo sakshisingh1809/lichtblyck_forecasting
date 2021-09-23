@@ -84,14 +84,13 @@ lb.tlp.plot.vs_t(tlp)  # quick visual check
 
 # Actual spot prices.
 act[("spot", "p")] = lb.prices.montel.gas_spot()
-act.spot.p = lb.tools.fill_gaps(act.spot.p, 5)
+act.spot.p = lb.fill_gaps(act.spot.p, 5)
 # (split into month average and month-to-day deviations)
 act[("spot_m", "p")] = act.spot.p.resample("MS").transform(np.mean)
 act[("spot_m2d", "p")] = act.spot.p - act.spot_m.p
 
 # Actual temperature.
-t = lb.historic.tmpr()
-t = lb.historic.fill_gaps(t)
+t = lb.tmpr.hist.tmpr()
 t_act = t.wavg(weights.values, axis=1)
 act[("envir", "t")] = t_act  # TODO: use new/own resample function
 
@@ -132,11 +131,11 @@ exp[("offtake", "w")] = tlp(exp.envir.t)
 def exp_price(df):
     cols = ["p", "ts_left_trade"]  # columns to keep
     # keep suitable
-    df = df[df["trade_before_deliv"] > datetime.timedelta(21)]
+    df = df[df["anticipation"] > datetime.timedelta(30)]
     df = df.dropna()
     # find one value
     if not df.empty:
-        df = df.sort_values("trade_before_deliv")  # sort suitable.
+        df = df.sort_values("anticipation")  # sort suitable.
         df = df.reset_index("ts_left_trade")  # to get 'ts_left_trade' in columns.
         return pd.Series(df[cols].iloc[0])  # keep one.
     return pd.Series([], dtype=pd.Float32Dtype)
@@ -146,7 +145,7 @@ def exp_price(df):
 # . Use futures prices to calculate the expected average price level.
 frontmonth = lb.prices.montel.gas_futures("m")
 # . Prices before temperature influence: at least 21 days before delivery start.
-p_exp1_m = frontmonth.groupby("ts_left_deliv").apply(exp_price).dropna()
+p_exp1_m = frontmonth.groupby("ts_left").apply(exp_price).dropna()
 
 # . Use actual spot prices to calculate expected M2D profile: mean but without extremes
 rolling_av = lambda nums: sum(np.sort(nums)[3:-3]) / (len(nums) - 6)

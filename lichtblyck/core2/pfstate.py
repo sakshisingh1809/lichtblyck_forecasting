@@ -5,13 +5,11 @@ certain moment in time (e.g., at the current moment, without any historic data).
 
 from __future__ import annotations
 from .pfline import PfLine
-from .pfstate_as_str import time_as_cols, time_as_rows
+from .textoutput import PfStateTextOutput
+from .plotoutput import PfStatePlotOutput
+from ..prices import convert, hedge
 from typing import Optional, Iterable, Union
-import functools
-import textwrap
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import warnings
 
 
@@ -20,7 +18,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
     3 PfLines: for offtake volume, unsourced price, and sourced price and volume."""
 
     # Make sure unsourced and offtake are specified.
-    if not offtakevolume or not unsourcedprice:
+    if offtakevolume is None or unsourcedprice is None:
         raise ValueError("Must specify offtake volume and unsourced prices.")
 
     # Offtake volume.
@@ -34,10 +32,16 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
             offtakevolume = offtakevolume.volume
 
     # Unsourced prices.
-    if isinstance(unsourcedprice, pd.Series) or isinstance(
-        unsourcedprice, pd.DataFrame
-    ):
+    if isinstance(unsourcedprice, pd.Series):
+        if unsourcedprice.name in "qwr":
+            ValueError("Name implies this is not a price timeseries.")
+        elif unsourcedprice.name != "p":
+            warnings.warn("Will assume prices, even though series name is not 'p'.")
+            unsourcedprice.name = "p"
+        unsourcedprice = PfLine(unsourcedprice)
+    elif isinstance(unsourcedprice, pd.DataFrame):
         unsourcedprice = PfLine(unsourcedprice)  # using column names or series names
+
     if isinstance(unsourcedprice, PfLine):
         if unsourcedprice.kind == "q":
             raise ValueError("Must specify unsourced prices.")
@@ -48,7 +52,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
             unsourcedprice = unsourcedprice.price
 
     # Sourced volume and prices.
-    if not sourced:
+    if sourced is None:
         i = offtakevolume.index.union(unsourcedprice.index)  # largest possible index
         sourced = PfLine(pd.DataFrame({"q": 0, "r": 0}, i))
 
@@ -62,7 +66,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
     return offtakevolume, unsourcedprice, sourced
 
 
-class PfState:
+class PfState(PfStateTextOutput, PfStatePlotOutput):
     """Class to hold timeseries information of an energy portfolio, at a specific moment. 
 
     Parameters
@@ -92,7 +96,6 @@ class PfState:
         Does not follow sign conventions (see 'Notes' below); volumes are <0 if 
         portfolio is short and >0 if long. Identical to `.unsourced`, but with sign 
         change for volumes and revenues (but not prices).
-
     pnl_costs : PfLine ('all')
         The expected costs needed to source the offtake volume; the sum of the sourced 
         and unsourced positions.
@@ -181,86 +184,7 @@ class PfState:
     def pnl_cost(self):
         return self.sourced + self.unsourced
 
-    # Methods.
-
-    def _as_str(
-        self,
-        time_axis: int = 0,
-        colorful: bool = True,
-        cols: str = "qp",
-        num_of_ts: int = 7,
-    ) -> str:
-        """Treeview of the portfolio state.
-
-        Parameters
-        ----------
-        time_axis : int, optional (default: 0)
-            Put timestamps along vertical axis (0), or horizontal axis (1).
-        colorful : bool, optional (default: True)
-            Make tree structure clearer by including colors. May not work on all output
-            devices.
-        cols : str, optional (default: "qp")
-            The values to show when time_axis == 1 (ignored if 0).
-        num_of_ts : int, optional (default: 7)
-            How many timestamps to show when time_axis == 0 (ignored if 1).
-
-        Returns
-        -------
-        str
-        """
-        if time_axis == 1:
-            return time_as_cols(self, cols, colorful)
-        else:
-            return time_as_rows(self, num_of_ts=num_of_ts, colorful=colorful)
-
-    @functools.wraps(_as_str)
-    def print(self, *args, **kwargs) -> None:
-        i = self.offtake.index  # TODO: fix
-        txt = textwrap.dedent(
-            f"""\
-        . Timestamps: first: {i[0] }      timezone: {i.tz}
-                       last: {i[-1]}          freq: {i.freq}
-        . Treeview:
-        """
-        )
-        print(txt + self._as_str(*args, **kwargs))
-
-    def plot_to_ax(
-        self, ax: plt.Axes, part: str = "offtake", col: str = None, **kwargs
-    ):
-        """Plot a timeseries of the Portfolio to a specific axes.
-        
-        Parameters
-        ----------
-        ax : plt.Axes
-            The axes object to which to plot the timeseries.
-        part : str, optional
-            The part to plot. One of {'offtake' (default), 'sourced', 'unsourced', 
-            'netposition', 'pnl_costs'}.
-        col : str, optional
-            The column to plot. Default: plot volume `w` [MW] (if available) or else
-            price `p` [Eur/MWh].
-        Any additional kwargs are passed to the pd.Series.plot function.
-        """
-        pass  # TODO
-
-    def plot(self, cols: str = "wp") -> plt.Figure:
-        """Plot one or more timeseries of the Portfolio.
-        
-        Parameters
-        ----------
-        cols : str, optional
-            The columns to plot. Default: plot volume `w` [MW] and price `p` [Eur/MWh] 
-            (if available).
-
-        Returns
-        -------
-        plt.Figure
-            The figure object to which the series was plotted.
-        """
-        pass  # TODO
-
-    # Methods that return new Portfolio instance.
+    # Methods that return new class instance.
 
     def set_offtakevolume(self, offtakevolume: PfLine) -> PfState:
         warnings.warn(
@@ -277,6 +201,34 @@ class PfState:
         )
         return PfState(self._offtakevolume, self._unsourcedprice, sourced)
 
+    def add_sourced(self, add_sourced: PfLine) -> PfState:
+        return self.set_sourced(self.sourced + add_sourced)
+
+    def hedge_at_unsourcedprice(
+        self, freq: str = "MS", how: str = "vol", bpo: bool = False
+    ) -> PfState:
+        """Hedge and source the unsourced volume, at unsourced prices in the portfolio,
+        so that the portfolio is fully hedged.
+
+        Parameters
+        ----------
+        freq : str, optional. By default "MS".
+            Grouping frequency. One of {'D', 'MS', 'QS', 'AS'} for hedging at day, 
+            month, quarter, or year level. ('D' not allowed for bpo==True.)
+        how : {'vol' (default), 'val'}
+            Hedge-constraint. 'vol' for volumetric hedge, 'val' for value hedge.
+        bpo : bool, optional. By default False.
+            Set to True to split hedge into peak and offpeak values. (Only sensible
+            for power portfolio with .freq=='H' or shorter, and a value for `freq` of
+            'MS' or longer.)
+
+        Returns
+        -------
+        PfState
+            Which is fully hedge at time scales of `freq` or longer.
+        """
+        pass  # TODO
+
     def changefreq(self, freq: str = "MS") -> PfState:
         """Resample the Portfolio to a new frequency.
         
@@ -288,7 +240,7 @@ class PfState:
         
         Returns
         -------
-        Portfolio
+        PfState
             Resampled at wanted frequency.
         """
         # pu resampling is most important, so that prices are correctly weighted.
@@ -350,7 +302,3 @@ class PfState:
         if not isinstance(other, float) and not isinstance(other, int):
             raise NotImplementedError("This division is not defined.")
         return self * (1 / other)
-
-    def __repr__(self):
-        return "Lichtblick PfState object.\n" + self._as_str(0, False)
-
