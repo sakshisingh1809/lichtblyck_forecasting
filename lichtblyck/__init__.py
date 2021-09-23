@@ -1,7 +1,8 @@
 # from .core import pfseries_pfframe  # extend functionalty of pandas
 # from .core.singlepf_multipf import SinglePf, MultiPf
 # from .core.lbpf import LbPf
-from .analyses import analyses
+from .analyse import analyse
+from .simulate import simulate
 from . import belvis
 from . import tlp
 from . import temperatures as tmpr
@@ -17,6 +18,7 @@ from .core2.pfstate import PfState
 from .tools.stamps import (
     FREQUENCIES,
     floor_ts,
+    ceil_ts,
     ts_leftright,
     freq_longest,
     freq_shortest,

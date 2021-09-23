@@ -9,6 +9,7 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 
 from .sourcedata.climate_zones import historicdata, forallzones
 from ..core import basics
+from ..tools.frames import set_ts_index
 from sklearn.linear_model import LinearRegression
 from typing import Callable, Union
 from datetime import datetime
@@ -35,7 +36,7 @@ def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
     df["MESS_DATUM"] = pd.to_datetime(df["MESS_DATUM"], format="%Y%m%d")
     df = df[df["MESS_DATUM"] >= "1917"]  # Problems with earlier data.
     # ...and set correct index and make gapless.
-    df = lb.tools.set_ts_index(df, "MESS_DATUM", "left")
+    df = set_ts_index(df, "MESS_DATUM", "left", continuous=False)
     df = df.resample("D").asfreq()  # add na-values for missing rows.
     return df
 
@@ -53,14 +54,21 @@ def _tmpr(climate_zone: int) -> pd.Series:
     return s
 
 
-def tmpr() -> pd.DataFrame:
+def tmpr(fill_gaps:bool=True) -> pd.DataFrame:
     """
     Return the daily temperatures for each climate zone.
 
-    Returns:
-        Dataframe with daily temperature values. Index: timestamp (daily).
-            Columns: climate zones (1..15). Values: average temperature for
-            corresponding day and climate zone in degC.
+    Parameters
+    ----------
+    fill_gaps : bool, optional. Default = True.
+        Try to fill in missing value of a climate zone with the values of the others.
+
+    Returns
+    -------
+    Dataframe
+        With daily temperature values. Index: timestamp (daily). Columns: climate zones
+        (1..15). Values: average temperature for corresponding day and climate zone in 
+        degC.
     """
     return forallzones(_tmpr)
 

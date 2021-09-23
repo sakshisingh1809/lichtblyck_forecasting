@@ -7,6 +7,7 @@ from __future__ import annotations
 from .pfline import PfLine
 from .textoutput import PfStateTextOutput
 from .plotoutput import PfStatePlotOutput
+from ..prices import convert, hedge
 from typing import Optional, Iterable, Union
 import pandas as pd
 import warnings
@@ -17,7 +18,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
     3 PfLines: for offtake volume, unsourced price, and sourced price and volume."""
 
     # Make sure unsourced and offtake are specified.
-    if not offtakevolume or not unsourcedprice:
+    if offtakevolume is None or unsourcedprice is None:
         raise ValueError("Must specify offtake volume and unsourced prices.")
 
     # Offtake volume.
@@ -31,10 +32,16 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
             offtakevolume = offtakevolume.volume
 
     # Unsourced prices.
-    if isinstance(unsourcedprice, pd.Series) or isinstance(
-        unsourcedprice, pd.DataFrame
-    ):
+    if isinstance(unsourcedprice, pd.Series):
+        if unsourcedprice.name in "qwr":
+            ValueError("Name implies this is not a price timeseries.")
+        elif unsourcedprice.name != "p":
+            warnings.warn("Will assume prices, even though series name is not 'p'.")
+            unsourcedprice.name = "p"
+        unsourcedprice = PfLine(unsourcedprice)
+    elif isinstance(unsourcedprice, pd.DataFrame):
         unsourcedprice = PfLine(unsourcedprice)  # using column names or series names
+
     if isinstance(unsourcedprice, PfLine):
         if unsourcedprice.kind == "q":
             raise ValueError("Must specify unsourced prices.")
@@ -45,7 +52,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
             unsourcedprice = unsourcedprice.price
 
     # Sourced volume and prices.
-    if not sourced:
+    if sourced is None:
         i = offtakevolume.index.union(unsourcedprice.index)  # largest possible index
         sourced = PfLine(pd.DataFrame({"q": 0, "r": 0}, i))
 
@@ -89,7 +96,6 @@ class PfState(PfStateTextOutput, PfStatePlotOutput):
         Does not follow sign conventions (see 'Notes' below); volumes are <0 if 
         portfolio is short and >0 if long. Identical to `.unsourced`, but with sign 
         change for volumes and revenues (but not prices).
-
     pnl_costs : PfLine ('all')
         The expected costs needed to source the offtake volume; the sum of the sourced 
         and unsourced positions.
@@ -195,6 +201,34 @@ class PfState(PfStateTextOutput, PfStatePlotOutput):
         )
         return PfState(self._offtakevolume, self._unsourcedprice, sourced)
 
+    def add_sourced(self, add_sourced: PfLine) -> PfState:
+        return self.set_sourced(self.sourced + add_sourced)
+
+    def hedge_at_unsourcedprice(
+        self, freq: str = "MS", how: str = "vol", bpo: bool = False
+    ) -> PfState:
+        """Hedge and source the unsourced volume, at unsourced prices in the portfolio,
+        so that the portfolio is fully hedged.
+
+        Parameters
+        ----------
+        freq : str, optional. By default "MS".
+            Grouping frequency. One of {'D', 'MS', 'QS', 'AS'} for hedging at day, 
+            month, quarter, or year level. ('D' not allowed for bpo==True.)
+        how : {'vol' (default), 'val'}
+            Hedge-constraint. 'vol' for volumetric hedge, 'val' for value hedge.
+        bpo : bool, optional. By default False.
+            Set to True to split hedge into peak and offpeak values. (Only sensible
+            for power portfolio with .freq=='H' or shorter, and a value for `freq` of
+            'MS' or longer.)
+
+        Returns
+        -------
+        PfState
+            Which is fully hedge at time scales of `freq` or longer.
+        """
+        pass  # TODO
+
     def changefreq(self, freq: str = "MS") -> PfState:
         """Resample the Portfolio to a new frequency.
         
@@ -206,7 +240,7 @@ class PfState(PfStateTextOutput, PfStatePlotOutput):
         
         Returns
         -------
-        Portfolio
+        PfState
             Resampled at wanted frequency.
         """
         # pu resampling is most important, so that prices are correctly weighted.

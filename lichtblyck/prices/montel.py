@@ -198,7 +198,7 @@ def gas_spot(market_code: str = "ncg") -> pd.Series:
     pd.Series
     """
     data = pd.read_excel(**_excel_gas("da", market_code=market_code))
-    data = set_ts_index(data.dropna(), data.columns[0])
+    data = set_ts_index(data.dropna(), data.columns[0], continuous=False)
     s = data.iloc[:, 0]  # turn one-column df into series
     s.index = s.ts_right  # shift up one, so delivery (not trade) day is shown.
     spot = set_ts_index(s).rename("p")
@@ -232,8 +232,8 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
     for df in (b, p):
         df.dropna(inplace=True)
         df.columns = ["ts_left_trade", "p"]
-    b = set_ts_index(b, "ts_left_trade")
-    p = set_ts_index(p, "ts_left_trade")
+    b = set_ts_index(b, "ts_left_trade",  continuous=False)
+    p = set_ts_index(p, "ts_left_trade",  continuous=False)
     # ...put into one object...
     df = p.merge(
         b, how="inner", left_index=True, right_index=True, suffixes=("_peak", "_base"),

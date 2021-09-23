@@ -20,11 +20,10 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import datetime
+from pathlib import Path
 from scipy.stats import norm
 
-os.chdir(
-    "C:\\Users\\ruud.wijtvliet\\Ruud\\OneDrive - LichtBlick SE\\Work_in_RM\\python\\2020_01_lichtblyck"
-)
+# os.chdir(Path(__file__).parent.parent.parent)
 
 stepS = pd.DataFrame(columns=[[], []])  # 2-level columns
 exp = pd.DataFrame(columns=[[], []])  # 2-level columns
@@ -52,27 +51,24 @@ weights = weights["gas"] / weights["gas"].sum()
 
 # Temperature to load.
 p2h_details = {"rh": {"source": 2, "spec": 612620}, "hp": {"source": 3, "spec": 53388}}
-tlp = {
+tlps = {
     pf: lb.tlp.power.fromsource(details["source"], spec=details["spec"])
     for pf, details in p2h_details.items()
 }
-tlp["gas"] = lb.tlp.gas.D14(kw=1000000)  # not used, just for comtempriskison
+tlps["gas"] = lb.tlp.gas.D14(kw=1000000)  # not used, just for comtempriskison
 # quick visual check
-for pr in tlp.values():
+for pr in tlps.values():
     lb.tlp.plot.vs_time(pr)
-    try:
-        lb.tlp.plot.vs_t(pr)  # for some reason, fails.
-    except:
-        pass
-
-tlp_touse = lambda ts: tlp["rh"](ts) + tlp["hp"](ts)
+    lb.tlp.plot.vs_t(pr) 
+    
+tlp = lambda ts: tlps["rh"](ts) + tlps["hp"](ts)
 
 # %% Spot
 
 # Actual spot prices.
 stepS[("pu", "p")] = lb.prices.montel.power_spot()
-stepS.pu.p = lb.tools.fill_gaps(stepS.pu.p, 5)
-# (split into (1) month average base and peak, and (2) month-to-hour deviations)
+stepS.pu.p = lb.fill_gaps(stepS.pu.p, 5)
+# (split into (1) month average peak and offpeak, and (2) month-to-hour deviations)
 stepS[("pu_m", "p")] = lb.prices.convert.tseries2tseries(stepS.pu.p, "MS")
 stepS[("pu_m2h", "p")] = stepS.pu.p - stepS.pu_m.p
 # visual check
@@ -89,7 +85,7 @@ stepS[("envir", "t")] = lb.changefreq_avg(t_act, "H")
 stepS = stepS.dropna().resample("H").asfreq()
 
 # Actual offtake.
-stepS[("qo", "w")] = tlp_touse(stepS.envir.t)
+stepS[("qo", "w")] = tlp(stepS.envir.t)
 
 
 # %% EXPECTED, OFFTAKE (General, at timepoint S and timepoint L)
@@ -113,7 +109,7 @@ t_exp = pd.Series(
 
 # Expected temperature and offtake.
 step0[("envir", "t")] = lb.changefreq_avg(t_exp, "H")
-step0[("qo", "w")] = tlp_touse(step0.envir.t)
+step0[("qo", "w")] = tlp(step0.envir.t)
 
 
 # %% EXPECTED, PRICES, L: ~ 3 weeks before delivery month: no temperature influence in price.
@@ -139,7 +135,7 @@ def price_after_stepL(df):
 # . Prices before temperature influence: about 21 days before delivery start.
 pu_L_m = pu_fut["m"].groupby(level=0).apply(price_after_stepL).dropna().unstack()
 print(pu_L_m[["ts_left_trade", "anticipation"]].describe())  # quick check
-pu_L_m = lb.tools.set_ts_index(pu_L_m.drop(columns=["ts_left_trade", "anticipation"]))
+pu_L_m = lb.set_ts_index(pu_L_m.drop(columns=["ts_left_trade", "anticipation"]))
 assert pu_L_m.isna().any().any() == False  # each month has a price
 pu_L_m["po_spread"] = pu_L_m.p_peak - pu_L_m.p_offpeak
 # quick visual check

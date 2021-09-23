@@ -8,8 +8,8 @@ Created on Wed Jun  3 11:42:08 2020
 from typing import Iterable, Union
 import pandas as pd
 import numpy as np
-from lichtblyck.temperatures.sourcedata.climate_zones import futuredata, forallzones
-from lichtblyck.temperatures import historic
+from .sourcedata.climate_zones import futuredata, forallzones
+from . import historic
 
 
 def climate_data(climate_zone: int) -> pd.DataFrame:

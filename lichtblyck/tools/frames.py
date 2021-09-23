@@ -18,7 +18,7 @@ def set_ts_index(
     continuous: bool = True,
 ) -> NDFrame:
     """
-    Create and add a standardized timestamp index to a dataframe.
+    Create and add a standardized, continuous timestamp index to a dataframe.
 
     Parameters
     ----------
