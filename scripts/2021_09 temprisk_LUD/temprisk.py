@@ -115,6 +115,8 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import datetime
+from urllib.parse import urlsplit
+from io import StringIO
 from pathlib import Path
 from scipy.stats import norm
 
@@ -193,6 +195,8 @@ stepL = pd.DataFrame(columns=[[], []])  # 2-level columns
 
 #%% PRICES.
 
+__file__ = "."
+
 # Year prices.
 pu_fut = lb.prices.montel.power_futures("a")
 # Spot prices.
@@ -247,13 +251,19 @@ t2022 = lb.changefreq_avg(t_exp.loc["2022"], "15T")
 # Offtake.
 offtakevolume = -lb.PfLine(tlp(t2022))
 
+# data_url = "https://dev.azure.com/lichtblick/FRM/_git/lichtblyck?path=/scripts/2021_09%20temprisk_LUD/20210922_084614_Zeitreihenbericht.xlsx"
+# path = StringIO(urlsplit(data_url).geturl())
+
+
 # Market prices.
 # . QHPFC.
 data = pd.read_excel(
-    r"C:\Users\ruud.wijtvliet\OneDrive - LichtBlick SE\Work_in_RM\python\2020_01_lichtblyck\scripts\2021_09 temprisk_LUD\20210922_084614_Zeitreihenbericht.xlsx",
+    Path(__file__).parent / "20210922_084614_Zeitreihenbericht.xlsx",
     header=1,
+    index_col=0,
     names=["ts_right", "qhpfc", "rh_wo", "rh_ws", "rh_rs", "hp_wo", "hp_ws", "hp_rs"],
 )
+
 data = lb.set_ts_index(data, "ts_right", "right")
 pu = data.qhpfc.rename("p")
 # Sourced prices and revenue.
@@ -410,7 +420,7 @@ hist = hist.sort_index(1)
 
 # Keep full years, except 2010 (was extremely cold year)
 hist = hist.loc["2001":"2020"]
-years = [df for y, df in hist.resample("AS") if y.year != 2010]  
+years = [df for y, df in hist.resample("AS") if y.year != 2010]
 
 # %% INFORMATION TO
 
@@ -471,8 +481,8 @@ for n in range(1000):
     for freq, records in [("MS", monthly_sims), ("AS", yearly_sims)]:
         df = lb.changefreq_sum(hourly[cols_sum], freq)
         for col in cols_avg:
-                df[col] = lb.changefreq_avg(hourly[col], freq)
-        df[("delta_p", "chg01")] = df.L.pu - df.O.ro / df.O.qo # correction 
+            df[col] = lb.changefreq_avg(hourly[col], freq)
+        df[("delta_p", "chg01")] = df.L.pu - df.O.ro / df.O.qo  # correction
         df[("temprisk", "p_Lt")] = df.temprisk.r_Lt / df.S.qo
         df[("temprisk", "p_St")] = df.temprisk.r_St / df.S.qo
         records.append(df)
@@ -663,7 +673,9 @@ axes.append(plt.subplot2grid((3, 2), (2, 1), fig=fig, sharex=axes[4], sharey=axe
 # Temprisk - Lt
 #  Scatter
 ax = axes[0]
-ax.title.set_text("Change in offtake vs long-term change in price\n(market price vs pf mix price)")
+ax.title.set_text(
+    "Change in offtake vs long-term change in price\n(market price vs pf mix price)"
+)
 ax.xaxis.label.set_text("MWh")
 ax.yaxis.label.set_text("Eur/MWh")
 ax.scatter(
