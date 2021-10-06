@@ -264,7 +264,7 @@ data = pd.read_excel(
     names=["ts_right", "qhpfc", "rh_wo", "rh_ws", "rh_rs", "hp_wo", "hp_ws", "hp_rs"],
 )
 
-data = lb.set_ts_index(data, "ts_right", "right")
+data = lb.set_ts_index(data, bound="right")
 pu = data.qhpfc.rename("p")
 # Sourced prices and revenue.
 sourced = lb.PfLine({"w": data["rh_ws"], "r": data["rh_rs"]}) + lb.PfLine(
