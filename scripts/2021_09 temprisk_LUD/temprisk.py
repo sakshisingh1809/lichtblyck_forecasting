@@ -258,7 +258,7 @@ offtakevolume = -lb.PfLine(tlp(t2022))
 # Market prices.
 # . QHPFC.
 data = pd.read_excel(
-    Path(__file__).parent / "20211007_110233_Zeitreihenbericht.xlsx",
+    Path(__file__).parent / "20211007_133242_Zeitreihenbericht.xlsx",
     header=1,
     index_col=0,
     names=["ts_right", "qhpfc", "rh_wo", "rh_ws", "rh_rs", "hp_wo", "hp_ws", "hp_rs"],
@@ -449,7 +449,7 @@ cols_avg = [
 monthly_sims = []
 yearly_sims = []
 
-for n in range(1000):
+for n in range(10000):
     # First, pick a historic year
     hourly = np.random.choice(years).copy().iloc[:8760]
 
@@ -596,7 +596,7 @@ ax.scatter(
     c="orange",
     s=10,
     alpha=0.5,
-    label=f"r_temprisk_lt   = {r_temprisk_lt/1000:.0f} kEur\nofftake = {q/1000:.0f} GWh\np_par_lt = {r_temprisk_lt/q:.2f} Eur/MWh",
+    label=f"r_temprisk_lt   = {r_temprisk_lt/10000:.0f} kEur\nofftake = {q/10000:.0f} GWh\np_par_lt = {r_temprisk_lt/q:.2f} Eur/MWh",
 )
 ax.legend()
 #  MWh.
@@ -626,7 +626,7 @@ ax.scatter(
     c="green",
     s=10,
     alpha=0.5,
-    label=f"r_temprisk_st   = {r_temprisk_st/1000:.0f} kEur\nofftake = {q/1000:.0f} GWh\np_par_st = {r_temprisk_st/q:.2f} Eur/MWh",
+    label=f"r_temprisk_st   = {r_temprisk_st/10000:.0f} kEur\nofftake = {q/10000:.0f} GWh\np_par_st = {r_temprisk_st/q:.2f} Eur/MWh",
 )
 ax.legend()
 #  MWh.
@@ -691,7 +691,7 @@ ax.yaxis.label.set_text("kEur")
 ax.xaxis.label.set_text("simulation number")
 ax.bar(
     range(len(source_vals)),
-    source_vals / 1000,
+    source_vals / 10000,
     width=1,
     color="orange",
     label=f"long-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
@@ -745,7 +745,7 @@ ax.yaxis.label.set_text("kEur")
 ax.xaxis.label.set_text("simulation number")
 ax.bar(
     range(len(source_vals)),
-    source_vals / 1000,
+    source_vals / 10000,
     width=1,
     color="green",
     label=f"short-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
@@ -811,7 +811,7 @@ ax.yaxis.label.set_text("kEur")
 ax.xaxis.label.set_text("simulation number")
 ax.bar(
     range(len(source_vals)),
-    source_vals / 1000,
+    source_vals / 10000,
     width=1,
     color="orange",
     label=f"long-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
@@ -856,7 +856,7 @@ ax.yaxis.label.set_text("kEur")
 ax.xaxis.label.set_text("simulation number")
 ax.bar(
     range(len(source_vals)),
-    source_vals / 1000,
+    source_vals / 10000,
     width=1,
     color="green",
     label=f"short-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
