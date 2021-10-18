@@ -24,62 +24,94 @@ from socket import gethostname
 import jwt
 import time
 
-
-__usr = "Ruud.Wijtvliet"
-__pwd = "Ammm1mmm2mmm3mmm"
-__tenant = "PFMSTROM"
 __server = "http://lbbelvis01:8040"
-_session = None
+_auth = None
+_commodity = "power"
+
+
+def _tenant() -> str:
+    """Convenience function to find Belvis tenant belonging to selected commodity."""
+    return {"power": "PFMSTROM", "gas": "PFMGAS"}[_commodity]
 
 
 def _getreq(path, *queryparts) -> requests.request:
-    if _session is None:
-        _startsession_and_authenticate()
     string = f"{__server}{path}"
     if queryparts:
         queryparts = [parse.quote(qp, safe=":=") for qp in queryparts]
         string += "?" + "&".join(queryparts)
     print(string)
     try:
-        return _session.get(string)
+        if "session" in _auth:
+            return _auth["session"].get(string)
+        elif "token" in _auth:
+            return requests.get(
+                string, headers={"Authorization": "Bearer " + _auth["token"]}
+            )
+        else:
+            raise ValueError(
+                "First authenicate with `auth_with_password` or `auth_with_token`."
+            )
     except ConnectionError as e:
         raise RuntimeError("Check if VPN connection to Lichtblick exists.") from e
 
 
-def _startsession_and_authenticate() -> None:
-    """Start session and get token."""
-    global _session
-    _session = requests.Session()
-    _getreq("/rest/session", f"usr={__usr}", f"pwd={__pwd}", f"tenant={__tenant}")
+def auth_with_password(usr: str, pwd: str) -> None:
+    """Authenticaten with username and password; open a session.
+
+    Parameters
+    ----------
+    usr : str
+        Belvis username.
+    pwd : str
+        Belvis password for the given user.
+    commodity : str
+        Which commodity to get data for. One of {'power', 'gas'}.
+    """
+    global _auth
+    _auth = {"session": requests.Session()}
+    _getreq("/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={_tenant()}")
+    if not connection_alive():
+        raise ConnectionError("No connection exists. Username and password incorrect?")
 
 
-def _generate_token() -> requests:
+def auth_with_token(commodity: str) -> None:
     """This method is used by current REST clients or Libraries supported.
     A trustworthy body generates a key pair from which it can be used for
     authorized persons Clients generate strings, so-called Bearer tokens.
 
-    Returns:
-        requests: requests.response
+    Parameters
+    ----------
+    commodity : str
+        Which commodity to get data for. One of {'power', 'gas'}.
     """
+    global _auth
     # Open private key to sign token with
     with open("privatekey.txt", "r") as f:
         private_key = f.read()
 
     # Create token that is valid for a given amount of time.
     claims = {
-        "preferred_username": __usr,
-        "clientId": __tenant,
+        "preferred_username": "Ruud.Wijtvliet",
+        "clientId": _tenant(),
         "exp": int(time.time()) + 10 * 60,
     }
 
     # "RSA 512 bit" in the PKCS standard for your client
     token = jwt.encode(claims, private_key, algorithm="RS512")
-    headers = {"Authorization": "Bearer " + token}
+    _auth = {"token": token}
 
-    response = requests.get(__server, headers=headers)
+    if not connection_alive():
+        raise ConnectionError("No connection exists. Token incorrect?")
 
-    return response
-    # return _object(response)
+
+def set_commodity(commodity: str) -> None:
+    global _commodity, _auth
+    if commodity not in ["power", "gas"]:
+        raise ValueError("`commodity` must be 'power' or 'gas'.")
+    if commodity == _commodity:
+        return
+    _commodity = commodity
+    _auth = None  # changing commodity means we need to redo authentication.
 
 
 def _object(response) -> Union[Dict, List]:
@@ -96,7 +128,7 @@ def connection_alive():
 
 def info(id: int) -> Dict:
     """Get dictionary with information about timeseries with id `id`."""
-    response = _getreq(f"/rest/energy/belvis/{__tenant}/timeSeries/{id}")
+    response = _getreq(f"/rest/energy/belvis/{_tenant()}/timeSeries/{id}")
     return _object(response)
 
 
@@ -114,7 +146,7 @@ def all_ids_in_pf(pf: str) -> List[int]:
         Found timeseries ids.
     """
     response = _getreq(
-        f"/rest/energy/belvis/{__tenant}/timeseries", f"instancetoken={pf}"
+        f"/rest/energy/belvis/{_tenant()}/timeseries", f"instancetoken={pf}"
     )
     restlist = _object(response)
     ids = [int(entry.split("/")[-1]) for entry in restlist]
@@ -130,7 +162,7 @@ def fetch_pfinfo():
     pf names and their abbreviations in a json file.
     """
     # Get all pfs.
-    response = _getreq(f"/rest/energy/belvis/{__tenant}/timeseries")
+    response = _getreq(f"/rest/energy/belvis/{_tenant()}/timeseries")
     restlist = _object(response)
     ids = [int(entry.split("/")[-1]) for entry in restlist]
 
@@ -252,7 +284,7 @@ def records(id: int, ts_left, ts_right) -> Iterable[Dict]:
     """
 
     response = _getreq(
-        f"/rest/energy/belvis/{__tenant}/timeSeries/{id}/values",
+        f"/rest/energy/belvis/{_tenant()}/timeSeries/{id}/values",
         f"timeRange={ts_left.isoformat()}--{ts_right.isoformat()}",
         "timeRangeType=inclusive-exclusive",
     )
