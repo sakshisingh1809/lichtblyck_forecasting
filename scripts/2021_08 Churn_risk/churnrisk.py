@@ -22,6 +22,7 @@ from scipy.stats import norm
 from pathlib import Path
 
 # %% PREPARATIONS
+__file__ = "."
 
 pf = "B2C"  # "LUD" or "B2C"
 
@@ -32,7 +33,7 @@ else:
 
 # Get current situation, prepare dataframe.
 current = pd.read_excel(
-    Path(__file__).parent / "20210804_090841_Zeitreihenbericht.xlsx",
+    Path(__file__).parent / "20210804_090841_Zeitreihenbericht_update.xlsx",
     header=1,
     index_col=0,
     usecols=usecols,
@@ -237,5 +238,4 @@ ax.text(
     0.4,
     f"if quantile = {quantile:.0%}, then\n   -> premium = {p_premium:.2f} Eur/MWh",
 )
-
 

@@ -12,21 +12,29 @@ Retrieve data from Belvis using Rest-API.
 from requests.exceptions import ConnectionError
 from typing import Tuple, Dict, List, Union, Iterable
 from urllib import parse
+
+# from ..tools.stamps import ts_leftright
 import pandas as pd
-import numpy as np
-import datetime as dt
-import subprocess
-import pathlib
-import requests
-import json
-from OpenSSL import crypto
-from socket import gethostname
 import jwt
 import time
+import json
+import requests
+from pathlib import Path
+
+# import numpy as np
+# import datetime as dt
+
+# import subprocess
+# import pathlib
+# from OpenSSL import crypto
+# from socket import gethostname
+
+_PFDATAFILEPATH = Path(__file__).parent / "memoized" / "metadata.txt"
 
 __server = "http://lbbelvis01:8040"
 _auth = None
 _commodity = "power"
+
 
 
 def _tenant() -> str:
@@ -39,7 +47,7 @@ def _getreq(path, *queryparts) -> requests.request:
     if queryparts:
         queryparts = [parse.quote(qp, safe=":=") for qp in queryparts]
         string += "?" + "&".join(queryparts)
-    print(string)
+    # print(string)
     try:
         if "session" in _auth:
             return _auth["session"].get(string)
@@ -155,11 +163,10 @@ def all_ids_in_pf(pf: str) -> List[int]:
     return ids
 
 
-def fetch_pfinfo():
+def fetch_pfinfo() -> None:
     """This is an expensive function, which is called only once from main().
-    This function searches the whole belvis database and creates a list of all ids.
-    The list is passed to another function store_all_pfinfo(), which stores the
-    pf names and their abbreviations in a json file.
+    This function searches the whole belvis database, creates a list of all ids, and 
+    stores the information in json format in a textfile for later use.
     """
     # Get all pfs.
     response = _getreq(f"/rest/energy/belvis/{_tenant()}/timeseries")
@@ -167,17 +174,6 @@ def fetch_pfinfo():
     ids = [int(entry.split("/")[-1]) for entry in restlist]
 
     # Create json file with all pf names ()
-    store_all_pfinfo(ids)
-
-
-def store_all_pfinfo(ids: List):
-    """This function takes the list of all ids in the belvis database and stores the
-    pf names & their abbreviations in a json object in belvis/memoized location.
-
-    Args:
-        ids_list: List
-            list of all portfolio ids
-    """
     metadata = []
     for id in ids:
         record = [None] * 2
@@ -188,49 +184,47 @@ def store_all_pfinfo(ids: List):
         if record not in metadata:
             metadata.append(record)
 
-    with open("metadata.txt", "w") as outfile:
+    with open(_PFDATAFILEPATH, "w") as outfile:
         json.dump(metadata, outfile)
 
 
-def find_pf(partial_or_exact_pf_name: str) -> str:
-    """Find the exact portfolio abbrevaition given any 'pf' names (full or partial).
+def find_pfs(partial_or_exact_pf_name: str, refresh: bool = False) -> str:
+    """Find the exact portfolio abbreviation given any 'pf' names (full or partial).
 
-    Parameters:
+    Parameters
     ----------
-        partial_or_exact_pf_name : str
-            Exact or partial name of portfolio
+    partial_or_exact_pf_name : str
+        Exact or partial name of portfolio.
+    refresh : bool, optional
+        If true, refreshes (and stores) all portfolio information. NB: Expensive function
+        (takes a long time), only run if any changes to the portfolio or the timeseries
+        have been made.
 
-    Raises:
+    Returns
     -------
-        ValueError : If no matching timeseries is found or 
-            If more than 1 matching timeseries are found
+    str
+        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
 
-    Returns:
-    -------
-        instanceToken : str
-            Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
+    Raises
+    ------
+    ValueError
+        If no, or more than 1, matching portfolio is found.
     """
+    if refresh:
+        fetch_pfinfo()
+
     # Get info of each id.
-    with open("metadata.txt") as json_file:
+    with open(_PFDATAFILEPATH) as json_file:
         data = json.load(json_file)
 
     # Convert data(list of list) into list of dictionaries
-    metadata = {}
-    for d in data:
-        metadata[d[0]] = d[1]
-
-    # Keep ids where name includes partialname
-    hits = [
-        record for record in metadata if partial_or_exact_pf_name in metadata[record]
-    ]
+    hits = {d[0]: d[1] for d in data if partial_or_exact_pf_name in d[1]}
 
     # Raise error if 0 or > 1 found.
     if len(hits) == 0:
-        raise ValueError("No timeseries found. Check parameters; use .find_id")
-    elif len(hits) > 1:
-        raise ValueError("Found more than 1 timeseries, i.e. with ids: {", hits, "}")
+        raise ValueError("No portfolios found. Check parameters; use .find_id")
 
-    return hits[0]
+    return hits
 
 
 def find_id(pf: str, name: str) -> int:
@@ -239,9 +233,9 @@ def find_id(pf: str, name: str) -> int:
     Parameters
     ----------
     pf : str
-        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
+        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     name : str
-        Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf'). 
+        Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf').
         Partial names also work, as long as they are unique to the timeseries.
 
     Returns
@@ -282,7 +276,7 @@ def records(id: int, ts_left, ts_right) -> Iterable[Dict]:
     --------
     .series
     """
-
+    # ts_left, ts_right = ts_leftright(ts_left, ts_right)
     response = _getreq(
         f"/rest/energy/belvis/{_tenant()}/timeSeries/{id}/values",
         f"timeRange={ts_left.isoformat()}--{ts_right.isoformat()}",
@@ -310,6 +304,8 @@ def series(id: int, ts_left, ts_right) -> pd.Series:
     --------
     .ts_leftright
     """
+
+    # ts_left, ts_right = ts_leftright(ts_left, ts_right)
     vals = records(id, ts_left, ts_right)
     df = pd.DataFrame.from_records(vals)
     mask = df["pf"] == "missing"
@@ -317,35 +313,3 @@ def series(id: int, ts_left, ts_right) -> pd.Series:
         df["v"].to_list(), pd.DatetimeIndex(df["ts"]).tz_convert("Europe/Berlin")
     )
     return s
-
-
-if __name__ == "__main__":
-    # fetch_pfinfo()
-    # pf = find_pf("udwig")  # returs 'LUD' or ValueError if 0 of > 1
-    id = find_id(
-        "LUD", "#LB FRM Procurement/Forward - MW - excl subpf"
-    )  # returns id or ValueError if 0 or > 1
-
-    i = info(id)
-    r = records(id)
-    s = series(id, "2020-02")
-
-
-# %%
-
-# TODO:
-# . use token instead of password
-# . function to get QHPFC
-
-
-# . function to find PF-abbrev (e.g. 'LUD') from part of pf-name (e.g. 'udwig')
-
-# I don't know pf abbreviation:
-# . find_pf: partial_or_exact_pf_name -> j
-
-# I know exact name or partial name of the ts:
-# . find_id: pf, name -> id
-# . series: id -> data
-
-# I know the id of the ts:
-# . series: id -> data

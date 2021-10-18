@@ -115,6 +115,8 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import datetime
+from urllib.parse import urlsplit
+from io import StringIO
 from pathlib import Path
 from scipy.stats import norm
 
@@ -193,6 +195,8 @@ stepL = pd.DataFrame(columns=[[], []])  # 2-level columns
 
 #%% PRICES.
 
+__file__ = "."
+
 # Year prices.
 pu_fut = lb.prices.montel.power_futures("a")
 # Spot prices.
@@ -247,14 +251,20 @@ t2022 = lb.changefreq_avg(t_exp.loc["2022"], "15T")
 # Offtake.
 offtakevolume = -lb.PfLine(tlp(t2022))
 
+# data_url = "https://dev.azure.com/lichtblick/FRM/_git/lichtblyck?path=/scripts/2021_09%20temprisk_LUD/20210922_084614_Zeitreihenbericht.xlsx"
+# path = StringIO(urlsplit(data_url).geturl())
+
+
 # Market prices.
 # . QHPFC.
 data = pd.read_excel(
-    r"C:\Users\ruud.wijtvliet\OneDrive - LichtBlick SE\Work_in_RM\python\2020_01_lichtblyck\scripts\2021_09 temprisk_LUD\20210922_084614_Zeitreihenbericht.xlsx",
+    Path(__file__).parent / "20211007_133242_Zeitreihenbericht.xlsx",
     header=1,
+    index_col=0,
     names=["ts_right", "qhpfc", "rh_wo", "rh_ws", "rh_rs", "hp_wo", "hp_ws", "hp_rs"],
 )
-data = lb.set_ts_index(data, "ts_right", "right")
+
+data = lb.set_ts_index(data, bound="right")
 pu = data.qhpfc.rename("p")
 # Sourced prices and revenue.
 sourced = lb.PfLine({"w": data["rh_ws"], "r": data["rh_rs"]}) + lb.PfLine(
@@ -410,7 +420,7 @@ hist = hist.sort_index(1)
 
 # Keep full years, except 2010 (was extremely cold year)
 hist = hist.loc["2001":"2020"]
-years = [df for y, df in hist.resample("AS") if y.year != 2010]  
+years = [df for y, df in hist.resample("AS") if y.year != 2010]
 
 # %% INFORMATION TO
 
@@ -439,7 +449,7 @@ cols_avg = [
 monthly_sims = []
 yearly_sims = []
 
-for n in range(1000):
+for n in range(10000):
     # First, pick a historic year
     hourly = np.random.choice(years).copy().iloc[:8760]
 
@@ -471,8 +481,8 @@ for n in range(1000):
     for freq, records in [("MS", monthly_sims), ("AS", yearly_sims)]:
         df = lb.changefreq_sum(hourly[cols_sum], freq)
         for col in cols_avg:
-                df[col] = lb.changefreq_avg(hourly[col], freq)
-        df[("delta_p", "chg01")] = df.L.pu - df.O.ro / df.O.qo # correction 
+            df[col] = lb.changefreq_avg(hourly[col], freq)
+        df[("delta_p", "chg01")] = df.L.pu - df.O.ro / df.O.qo  # correction
         df[("temprisk", "p_Lt")] = df.temprisk.r_Lt / df.S.qo
         df[("temprisk", "p_St")] = df.temprisk.r_St / df.S.qo
         records.append(df)
@@ -586,7 +596,7 @@ ax.scatter(
     c="orange",
     s=10,
     alpha=0.5,
-    label=f"r_temprisk_lt   = {r_temprisk_lt/1000:.0f} kEur\nofftake = {q/1000:.0f} GWh\np_par_lt = {r_temprisk_lt/q:.2f} Eur/MWh",
+    label=f"r_temprisk_lt   = {r_temprisk_lt/10000:.0f} kEur\nofftake = {q/10000:.0f} GWh\np_par_lt = {r_temprisk_lt/q:.2f} Eur/MWh",
 )
 ax.legend()
 #  MWh.
@@ -616,7 +626,7 @@ ax.scatter(
     c="green",
     s=10,
     alpha=0.5,
-    label=f"r_temprisk_st   = {r_temprisk_st/1000:.0f} kEur\nofftake = {q/1000:.0f} GWh\np_par_st = {r_temprisk_st/q:.2f} Eur/MWh",
+    label=f"r_temprisk_st   = {r_temprisk_st/10000:.0f} kEur\nofftake = {q/10000:.0f} GWh\np_par_st = {r_temprisk_st/q:.2f} Eur/MWh",
 )
 ax.legend()
 #  MWh.
@@ -663,7 +673,9 @@ axes.append(plt.subplot2grid((3, 2), (2, 1), fig=fig, sharex=axes[4], sharey=axe
 # Temprisk - Lt
 #  Scatter
 ax = axes[0]
-ax.title.set_text("Change in offtake vs long-term change in price\n(market price vs pf mix price)")
+ax.title.set_text(
+    "Change in offtake vs long-term change in price\n(market price vs pf mix price)"
+)
 ax.xaxis.label.set_text("MWh")
 ax.yaxis.label.set_text("Eur/MWh")
 ax.scatter(
@@ -679,7 +691,7 @@ ax.yaxis.label.set_text("kEur")
 ax.xaxis.label.set_text("simulation number")
 ax.bar(
     range(len(source_vals)),
-    source_vals / 1000,
+    source_vals / 10000,
     width=1,
     color="orange",
     label=f"long-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
@@ -733,7 +745,7 @@ ax.yaxis.label.set_text("kEur")
 ax.xaxis.label.set_text("simulation number")
 ax.bar(
     range(len(source_vals)),
-    source_vals / 1000,
+    source_vals / 10000,
     width=1,
     color="green",
     label=f"short-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
@@ -799,7 +811,7 @@ ax.yaxis.label.set_text("kEur")
 ax.xaxis.label.set_text("simulation number")
 ax.bar(
     range(len(source_vals)),
-    source_vals / 1000,
+    source_vals / 10000,
     width=1,
     color="orange",
     label=f"long-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
@@ -844,7 +856,7 @@ ax.yaxis.label.set_text("kEur")
 ax.xaxis.label.set_text("simulation number")
 ax.bar(
     range(len(source_vals)),
-    source_vals / 1000,
+    source_vals / 10000,
     width=1,
     color="green",
     label=f"short-term component\nmean: {loc/1e3:.0f} kEur\n std: {scale/1e3:.0f} kEur",
