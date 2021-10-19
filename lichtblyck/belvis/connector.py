@@ -29,54 +29,74 @@ from pathlib import Path
 # from OpenSSL import crypto
 # from socket import gethostname
 
+_PFDATAFILEPATH = Path(__file__).parent / "memoized" / "metadata.txt"
 
-__usr = "Ruud.Wijtvliet"
-__pwd = "Ammm1mmm2mmm3mmm"
-__tenant = "PFMSTROM"
 __server = "http://lbbelvis01:8040"
-_session = None
-__file__ = "."
+_auth = None
+_commodity = "power"
 
 _PFDATAFILEPATH = Path(__file__).parent / "memoized"
 
 
 def _getreq(path, *queryparts) -> requests.request:
-    if _session is None:
-        _startsession_and_authenticate()
     string = f"{__server}{path}"
     if queryparts:
         queryparts = [parse.quote(qp, safe=":=") for qp in queryparts]
         string += "?" + "&".join(queryparts)
     # print(string)
     try:
-        return _session.get(string)
+        if "session" in _auth:
+            return _auth["session"].get(string)
+        elif "token" in _auth:
+            return requests.get(
+                string, headers={"Authorization": "Bearer " + _auth["token"]}
+            )
+        else:
+            raise ValueError(
+                "First authenicate with `auth_with_password` or `auth_with_token`."
+            )
     except ConnectionError as e:
         raise RuntimeError("Check if VPN connection to Lichtblick exists.") from e
 
 
-def _startsession_and_authenticate() -> None:
-    """Start session and get token."""
-    global _session
-    _session = requests.Session()
-    _getreq("/rest/session", f"usr={__usr}", f"pwd={__pwd}", f"tenant={__tenant}")
+def auth_with_password(usr: str, pwd: str) -> None:
+    """Authenticaten with username and password; open a session.
+
+    Parameters
+    ----------
+    usr : str
+        Belvis username.
+    pwd : str
+        Belvis password for the given user.
+    commodity : str
+        Which commodity to get data for. One of {'power', 'gas'}.
+    """
+    global _auth
+    _auth = {"session": requests.Session()}
+    _getreq("/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={_tenant()}")
+    if not connection_alive():
+        raise ConnectionError("No connection exists. Username and password incorrect?")
 
 
-def _generate_token() -> requests:
+def auth_with_token(commodity: str) -> None:
     """This method is used by current REST clients or Libraries supported.
     A trustworthy body generates a key pair from which it can be used for
     authorized persons Clients generate strings, so-called Bearer tokens.
 
-    Returns:
-        requests: requests.response
+    Parameters
+    ----------
+    commodity : str
+        Which commodity to get data for. One of {'power', 'gas'}.
     """
+    global _auth
     # Open private key to sign token with
     with open(_PFDATAFILEPATH / "privatekey.txt", "r") as f:
         private_key = f.read()
 
     # Create token that is valid for a given amount of time.
     claims = {
-        "preferred_username": __usr,
-        "clientId": __tenant,
+        "preferred_username": "Ruud.Wijtvliet",
+        "clientId": _tenant(),
         "exp": int(time.time()) + 10 * 60,
     }
 
@@ -85,11 +105,20 @@ def _generate_token() -> requests:
     # decoded = jwt.decode(token, options={"verify_signature": True})
     print(token)
     headers = {"Authorization": "Bearer " + token}
+    _auth = {"token": token}
 
-    response = requests.get(__server, headers=headers)
+    if not connection_alive():
+        raise ConnectionError("No connection exists. Token incorrect?")
 
-    return response
-    # return _object(response)
+
+def set_commodity(commodity: str) -> None:
+    global _commodity, _auth
+    if commodity not in ["power", "gas"]:
+        raise ValueError("`commodity` must be 'power' or 'gas'.")
+    if commodity == _commodity:
+        return
+    _commodity = commodity
+    _auth = None  # changing commodity means we need to redo authentication.
 
 
 def _object(response) -> Union[Dict, List]:
@@ -106,7 +135,7 @@ def connection_alive():
 
 def info(id: int) -> Dict:
     """Get dictionary with information about timeseries with id `id`."""
-    response = _getreq(f"/rest/energy/belvis/{__tenant}/timeSeries/{id}")
+    response = _getreq(f"/rest/energy/belvis/{_tenant()}/timeSeries/{id}")
     return _object(response)
 
 
@@ -124,7 +153,7 @@ def all_ids_in_pf(pf: str) -> List[int]:
         Found timeseries ids.
     """
     response = _getreq(
-        f"/rest/energy/belvis/{__tenant}/timeseries", f"instancetoken={pf}"
+        f"/rest/energy/belvis/{_tenant()}/timeseries", f"instancetoken={pf}"
     )
     restlist = _object(response)
     ids = [int(entry.split("/")[-1]) for entry in restlist]
@@ -133,35 +162,17 @@ def all_ids_in_pf(pf: str) -> List[int]:
     return ids
 
 
-def fetch_pfinfo(refresh):
+def fetch_pfinfo() -> None:
     """This is an expensive function, which is called only once from main().
-    This function searches the whole belvis database and creates a list of all ids.
-    The list is passed to another function store_all_pfinfo(), which stores the
-    pf names and their abbreviations in a json file.
+    This function searches the whole belvis database, creates a list of all ids, and 
+    stores the information in json format in a textfile for later use.
     """
+    # Get all pfs.
+    response = _getreq(f"/rest/energy/belvis/{_tenant()}/timeseries")
+    restlist = _object(response)
+    ids = [int(entry.split("/")[-1]) for entry in restlist]
 
-    # Only refresh the text file if there is a new update
-    if refresh == "True":
-
-        # Get all pfs.
-        response = _getreq(f"/rest/energy/belvis/{__tenant}/timeseries")
-        restlist = _object(response)
-        ids = [int(entry.split("/")[-1]) for entry in restlist]
-
-        # Create json file with all pf names ()
-        store_all_pfinfo(ids)
-
-    return
-
-
-def store_all_pfinfo(ids: List):
-    """This function takes the list of all ids in the belvis database and stores the
-    pf names & their abbreviations in a json object in belvis/memoized location.
-
-    Args:
-        ids_list: List
-            list of all portfolio ids
-    """
+    # Create json file with all pf names ()
     metadata = []
     for id in ids:
         record = [None] * 2
@@ -172,28 +183,35 @@ def store_all_pfinfo(ids: List):
         if record not in metadata:
             metadata.append(record)
 
-    with open("metadata.txt", "w") as outfile:
+    with open(_PFDATAFILEPATH, "w") as outfile:
         json.dump(metadata, outfile)
 
 
-def find_pfs(partial_or_exact_pf_name: str) -> str:
-    """Find the exact portfolio abbrevaition given any 'pf' names (full or partial).
+def find_pfs(partial_or_exact_pf_name: str, refresh: bool = False) -> str:
+    """Find the exact portfolio abbreviation given any 'pf' names (full or partial).
 
-    Parameters:
+    Parameters
     ----------
-        partial_or_exact_pf_name : str
-            Exact or partial name of portfolio
+    partial_or_exact_pf_name : str
+        Exact or partial name of portfolio.
+    refresh : bool, optional
+        If true, refreshes (and stores) all portfolio information. NB: Expensive function
+        (takes a long time), only run if any changes to the portfolio or the timeseries
+        have been made.
 
-    Raises:
+    Returns
     -------
-        ValueError : If no matching timeseries is found or 
-            If more than 1 matching timeseries are found
+    str
+        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
 
-    Returns:
-    -------
-        instanceToken : str
-            Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
+    Raises
+    ------
+    ValueError
+        If no, or more than 1, matching portfolio is found.
     """
+    if refresh:
+        fetch_pfinfo()
+
     # Get info of each id.
     with open(_PFDATAFILEPATH / "metadata.txt") as json_file:
         data = json.load(json_file)
@@ -203,7 +221,7 @@ def find_pfs(partial_or_exact_pf_name: str) -> str:
 
     # Raise error if 0 or > 1 found.
     if len(hits) == 0:
-        raise ValueError("No timeseries found. Check parameters; use .find_id")
+        raise ValueError("No portfolios found. Check parameters; use .find_id")
 
     return hits
 
@@ -214,7 +232,7 @@ def find_id(pf: str, name: str) -> int:
     Parameters
     ----------
     pf : str
-        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
+        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     name : str
         Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf').
         Partial names also work, as long as they are unique to the timeseries.
@@ -276,7 +294,7 @@ def records(id: int, ts_left, ts_right) -> Iterable[Dict]:
     """
     # ts_left, ts_right = ts_leftright(ts_left, ts_right)
     response = _getreq(
-        f"/rest/energy/belvis/{__tenant}/timeSeries/{id}/values",
+        f"/rest/energy/belvis/{_tenant()}/timeSeries/{id}/values",
         f"timeRange={ts_left.isoformat()}--{ts_right.isoformat()}",
         "timeRangeType=inclusive-exclusive",
     )
