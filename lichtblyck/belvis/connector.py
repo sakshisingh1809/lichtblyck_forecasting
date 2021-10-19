@@ -12,14 +12,13 @@ Retrieve data from Belvis using Rest-API.
 from requests.exceptions import ConnectionError
 from typing import Tuple, Dict, List, Union, Iterable
 from urllib import parse
-
-# from ..tools.stamps import ts_leftright
+from pathlib import Path
 import pandas as pd
+import datetime as dt
 import jwt
 import time
 import json
 import requests
-from pathlib import Path
 
 # import numpy as np
 # import datetime as dt
@@ -31,10 +30,9 @@ from pathlib import Path
 
 _PFDATAFILEPATH = Path(__file__).parent / "memoized" / "metadata.txt"
 
-__server = "http://lbbelvis01:8040"
+_server = "http://lbbelvis01:8040"
 _auth = None
 _commodity = "power"
-
 
 
 def _tenant() -> str:
@@ -43,7 +41,7 @@ def _tenant() -> str:
 
 
 def _getreq(path, *queryparts) -> requests.request:
-    string = f"{__server}{path}"
+    string = f"{_server}{path}"
     if queryparts:
         queryparts = [parse.quote(qp, safe=":=") for qp in queryparts]
         string += "?" + "&".join(queryparts)
@@ -63,37 +61,44 @@ def _getreq(path, *queryparts) -> requests.request:
         raise RuntimeError("Check if VPN connection to Lichtblick exists.") from e
 
 
-def auth_with_password(usr: str, pwd: str) -> None:
+def auth_with_password(usr: str = None, pwd: str = None) -> None:
     """Authenticaten with username and password; open a session.
 
     Parameters
     ----------
-    usr : str
-        Belvis username.
-    pwd : str
-        Belvis password for the given user.
-    commodity : str
-        Which commodity to get data for. One of {'power', 'gas'}.
+    usr : str, optional
+        Belvis username. If none provided, use previously specified username.
+    pwd : str, optional
+        Belvis password for the given user. If none provided, use previously specified
+        password.
     """
     global _auth
-    _auth = {"session": requests.Session()}
+
+    # Handle case when usr and pwd not specified.
+    if usr is None and "usr" in _auth:
+        usr = _auth["usr"]
+    if pwd is None and "pwd" in _auth:
+        pwd = _auth["pwd"]
+    if usr is None or pwd is None:
+        raise ValueError("Username and/or password missing.")
+
+    # Store for later use and log in.
+    _auth = {"usr": usr, "pwd": pwd, "session": requests.Session()}
     _getreq("/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={_tenant()}")
+
+    # Check if successful.
     if not connection_alive():
+        _auth = None
         raise ConnectionError("No connection exists. Username and password incorrect?")
 
 
-def auth_with_token(commodity: str) -> None:
+def auth_with_token() -> None:
     """This method is used by current REST clients or Libraries supported.
     A trustworthy body generates a key pair from which it can be used for
     authorized persons Clients generate strings, so-called Bearer tokens.
-
-    Parameters
-    ----------
-    commodity : str
-        Which commodity to get data for. One of {'power', 'gas'}.
     """
     global _auth
-    # Open private key to sign token with
+    # Open private key to sign token with.
     with open("privatekey.txt", "r") as f:
         private_key = f.read()
 
@@ -104,22 +109,28 @@ def auth_with_token(commodity: str) -> None:
         "exp": int(time.time()) + 10 * 60,
     }
 
-    # "RSA 512 bit" in the PKCS standard for your client
+    # "RSA 512 bit" in the PKCS standard for your client.
     token = jwt.encode(claims, private_key, algorithm="RS512")
     _auth = {"token": token}
 
+    # Check if successful.
     if not connection_alive():
+        _auth = None
         raise ConnectionError("No connection exists. Token incorrect?")
 
 
 def set_commodity(commodity: str) -> None:
-    global _commodity, _auth
+    """Set commodity to get information for. One of {'power', 'gas'}."""
+    global _commodity
+    if commodity == _commodity:
+        return  # commodity already set correctly, nothing to do
     if commodity not in ["power", "gas"]:
         raise ValueError("`commodity` must be 'power' or 'gas'.")
-    if commodity == _commodity:
-        return
     _commodity = commodity
-    _auth = None  # changing commodity means we need to redo authentication.
+    if "session" in _auth:
+        auth_with_password()  # redo authentication
+    elif "token" in _auth:
+        auth_with_token()  # redo authentication
 
 
 def _object(response) -> Union[Dict, List]:
@@ -269,14 +280,17 @@ def find_id(pf: str, name: str) -> int:
     return hits[0]["id"]
 
 
-def records(id: int, ts_left, ts_right) -> Iterable[Dict]:
+def records(
+    id: int,
+    ts_left: Union[pd.Timestamp, dt.datetime],
+    ts_right: Union[pd.Timestamp, dt.datetime],
+) -> Iterable[Dict]:
     """Return values from timeseries with id `id` in given delivery time interval.
 
     See also
     --------
     .series
     """
-    # ts_left, ts_right = ts_leftright(ts_left, ts_right)
     response = _getreq(
         f"/rest/energy/belvis/{_tenant()}/timeSeries/{id}/values",
         f"timeRange={ts_left.isoformat()}--{ts_right.isoformat()}",
@@ -285,27 +299,25 @@ def records(id: int, ts_left, ts_right) -> Iterable[Dict]:
     return _object(response)
 
 
-def series(id: int, ts_left, ts_right) -> pd.Series:
+def series(
+    id: int,
+    ts_left: Union[pd.Timestamp, dt.datetime],
+    ts_right: Union[pd.Timestamp, dt.datetime],
+) -> pd.Series:
     """Return series from timeseries with id `id` in given delivery time interval.
 
     Parameters
     ----------
     id : int
         Timeseries id.
-    ts_left : timestamp
-    ts_right : timestamp
+    ts_left : Union[pd.Timestamp, dt.datetime]
+    ts_right : Union[pd.Timestamp, dt.datetime]
 
     Returns
     -------
     pd.Series
         with resulting information.
-
-    See also
-    --------
-    .ts_leftright
     """
-
-    # ts_left, ts_right = ts_leftright(ts_left, ts_right)
     vals = records(id, ts_left, ts_right)
     df = pd.DataFrame.from_records(vals)
     mask = df["pf"] == "missing"
