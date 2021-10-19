@@ -30,24 +30,23 @@ TSNAMES = {
 
 
 def offtakevolume(
-    pfname,
-    tsname_wo,
-    ts_left: Optional[Union[str, dt.dt.datetime]] = None,
-    ts_right: Optional[Union[str, dt.dt.datetime]] = None,
+    pf,
+    ts_left: Optional[Union[str, dt.datetime]] = None,
+    ts_right: Optional[Union[str, dt.datetime]] = None,
 ) -> PfLine:
     """[summary]
 
     Args:
-        pfname ([type]): [description]
-        tsname_wo ([type]): [description]
+        pf ([type]): [description]
         ts_left (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
         ts_right (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
 
     Returns:
-        PfLine: [description]
+        PfLine: returns the PfLine for offtake o
     """
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
-    id_wo = connector.find_id(pfname, tsname_wo)
+    tsname = get_tsnames(pf)
+    id_wo = connector.find_id(pf, tsname["wo"])  # "name of offtake timeseries"
     wo = connector.series(id_wo, ts_left, ts_left)
 
     return PfLine({"w": wo})
@@ -68,16 +67,12 @@ def sourced(
         ts_right (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
 
     Returns:
-        PfLine: [description]
+        PfLine: returns the PfLine for sourced volume w & revenue r
     """
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
     tsname = get_tsnames(pf)
-    id_ws = connector.find_id(
-        pfname, tsname["ws"]
-    )  # "name of sourced volume timeseries"
-    id_rs = connector.find_id(
-        pfname, tsname["rs"]
-    )  # "name of sourced revenue timeseries"
+    id_ws = connector.find_id(pf, tsname["ws"])  # "name of sourced volume timeseries"
+    id_rs = connector.find_id(pf, tsname["rs"])  # "name of sourced revenue timeseries"
     ws = connector.series(id_ws, ts_left, ts_left)
     rs = connector.series(id_rs, ts_left, ts_left)
 
@@ -89,9 +84,19 @@ def unsourcedprice(
     ts_left: Optional[Union[str, dt.dt.datetime]] = None,
     ts_right: Optional[Union[str, dt.dt.datetime]] = None,
 ) -> PfLine:
+    """[summary]
+
+    Args:
+        ts_left (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
+        ts_right (Optional[Union[str, dt.dt.datetime]], optional): [description]. Defaults to None.
+
+    Returns:
+        PfLine: returns the PfLine for unsourced price p
+    """
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
-    id_pu = connector.find_id_not_in_pf("name of qhpfc")
+    id_pu = connector.find_id_not_in_pf("Spot (Mix 15min) / QHPFC (aktuell)")
     pu = connector.series(id_pu, ts_left, ts_left)
+
     return PfLine({"p": pu})
 
 
@@ -137,7 +142,7 @@ def givemepfstate(
 def get_tsnames(pf):
 
     dic = TSNAMES[pf]
-    for key in ["wo", "ws", "rs"]:
+    for key in ["wo", "ws", "rs", "pu"]:
         if key not in dic:
             dic[key] = TSNAMES["DEFAULT"][key]
 
@@ -146,7 +151,8 @@ def get_tsnames(pf):
 
 if __name__ == "__main__":
 
-    pfname = "udwig"
-    tsname = "#LB FRM Procurement/Forward - MW - incl subpf"
+    pf = "udwig"
+    # tsname = "#LB FRM Procurement/Forward - MW - incl subpf"
 
-    pfstate()
+    pfs = pfstate(pf)
+    print(pfs)

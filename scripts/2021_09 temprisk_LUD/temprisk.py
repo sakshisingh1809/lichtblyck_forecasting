@@ -251,10 +251,6 @@ t2022 = lb.changefreq_avg(t_exp.loc["2022"], "15T")
 # Offtake.
 offtakevolume = -lb.PfLine(tlp(t2022))
 
-# data_url = "https://dev.azure.com/lichtblick/FRM/_git/lichtblyck?path=/scripts/2021_09%20temprisk_LUD/20210922_084614_Zeitreihenbericht.xlsx"
-# path = StringIO(urlsplit(data_url).geturl())
-
-
 # Market prices.
 # . QHPFC.
 data = pd.read_excel(

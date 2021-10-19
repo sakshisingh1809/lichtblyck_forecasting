@@ -37,7 +37,7 @@ __server = "http://lbbelvis01:8040"
 _session = None
 __file__ = "."
 
-_PFDATAFILEPATH = Path(__file__).parent / "memoized" / "metadata.txt"
+_PFDATAFILEPATH = Path(__file__).parent / "memoized"
 
 
 def _getreq(path, *queryparts) -> requests.request:
@@ -70,7 +70,7 @@ def _generate_token() -> requests:
         requests: requests.response
     """
     # Open private key to sign token with
-    with open("privatekey.txt", "r") as f:
+    with open(_PFDATAFILEPATH / "privatekey.txt", "r") as f:
         private_key = f.read()
 
     # Create token that is valid for a given amount of time.
@@ -82,6 +82,8 @@ def _generate_token() -> requests:
 
     # "RSA 512 bit" in the PKCS standard for your client
     token = jwt.encode(claims, private_key, algorithm="RS512")
+    # decoded = jwt.decode(token, options={"verify_signature": True})
+    print(token)
     headers = {"Authorization": "Bearer " + token}
 
     response = requests.get(__server, headers=headers)
@@ -193,7 +195,7 @@ def find_pfs(partial_or_exact_pf_name: str) -> str:
             Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
     """
     # Get info of each id.
-    with open(_PFDATAFILEPATH) as json_file:
+    with open(_PFDATAFILEPATH / "metadata.txt") as json_file:
         data = json.load(json_file)
 
     # Convert data(list of list) into list of dictionaries
@@ -248,6 +250,23 @@ def find_id(pf: str, name: str) -> int:
     return hits[0]["id"]
 
 
+def find_id_not_in_pf(name: str) -> int:
+    """Find the timeseries id for unhedged price (pu). Here,
+        pf: 'QHPFC'
+        timeseriesname: 'Spot (Mix 15min) / QHPFC (aktuell)'
+    We cannot use the find_id() function directly with pf and timeseriesname as it is not available in the database (ie, belvis/memoized/metadata.txt).
+  
+    Args:
+        name (str): name of unsourced price timeseries (pu) is Spot (Mix 15min) / QHPFC (aktuell)
+
+    Returns:
+        int: id of found timeseries.
+    """
+
+    # hardcoding as we directly know the id of QHPFC
+    return info(42897963)["id"]
+
+
 def records(id: int, ts_left, ts_right) -> Iterable[Dict]:
     """Return values from timeseries with id `id` in given delivery time interval.
 
@@ -292,3 +311,4 @@ def series(id: int, ts_left, ts_right) -> pd.Series:
         df["v"].to_list(), pd.DatetimeIndex(df["ts"]).tz_convert("Europe/Berlin")
     )
     return s
+
