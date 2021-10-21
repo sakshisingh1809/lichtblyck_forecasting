@@ -27,6 +27,7 @@ import numpy as np
 # The first case one is the most important one, and is therefore used. The second case
 # must be handled by storing market prices seperately from volume data.
 
+
 def _make_df(data) -> pd.DataFrame:
     """From data, create a DataFrame with column `q`, column `p`, or columns `q` and `r`.
     Also, do some data verification."""
@@ -310,5 +311,4 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput):
         if not isinstance(other, float) and not isinstance(other, int):
             raise NotImplementedError("This division is not defined.")
         return self * (1 / other)
-
 

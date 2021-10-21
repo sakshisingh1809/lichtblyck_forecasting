@@ -111,6 +111,9 @@ def auth_with_token() -> None:
 
     # "RSA 512 bit" in the PKCS standard for your client.
     token = jwt.encode(claims, private_key, algorithm="RS512")
+    # decoded = jwt.decode(token, options={"verify_signature": True})
+    print(token)
+    headers = {"Authorization": "Bearer " + token}
     _auth = {"token": token}
 
     # Check if successful.
@@ -225,7 +228,7 @@ def find_pfs(partial_or_exact_pf_name: str, refresh: bool = False) -> str:
         fetch_pfinfo()
 
     # Get info of each id.
-    with open(_PFDATAFILEPATH) as json_file:
+    with open(_PFDATAFILEPATH / "metadata.txt") as json_file:
         data = json.load(json_file)
 
     # Convert data(list of list) into list of dictionaries
@@ -324,3 +327,4 @@ def series(
         df["v"].to_list(), pd.DatetimeIndex(df["ts"]).tz_convert("Europe/Berlin")
     )
     return s
+

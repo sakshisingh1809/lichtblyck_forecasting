@@ -111,4 +111,20 @@ def plot_pfstates(dic: Dict[str, PfState]) -> plt.Figure:
     plt.Figure
         The figure object to which the instances were plotted.
     """
-    pass  # TODO
+
+    fig, ax = plt.subplots(
+        len(Dict), 1, True, False, squeeze=False, figsize=(10, len(Dict) * 3)
+    )
+    # make x-axis tick labels on the top of a plot
+    plt.rcParams["xtick.bottom"] = plt.rcParams["xtick.labelbottom"] = False
+    plt.rcParams["xtick.top"] = plt.rcParams["xtick.labeltop"] = True
+
+    # plot for offtake [MWh]
+    if Dict.keys() == "offtake":
+        ax.set_xlabel("MWh")
+        ax.set_title("Offtake [MWh]")
+        bar_plot = ax.bar(Dict.values(), color=vis.Colors.Wqpr)
+        for index, data in enumerate(y):
+            plt.text(x=index, y=data + 1, s=f"{data}", fontdict=dict(fontsize=20))
+
+    plt.show()
