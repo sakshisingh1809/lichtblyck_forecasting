@@ -46,6 +46,10 @@ def _getreq(path, *queryparts) -> requests.request:
         queryparts = [parse.quote(qp, safe=":=") for qp in queryparts]
         string += "?" + "&".join(queryparts)
     # print(string)
+    if _auth is None:
+        raise PermissionError(
+            "First authenicate with `auth_with_password` or `auth_with_token`."
+        )
     try:
         if "session" in _auth:
             return _auth["session"].get(string)
@@ -53,12 +57,8 @@ def _getreq(path, *queryparts) -> requests.request:
             return requests.get(
                 string, headers={"Authorization": "Bearer " + _auth["token"]}
             )
-        else:
-            raise ValueError(
-                "First authenicate with `auth_with_password` or `auth_with_token`."
-            )
     except ConnectionError as e:
-        raise RuntimeError("Check if VPN connection to Lichtblick exists.") from e
+        raise ConnectionError("Check if VPN connection to Lichtblick exists.") from e
 
 
 def auth_with_password(usr: str = None, pwd: str = None) -> None:
@@ -269,15 +269,14 @@ def find_id(pf: str, name: str) -> int:
     # Raise error if 0 or > 1 found.
     if len(hits) == 0:
         raise ValueError(
-            "No timeseries found. Check parameters; use .find_pf"
-            + "to check if pf abbreviation is correct."
+            "No timeseries found. Check parameters; use .find_pfs to check if `pf` is correct."
         )
     elif len(hits) > 1:
         raise ValueError(
-            'Found more than 1 timeseries, i.e. with ids {",".join(hits)}.'
+            f"Found more than 1 timeseries, i.e. with ids: {','.join(hits)}."
         )
 
-    return hits[0]["id"]
+    return int(hits[0]["id"])
 
 
 def records(
