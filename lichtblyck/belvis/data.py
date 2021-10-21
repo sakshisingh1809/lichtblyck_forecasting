@@ -133,7 +133,7 @@ def pfstate(
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
 ) -> PfState:
-    """Get state of portfolio from Belvis
+    """Get state of portfolio from Belvis.
 
     Parameters
     ----------
