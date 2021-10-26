@@ -84,10 +84,12 @@ def auth_with_password(usr: str = None, pwd: str = None) -> None:
 
     # Store for later use and log in.
     _auth = {"usr": usr, "pwd": pwd, "session": requests.Session()}
-    _getreq("/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={_tenant()}")
+    response = _getreq(
+        "/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={_tenant()}"
+    )
 
     # Check if successful.
-    if not connection_alive():
+    if response.status_code == 401:
         _auth = None
         raise ConnectionError("No connection exists. Username and password incorrect?")
 
@@ -228,7 +230,7 @@ def find_pfs(partial_or_exact_pf_name: str, refresh: bool = False) -> str:
         fetch_pfinfo()
 
     # Get info of each id.
-    with open(_PFDATAFILEPATH / "metadata.txt") as json_file:
+    with open(_PFDATAFILEPATH) as json_file:
         data = json.load(json_file)
 
     # Convert data(list of list) into list of dictionaries
