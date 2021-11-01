@@ -273,11 +273,11 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput):
             raise NotImplementedError("This addition is not defined.")
         if self.kind != other.kind:
             raise ValueError("Cannot add portfolio lines of unequal kind.")
-        # Upsample to shortest frequency.
-        freq = stamps.freq_shortest(self.index.freq, other.index.freq)
-        dfs = [pfl.changefreq(freq).df(pfl._summable) for pfl in [self, other]]
+        if self.index.freq != other.index.freq:
+            raise NotImplementedError("Cannot add portfolio lines of unequal frequency.")
         # Get addition and keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
-        df = sum(dfs).dropna().resample(freq).asfreq()
+        dfs = [pfl.df(pfl._summable) for pfl in [self, other]]
+        df = sum(dfs).dropna().resample(self.index.freq).asfreq()
         return PfLine(df)
 
     def __radd__(self, other):
@@ -293,13 +293,19 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput):
         if isinstance(other, float) or isinstance(other, int):
             # multiply price p (kind == 'p'), volume q (kind == 'q'), or volume q and revenue r (kind == 'all').
             return PfLine(self._df * other)
-        elif isinstance(other, PfLine):
-            if self.kind == "p" and other.kind == "q":
-                return PfLine({"q": other.q, "p": self.p})
-            elif self.kind == "q" and other.kind == "p":
-                return PfLine({"q": self.q, "p": other.p})
+        if not isinstance(other, PfLine):
+            raise NotImplementedError("This multiplication is not defined.")
+        if self.index.freq != other.index.freq:
+            raise NotImplementedError("Cannot multiply portfolio lines of unequal frequency.")
+        if self.kind == "p" and other.kind == "q":
+            df = pd.DataFrame({"q": other.q, "p": self.p})
+        elif self.kind == "q" and other.kind == "p":
+            df = pd.DataFrame({"q": self.q, "p": other.p})
+        else:
             raise ValueError("Can only multiply volume with price information.")
-        raise NotImplementedError("This multiplication is not defined.")
+        # Keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
+        df = df.dropna().resample(self.index.freq).asfreq()
+        return PfLine(df)
 
     def __rmul__(self, other):
         return self * other
