@@ -122,6 +122,7 @@ class _Connection:
             return json.loads(response.text)
         elif response.status_code == 401 and self._lastquery is not None:
             self.redo_auth()
+            return self.query_general(path, *queryparts) # retry.
         else:
             raise RuntimeError(response)
 
