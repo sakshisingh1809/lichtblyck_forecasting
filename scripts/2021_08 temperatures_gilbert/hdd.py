@@ -12,7 +12,7 @@ import pandas as pd
 
 t = lb.tmpr.hist.tmpr()
 t = t[t.index >= "2000"]
-hdd = t.applymap(lambda x: max(18 - x, 0)).mul(t.duration / 24, axis=0)
+hdd = t.applymap(lambda x: max(18 - x, 0)).mul(t.index.duration / 24, axis=0)
 hdd_per_month_and_zone = lb.changefreq_sum(hdd, "MS")
 weights = lb.tmpr.weights()
 hdd_per_month = lb.wavg(hdd_per_month_and_zone, weights["power"], axis=1)
@@ -30,7 +30,7 @@ tlp = lb.tlp.power.fromsource(1, spec=1)
 wo_per_day_and_zone = pd.DataFrame({key: tlp(s) for key, s in t.items()})
 wo_per_day = lb.wavg(wo_per_day_and_zone, weights["power"], axis=1)
 wo_per_month = lb.changefreq_avg(wo_per_day, "MS")
-qo_per_month = wo_per_month.mul(wo_per_month.duration, axis=0)
+qo_per_month = wo_per_month.mul(wo_per_month.index.duration, axis=0)
 qo_per_calmonth = (
     qo_per_month.groupby(lambda ts: ts.month).mean().rename_axis(index="calmonth")
 )

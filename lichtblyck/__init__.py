@@ -8,10 +8,10 @@ from . import tlp
 from . import temperatures as tmpr
 from . import prices
 
-from .core2 import dev
-from .core2 import basics  # extend functionalty of pandas
-from .core2.pfline import PfLine
-from .core2.pfstate import PfState
+from .core import dev
+from .core import basics  # extend functionalty of pandas
+from .core.pfline import PfLine
+from .core.pfstate import PfState
 
 # Methods/attributes directly available at package root.
 

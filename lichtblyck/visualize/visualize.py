@@ -121,8 +121,8 @@ def plot_timeseries_as_bar(
     if categories:
         ax.bar(categories, s.values, 0.8, **kwargs)
     else:
-        x = s.index + 0.5 * (s.ts_right - s.index)
-        width = (s.duration / 24).median() * 0.8
+        x = s.index + 0.5 * (s.index.ts_right - s.index)
+        width = (s.index.duration / 24).median() * 0.8
         ax.bar(x, s.values, width, **kwargs)
 
 
@@ -136,7 +136,7 @@ def plot_timeseries_as_hline(
         x = np.arange(len(categories))
         ax.hlines(s.values, x - 0.4, x + 0.4, label=categories, **kwargs)
     else:
-        ax.hlines(s.values, s.index, s.ts_right, **kwargs)
+        ax.hlines(s.values, s.index, s.index.ts_right, **kwargs)
 
 
 @append_to_doc(docstringliteral_plotparameters)
@@ -162,7 +162,7 @@ def plot_timeseries_as_step(
         y = [*s.values, s.values[-1]]  # repeat final datapoint
         ax.step(x, y, where="post", **kwargs)
     else:
-        x = [*s.index, s.ts_right[-1]]  # add final datapoint
+        x = [*s.index, s.index.ts_right[-1]]  # add final datapoint
         y = [*s.values, s.values[-1]]  # repeat final datapoint
         ax.step(x, y, where="post", **kwargs)
 

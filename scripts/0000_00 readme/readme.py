@@ -10,7 +10,7 @@ import numpy as np
 
 # %% UPSAMPLE
 years = pd.DataFrame(
-    {"q": 1000, "r": 30000, "t": 7.98quart},
+    {"q": 1000, "r": 30000, "t": 7.98},
     pd.date_range("2020", periods=1, freq="AS", tz="Europe/Berlin"),
 )
 years["w"] = years.q / years.duration
@@ -33,7 +33,7 @@ quarters = pd.DataFrame(
     pd.date_range("2020", periods=4, freq="QS", tz="Europe/Berlin"),
 )
 quarters['r'] = quarters.q * [37.767, 25.3, 21.3, 30.8]
-quarters["w"] = quarters.q / quarters.duration
+quarters["w"] = quarters.q / quarters.index.duration
 quarters["p"] = quarters.r / quarters.q
 quarters = lb.set_ts_index(quarters[["q", "w", "r", "p", "t"]])
 

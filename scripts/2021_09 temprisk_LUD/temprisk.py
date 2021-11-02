@@ -106,7 +106,7 @@ Abbreviations:
 
 #%% IMPORTS
 
-from lichtblyck.core2.pfstate import PfState
+from lichtblyck.core.pfstate import PfState
 from typing import Callable
 import lichtblyck as lb
 import pandas as pd

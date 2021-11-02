@@ -40,7 +40,7 @@ def _w_hedge(
 
     if not bpo:
         try:
-            duration = w.duration
+            duration = w.index.duration
         except (AttributeError, ValueError):
             duration = pd.Series([1] * len(w), w.index)
         if how.lower().startswith("vol"):  # volume hedge

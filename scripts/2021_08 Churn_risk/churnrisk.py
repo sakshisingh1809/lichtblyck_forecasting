@@ -59,9 +59,9 @@ if pf == "B2C":
     current.rs *= contrib4
 
 # Calculate additional information.
-current["ps"] = current.rs / (current.ws * current.duration)
+current["ps"] = current.rs / (current.ws * current.index.duration)
 current["wu"] = current.wo - current.ws
-current["ru"] = current.wu * current.duration * current.pu
+current["ru"] = current.wu * current.index.duration * current.pu
 current["ro"] = current.rs + current.ru
 
 
@@ -153,20 +153,20 @@ ax.plot(lb.changefreq_avg(current.pu, "D"), color="r")
 # Find 'eventual' sourced volume at offer time, and current (best-guess) offer price.
 w_hedge_missing = lb.hedge(current.wu, current.pu, "AS", "val", bpo=True)
 w_hedge = current.ws + w_hedge_missing
-r_hedge = current.rs + w_hedge_missing * w_hedge_missing.duration * current.pu
+r_hedge = current.rs + w_hedge_missing * w_hedge_missing.index.duration * current.pu
 
 offer = current.copy()
 offer["ws"] = w_hedge
 offer["rs"] = r_hedge
-offer["ps"] = offer.rs / (offer.ws * offer.duration)
+offer["ps"] = offer.rs / (offer.ws * offer.index.duration)
 offer["wu"] = offer.wo - offer.ws
-offer["ru"] = offer.wu * offer.duration * offer.pu
+offer["ru"] = offer.wu * offer.index.duration * offer.pu
 offer["ro"] = offer.rs + offer.ru
 stepO = pd.Series(dtype=float)
-stepO["qs"] = (offer.ws * offer.duration).sum()
+stepO["qs"] = (offer.ws * offer.index.duration).sum()
 stepO["ps"] = offer.rs.sum() / stepO["qs"]
 stepO["ro"] = offer.ro.sum()
-stepO["qo"] = (offer.wo * offer.duration).sum()
+stepO["qo"] = (offer.wo * offer.index.duration).sum()
 stepO["po"] = stepO["ro"] / stepO["qo"]
 print(
     "'Expected' situation at offer:\n"
@@ -186,10 +186,10 @@ for i in range(10_000):
     # situation at end of long-term step (L)
     sim = pd.DataFrame({"pu": p_sim(), "wo": wo_sim()}).dropna()
     sim["wu"] = sim.wo - offer.ws  # open volume at that time
-    sim["ru"] = sim.wu * sim.duration * sim.pu  # value of that volume
+    sim["ru"] = sim.wu * sim.index.duration * sim.pu  # value of that volume
     stepL = pd.Series(dtype=float)
     stepL["ro"] = sim.ru.sum() + offer.rs.sum()
-    stepL["qo"] = (sim.wo * sim.duration).sum()
+    stepL["qo"] = (sim.wo * sim.index.duration).sum()
     stepL["po"] = stepL["ro"] / stepL["qo"]
     stepL["delta_po"] = stepL["po"] - stepO["po"]
     stepL["delta_rmp"] = -stepL["qo"] * stepL["delta_po"]

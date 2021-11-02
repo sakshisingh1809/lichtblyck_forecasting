@@ -171,7 +171,7 @@ def test_pbaseppeakpoffpeak(series_and_frames, long_freq):
     tseries, bpoframes = series_and_frames
     idx = np.random.randint(len(bpoframes[long_freq].index))
     ts_left = bpoframes[long_freq].index[idx]
-    ts_right = bpoframes[long_freq].ts_right[idx]
+    ts_right = bpoframes[long_freq].index.ts_right[idx]
     values_ref = bpoframes[long_freq].loc[ts_left, :]
 
     for key, f in [

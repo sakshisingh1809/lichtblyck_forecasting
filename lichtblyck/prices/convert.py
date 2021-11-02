@@ -117,7 +117,7 @@ def complete_bpoframe(partial_bpoframe: pd.DataFrame) -> pd.DataFrame:
             "At least 2 of {'p_base', 'p_peak', 'p_offpeak'} must be present as columns"
         )
     df = partial_bpoframe.copy()
-    b, p, o = np.vectorize(duration_bpo)(df.index, df.ts_right)
+    b, p, o = np.vectorize(duration_bpo)(df.index, df.index.ts_right)
     if "p_offpeak" not in df:
         df["p_offpeak"] = (df["p_base"] * b - df["p_peak"] * p) / o
     elif "p_peak" not in df:

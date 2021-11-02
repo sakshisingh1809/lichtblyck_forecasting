@@ -116,10 +116,10 @@ initial[("hedge", "w")] = w_hedge
 initial[("hedge", "p")] = p_pfc * 44.93 / p_hedge
 initial[("open", "w")] = initial.offtake.w - initial.hedge.w
 initial[("open", "p")] = p_pfc
-initial[("open", "r")] = initial.open.w * initial.duration * initial.open.p
-initial[("hedge", "r")] = initial.hedge.w * initial.duration * initial.hedge.p
+initial[("open", "r")] = initial.open.w * initial.index.duration * initial.open.p
+initial[("hedge", "r")] = initial.hedge.w * initial.index.duration * initial.hedge.p
 r_initial = initial.open.r.sum() + initial.hedge.r.sum()
-q_initial = (initial.offtake.w * initial.duration).sum()
+q_initial = (initial.offtake.w * initial.index.duration).sum()
 p_initial = r_initial / q_initial
 
 
@@ -129,9 +129,9 @@ sims = []
 for i in range(10_000):
     sim = pd.DataFrame({("spot", "p"): p_sim(), ("offtake", "w"): w_sim()}).dropna()
     sim[("spot", "w")] = sim.offtake.w - initial.hedge.w
-    sim[("spot", "r")] = sim.spot.w * sim.duration * sim.spot.p
+    sim[("spot", "r")] = sim.spot.w * sim.index.duration * sim.spot.p
     r_final = sim.spot.r.sum() + initial.hedge.r.sum()
-    q_final = (sim.offtake.w * sim.duration).sum()
+    q_final = (sim.offtake.w * sim.index.duration).sum()
     p_final = r_final / q_final
 
     p_premium = p_final - p_initial

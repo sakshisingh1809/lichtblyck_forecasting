@@ -126,7 +126,7 @@ def series2function(tlp_s: pd.Series) -> Callable[[pd.Series], pd.Series]:
         if "time" in left_on:
             new_ts = pd.date_range(
                 t.index[0],
-                t.ts_right[-1],
+                t.index.ts_right[-1],
                 freq=freq,
                 closed="left",
                 tz=t.index.tz,

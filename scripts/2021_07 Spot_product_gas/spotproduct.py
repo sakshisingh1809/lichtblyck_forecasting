@@ -84,7 +84,7 @@ for code in weights_tlps.index:
     for zone in weights_zones.index:
         temperature = tmpr[zone]
         offtake = tlp(temperature)  # MW
-        offtake = offtake * offtake.duration  # MWh
+        offtake = offtake * offtake.index.duration  # MWh
         offtake = offtake.resample("AS").transform(lambda x: x / x.sum())  # scaled to 1
         revenue = offtake * prices  # Eur
         pfprice = lb.changefreq_sum(revenue, "AS") / 1  # as yearly price [Eur/MWh]

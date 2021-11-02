@@ -1,4 +1,4 @@
-from lichtblyck.core2 import dev
+from lichtblyck.core import dev
 from lichtblyck.tools.frames import set_ts_index, wavg, fill_gaps
 from numpy import nan
 import lichtblyck as lb

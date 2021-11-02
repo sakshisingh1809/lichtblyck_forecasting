@@ -48,7 +48,7 @@ pu_a_stepS = lb.prices.convert.tseries2bpoframe(spot, "AS")
 path = Path("profile.xlsx")
 wo_step0 = pd.read_excel(path, "Tabelle1", header=4, usecols="B:C", index_col=0)
 wo_step0 = lb.tools.set_ts_index(wo_step0, bound="right")["MW"]
-qo_step0 = wo_step0 * wo_step0.duration
+qo_step0 = wo_step0 * wo_step0.index.duration
 # Decompose in peak and offpeak
 qo_step0 = (
     qo_step0.groupby(is_peak_hour).sum().rename({True: "q_peak", False: "q_offpeak"})

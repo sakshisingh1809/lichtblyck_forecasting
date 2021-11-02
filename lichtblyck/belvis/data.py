@@ -1,8 +1,8 @@
 """Module that uses connection to Belvis to generate PfLine and PfState objects."""
 
 from ..tools import stamps, frames
-from ..core2.pfline import PfLine
-from ..core2.pfstate import PfState
+from ..core.pfline import PfLine
+from ..core.pfstate import PfState
 from . import connector
 from typing import Union, Tuple
 import functools

@@ -1,6 +1,6 @@
 """Functions to work with pandas dataframes."""
 
-from .basics import FREQUENCIES
+from ..tools.stamps import FREQUENCIES, freq_up_or_down
 from pandas.core.frame import NDFrame
 from typing import Iterable
 import pandas as pd
@@ -58,26 +58,6 @@ def concat(dfs: Iterable, axis: int = 0, *args, **kwargs) -> pd.DataFrame:
     return pd.concat(dfs, axis=axis, *args, **kwargs)
 
 
-# def _aggpf(df: pd.DataFrame) -> pd.Series:
-#     """
-#     Aggregation function for PfFrames.
-
-#     Parameters
-#     ----------
-#     df : pd.DataFrame
-#         Dataframe with (at least) 2 of the following columns: (w or q), p, r.
-
-#     Returns
-#     -------
-#     pd.Series
-#         The aggregated series with the aggregated values for q, r, w and p.
-#     """
-#     duration = df.duration.sum()
-#     q = df.q.sum(skipna=False)
-#     r = df.r.sum(skipna=False)
-#     return pd.Series({"q": q, "r": r, "w": q / duration, "p": r / q})
-
-
 def _changefreq_general(fr: NDFrame, freq: str = "MS", is_summable: bool = True):
     """Change frequency of a Series or DataFrame, depending on the type of data it 
     contains."""
@@ -104,12 +84,19 @@ def _changefreq_general(fr: NDFrame, freq: str = "MS", is_summable: bool = True)
             # Downsampling is easiest for summable frames: simply sum child values.
             fr2 = fr.resample(freq).sum()
             # Discard rows in new frame that are only partially present in original.
-            return fr2[(fr2.index >= fr.index[0]) & (fr2.ts_right <= fr.ts_right[-1])]
+            fr2 = fr2[
+                (fr2.index >= fr.index[0])
+                & (fr2.index.ts_right <= fr.index.ts_right[-1])
+            ]
+            # Return if any values found
+            if not len(fr2):
+                raise ValueError("There are no 'full' time periods at this frequency.")
+            return fr2
         else:
             # For averagable frames: first make summable.
-            summable = fr.mul(fr.duration, axis=0)
+            summable = fr.mul(fr.index.duration, axis=0)
             summable2 = _changefreq_general(summable, freq, True)
-            fr2 = summable2.div(summable2.duration, axis=0)
+            fr2 = summable2.div(summable2.index.duration, axis=0)
             return fr2
 
     # Must upsample.
@@ -120,18 +107,18 @@ def _changefreq_general(fr: NDFrame, freq: str = "MS", is_summable: bool = True)
             fr = fr.copy()
             # first, add additional row...
             try:  # fails if series
-                fr.loc[fr.ts_right[-1], :] = None
+                fr.loc[fr.index.ts_right[-1], :] = None
             except TypeError:
-                fr.loc[fr.ts_right[-1]] = None
+                fr.loc[fr.index.ts_right[-1]] = None
             # ... then do upsampling ...
             fr2 = fr.resample(freq).asfreq().ffill()  # duplicate value
             # ... and then remove final row.
             return fr2.iloc[:-1]
         else:
             # For summable frames: first make averagable.
-            avgable = fr.div(fr.duration, axis=0)
+            avgable = fr.div(fr.index.duration, axis=0)
             avgable2 = _changefreq_general(avgable, freq, False)
-            fr2 = avgable2.mul(avgable2.duration, axis=0)
+            fr2 = avgable2.mul(avgable2.index.duration, axis=0)
             return fr2
 
 
@@ -184,66 +171,3 @@ def changefreq_avg(fr: NDFrame, freq: str = "MS") -> NDFrame:
     like power [MW]. When downsampling, the values are weighted with their duration.    
     """
     return _changefreq_general(fr, freq, False)
-
-
-def freq_up_or_down(freq_source, freq_target) -> int:
-    """
-    Compare source frequency with target frequency to see if it needs up- or downsampling.
-
-    Parameters
-    ----------
-    freq_source, freq_target : frequencies to compare.
-
-    Returns
-    -------
-    1 (-1, 0) if source frequency must be upsampled (downsampled, no change) to obtain
-        target frequency.
-
-    Notes
-    -----
-    Arbitrarily using a time point as anchor to calculate the length of the time period
-    from. May have influence on the ratio (duration of a month, quarter, year etc are
-    influenced by this), but, for most common frequencies, not on which is larger.
-    """
-    common_ts = pd.Timestamp("2020-01-01")
-    ts1 = common_ts + pd.tseries.frequencies.to_offset(freq_source)
-    ts2 = common_ts + pd.tseries.frequencies.to_offset(freq_target)
-    if ts1 > ts2:
-        return 1
-    elif ts1 < ts2:
-        return -1
-    return 0
-
-
-def _freq_longestshortest(shortest: bool, *freqs):
-    """
-    Determine which frequency denotes the shortest or longest time period.
-
-    Parameters
-    ----------
-    shortest : bool
-        True to find shortest, False to find longest frequency.
-    *freqs : frequencies to compare (as string or other object).
-
-    Returns
-    -------
-    Frequency.
-    """
-    common_ts = pd.Timestamp("2020-01-01")
-    ts = [common_ts + pd.tseries.frequencies.to_offset(fr) for fr in freqs]
-    i = (np.argmin if shortest else np.argmax)(ts)
-    return freqs[i]
-
-
-def freq_shortest(*freqs):
-    """
-    Returns shortest frequency in list.
-    """
-    return _freq_longestshortest(True, *freqs)
-
-
-def freq_longest(*freqs):
-    """
-    Returns longest frequency in list.
-    """
-    return _freq_longestshortest(False, *freqs)

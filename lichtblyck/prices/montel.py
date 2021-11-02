@@ -200,7 +200,7 @@ def gas_spot(market_code: str = "ncg") -> pd.Series:
     data = pd.read_excel(**_excel_gas("da", market_code=market_code))
     data = set_ts_index(data.dropna(), data.columns[0], continuous=False)
     s = data.iloc[:, 0]  # turn one-column df into series
-    s.index = s.ts_right  # shift up one, so delivery (not trade) day is shown.
+    s.index = s.index.ts_right  # shift up one, so delivery (not trade) day is shown.
     spot = set_ts_index(s).rename("p")
     return spot
 

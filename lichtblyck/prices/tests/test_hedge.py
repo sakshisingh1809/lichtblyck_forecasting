@@ -137,7 +137,7 @@ def get_hedgeresults_long(start, freq, length, aggfreq):
     i = pd.date_range(start, freq=freq, periods=length, tz="Europe/Berlin")
     w_values = 100 + 100 * np.random.rand(len(i))
     p_values = 50 + 20 * np.random.rand(len(i))
-    duration_values = pd.Series(w_values, i).duration.values
+    duration_values = i.duration.values
 
     if aggfreq is None:
         resultkey = lambda ts: None

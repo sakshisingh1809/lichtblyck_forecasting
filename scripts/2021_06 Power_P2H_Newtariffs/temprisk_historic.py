@@ -55,7 +55,7 @@ tlps = {
     pf: lb.tlp.power.fromsource(details["source"], spec=details["spec"])
     for pf, details in p2h_details.items()
 }
-tlps["gas"] = lb.tlp.gas.D14(kw=1000000)  # not used, just for comtempriskison
+tlps["gas"] = lb.tlp.gas.D14(kw=1000000)  # not used, just for comparison
 # quick visual check
 for pr in tlps.values():
     lb.tlp.plot.vs_time(pr)
@@ -76,8 +76,8 @@ stepS[["pu", "pu_m"]].plot()
 stepS[["pu", "pu_m", "pu_m2h"]].loc["2020-11":"2020-12", :].plot()
 
 # Actual temperature.
-t = lb.historic.tmpr()
-t = lb.historic.fill_gaps(t)
+t = lb.tmpr.hist.tmpr()
+t = lb.tmpr.hist.fill_gaps(t)
 t_act = t.wavg(weights.values, axis=1)
 stepS[("envir", "t")] = lb.changefreq_avg(t_act, "H")
 
@@ -328,7 +328,7 @@ hourly[("0", "qs", "w")] = hourly["0"].qs.w.apply(lambda v: v // 1)  # only buy 
 # Expected spot quantities.
 hourly[("0", "spot", "w")] = hourly["0"].qo.w - hourly["0"].qs.w
 # check: spot volume should add to 0 for each given month (only if hedge not rounded)
-# assert ((daily.exp.spot.w * daily.duration).resample("MS").sum().abs() < 0.1).all()
+# assert ((daily.exp.spot.w * daily.index.duration).resample("MS").sum().abs() < 0.1).all()
 
 # Actual spot quantities.
 hourly[("S", "spot", "w")] = hourly.S.qo.w - hourly["0"].qs.w
@@ -339,10 +339,10 @@ hourly[("L", "delta_pu", "p")] = hourly.L.pu.p - hourly["0"].pu.p
 hourly[("S", "delta_pu", "p")] = hourly.S.pu.p - hourly.L.pu.p
 
 hourly[("temprisk", "Lt", "r")] = (
-    hourly.S.delta_qo.w * hourly.duration * hourly.L.delta_pu.p
+    hourly.S.delta_qo.w * hourly.index.duration * hourly.L.delta_pu.p
 )
 hourly[("temprisk", "St", "r")] = (
-    hourly.S.delta_qo.w * hourly.duration * hourly.S.delta_pu.p
+    hourly.S.delta_qo.w * hourly.index.duration * hourly.S.delta_pu.p
 )
 
 hourly = hourly.sort_index(1)
@@ -361,7 +361,7 @@ for df in [daily, monthly, yearly]:
         # Correction: here sum is needed, not mean
         df[column] = lb.changefreq_sum(hourly[column], df.index.freq)
         # New information
-        df[("temprisk", period, "p")] = df[column] / (df.S.qo.w * df.duration)
+        df[("temprisk", period, "p")] = df[column] / (df.S.qo.w * df.index.duration)
 
 # %% Temprisk distribution.
 
@@ -391,7 +391,7 @@ df = filtr(hourly)
 # Values
 r_temprisk_lt = df.temprisk.Lt.r.sum()
 r_temprisk_st = df.temprisk.St.r.sum()
-q = (df.S.qo.w * df.duration).sum()
+q = (df.S.qo.w * df.index.duration).sum()
 
 # Formatting
 plt.style.use("seaborn")
@@ -575,7 +575,7 @@ ax = axes[1]
 ax.title.set_text("Change in offtake, per month")
 ax.yaxis.label.set_text("MWh")
 ax.plot(
-    (monthly.S.qo.w - monthly["0"].qo.w) * monthly.duration,
+    (monthly.S.qo.w - monthly["0"].qo.w) * monthly.index.duration,
     c="purple",
     linewidth=1,
     label="change (+ = more offtake)",
