@@ -4,7 +4,7 @@ Module with mixins, to add 'plot-functionality' to PfLine and PfState classes.
 
 from __future__ import annotations
 from ..visualize import visualize as vis
-from ..tools import units
+from ..tools import nits
 from typing import Dict, TYPE_CHECKING
 from matplotlib import pyplot as plt
 
@@ -30,7 +30,7 @@ class PfLinePlotOutput:
             col = "w" if "w" in self.available else "p"
         how = {"r": "bar", "q": "bar", "p": "step", "w": "line"}.get(col)
         if not how:
-            raise ValueError("`col` must be one of {'w', 'q', 'p', 'r'}")
+            raise ValueError(f"`col` must be one of {', '.join(self.available)}.")
         s = self[col]
         vis.plot_timeseries(ax, s, how=how, **kwargs)
 
@@ -55,9 +55,7 @@ class PfLinePlotOutput:
 
         for col, ax in zip(cols, axes.flatten()):
             color = getattr(vis.Colors.Wqpr, col)
-            unit = units.BU(col)
             self.plot_to_ax(ax, col, color=color)
-            ax.set_ylabel(unit)
         return fig
 
 

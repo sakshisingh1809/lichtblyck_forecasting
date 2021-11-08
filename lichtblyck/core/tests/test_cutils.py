@@ -14,6 +14,7 @@ freqs_small_to_large = ["T", "5T", "15T", "30T", "H", "2H", "D", "MS", "QS", "AS
 def freq(request):
     return request.param
 
+
 freq1 = freq2 = freq
 
 
@@ -56,7 +57,13 @@ def aggdata():
         raise ValueError("Invalid value for `freq`.")
 
     agg_data = {
-        freq: {"values": [], "index": [], "durations": [], "new": isstart_f(freq)}
+        freq: {
+            "values": [],
+            "index": [],
+            "durations": [],
+            "hours": [],
+            "new": isstart_f(freq),
+        }
         for freq in ["H", "D", "MS", "QS", "AS"]
     }
     for ts, val, dur in zip(source.index, source.values, source.index.duration):
@@ -65,11 +72,14 @@ def aggdata():
                 dic["index"].append(ts)
                 dic["values"].append([])
                 dic["durations"].append([])
+                dic["hours"].append([])
             dic["values"][-1].append(val)
             dic["durations"][-1].append(dur)
+            dic["hours"][-1].append(dur.magnitude)
     agg_data["15T"] = {
         "values": [[v] for v in source.values],
         "durations": [[d] for d in source.index.duration],
+        "hours": [[d.magnitude] for d in source.index.duration],
         "index": source.index,
     }
     return agg_data
@@ -118,30 +128,28 @@ def combis_upsampling():
             # Find the two series, value-by-value.
             sumrecords1, sumrecords2, avgrecords1, avgrecords2 = {}, {}, {}, {}
             i2 = 0
-            for ts1, vals1, durs1 in zip(
-                dic1["index"], dic1["values"], dic1["durations"]
-            ):
+            for ts1, vals1, hours1 in zip(dic1["index"], dic1["values"], dic1["hours"]):
                 len1 = len(vals1)
                 sumval1 = sum(vals1)
-                avgval1 = wavg(pd.Series(vals1), durs1)
+                avgval1 = wavg(pd.Series(vals1), hours1)
 
                 # For each datapoint in long frequency, find corresponing datapoints in shorter frequency.
-                tss2, durss2 = [], []
+                tss2, hourss2 = [], []
                 len2 = 0
                 # ts1 is single timestamp; vals1 and durs1 are nonnested lists.
                 # tss2 is list of timestamps; valss2 and durss2 are nested lists.
                 while len2 < len1:
                     tss2.append(dic2["index"][i2])
-                    durss2.append(dic2["durations"][i2])
-                    len2 += len(dic2["durations"][i2])
+                    hourss2.append(dic2["hours"][i2])
+                    len2 += len(dic2["hours"][i2])
                     i2 += 1
 
-                durs2 = np.array([sum(durs) for durs in durss2])
-                durfractions = durs2 / durs2.sum()
+                hours2 = np.array([sum(durs) for durs in hourss2])
+                durfractions = hours2 / hours2.sum()
                 sumvals2 = sumval1 * durfractions
 
-                assert sum(durs1) == sum(
-                    durs2
+                assert sum(hours1) == sum(
+                    hours2
                 )  # just small check (not part of pytests)
 
                 sumrecords1[ts1] = sumval1

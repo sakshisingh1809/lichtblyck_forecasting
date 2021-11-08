@@ -104,7 +104,8 @@ def test_all_ids_in_pf(pf, partial_result):
                 "LUD": "Ludwig",
                 "LUD_HKN": "Ludwig_HKN",
             },
-        )(
+        ),
+        (
             "LUD",
             {
                 "01.08.2020 - 01.09.2020": "20200729_S_HI_Verkauf_Base_LUD_NSp_SiM_7_MW",
@@ -127,13 +128,13 @@ def test_all_ids_in_pf(pf, partial_result):
 )
 def test_find_pfs(partial_or_exact_pf_name, partial_result):
     if partial_result:
-        result = connector.find_pfs(partial_or_exact_pf_name)
+        result = connector.find_pfids(partial_or_exact_pf_name)
         for key, value in partial_result.items():
             assert result[key] == value
 
     else:
         with pytest.raises(ValueError):
-            connector.find_pfs(partial_or_exact_pf_name)
+            connector.find_pfids(partial_or_exact_pf_name)
 
 
 @pytest.mark.parametrize(
@@ -145,7 +146,7 @@ def test_find_pfs(partial_or_exact_pf_name, partial_result):
 )
 def test_find_id(pf, name, partial_result):
     if partial_result:
-        result = connector.find_id(pf, name)
+        result = connector.find_tsid(pf, name)
         if result == partial_result:
             assert result
 

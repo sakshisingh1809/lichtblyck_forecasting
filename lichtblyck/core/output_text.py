@@ -3,8 +3,9 @@ Module with mixins, to add 'text-functionality' to PfLine and PfState classes.
 """
 
 from __future__ import annotations
-from ..tools import units
+from ..tools import nits
 from typing import List, Callable, Dict, Tuple, TYPE_CHECKING
+import pandas as pd
 import colorama
 import functools
 import textwrap
@@ -51,13 +52,26 @@ def _unitsline(headerline: str) -> str:
     """Return a line of text with units that line up with the provided header."""
     text = headerline
     for col in "wqpr":
-        unit = str(units.BU(col))
+        unit = f"{nits.name2unit(col):~P}"
         to_add = f" [{unit}]"
         text = text.replace(col.rjust(len(to_add)), to_add)
         while to_add not in text and len(unit) > 1:
             unit = unit[:-3] + ".." if len(unit) > 2 else "."
             to_add = f" [{unit}]"
             text = text.replace(col.rjust(len(to_add)), to_add)
+    return text
+
+def _unitsline2(headerline: str, units: Dict[str, nits.ureg.Unit]) -> str:
+    """Return a line of text with units that line up with the provided header."""
+    text = headerline
+    for name, unit in units.items():
+        u = f"{unit:~P}"
+        to_add = f" [{u}]"
+        text = text.replace(name.rjust(len(to_add)), to_add)
+        while to_add not in text and len(u) > 1:
+            u = u[:-3] + ".." if len(u) > 2 else "."
+            to_add = f" [{u}]"
+            text = text.replace(name.rjust(len(to_add)), to_add)
     return text
 
 
@@ -113,8 +127,9 @@ def _formatval(pfl, col, width, ts):
         val = ".."
     if isinstance(val, str):
         return f" {val:>{width-1}}"
-    else:
-        return f" {val:>{width-1}.{decimals}f}"
+    if isinstance(val, nits.Q_):
+        val = val.magnitude  # keep number only
+    return f" {val:>{width-1}.{decimals}f}"
 
 
 def _datablockfn_time_as_cols(
@@ -126,7 +141,9 @@ def _datablockfn_time_as_cols(
         line = " " + _makelen(col, indexwidth - 1, False, False)  # index (column)
         for ts, colwidth in zip(stamps, colwidths):
             line += _formatval(pfl, col, colwidth, ts)  # datavalues
-        line += " " + _makelen(f"[{units.BU(col)}]", tailwidth, False, True)  # unit
+        line += " " + _makelen(
+            f"[{nits.name2unit(col)}]", tailwidth, False, True
+        )  # unit
         return line
 
     def datablockfn(pfl: PfLine):
@@ -238,16 +255,25 @@ def _time_as_cols(pfs: PfState, cols="qp", colorful: bool = True) -> str:
 
 
 class PfLineTextOutput:
+    FORMAT = {"w": "{:7,.2f}", "q": "{:11,.0f}", "p": "{:11,.2f}", "r": "{:13,.0f}"}
     def __repr__(self: PfLine):
         what = {"p": "price", "q": "volume", "all": "price and volume"}[self.kind]
         header = f"Lichtblick PfLine object containing {what} information."
-        body = repr(self.df(self.available))
-        units = _unitsline(body.split("\n")[0])
+        # Split dataframe into magnitude and unit, and format magnitude.
+        stringseries = {}
+        units = {}
+        for name, s in self.df().items():
+            units[name] = s.pint.units
+            formatting = self.FORMAT.get(name, "{}").format
+            stringseries[name] = s.pint.magnitude.apply(formatting).str.replace(",", " ")
+        body = repr(pd.DataFrame(stringseries))
+
+        unitsline = _unitsline2(body.split("\n")[0], units)
         loc = body.find("\n\n") + 1
         if not loc:
-            return f"{header}\n{body}\n{units}"
+            return f"{header}\n{body}\n{unitsline}"
         else:
-            return f"{header}\n{body[:loc]}{units}{body[loc:]}"
+            return f"{header}\n{body[:loc]}{unitsline}{body[loc:]}"
 
 
 class PfStateTextOutput:

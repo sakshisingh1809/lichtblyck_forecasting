@@ -6,3 +6,5 @@ geopy
 scikit-learn
 sqlalchemy
 openpyxl
+pint
+pint-pandas

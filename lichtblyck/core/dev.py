@@ -2,6 +2,7 @@
 Code to quickly get objects for testing.
 """
 
+from ..tools.nits import ureg, PA_, name2unit
 from .pfline import PfLine
 from .pfstate import PfState
 import pandas as pd
@@ -26,7 +27,8 @@ def get_series(i=None, name="w", min=10, max=20) -> pd.Series:
     max (default: 20)."""
     if i is None:
         i = get_index()
-    return pd.Series(min + np.random.rand(len(i)) * (max - min), i, name=name)
+    u = name2unit(name)
+    return pd.Series(min + np.random.rand(len(i)) * (max - min), i, name=name).astype(f'pint[{u}]')
 
 
 def get_dataframe(

@@ -183,6 +183,7 @@ def plot_timeseries(
         plot_timeseries_as_bar(ax, s, cat, **kwargs)
     else:
         raise ValueError("`how` must be one of {'hline', 'step', 'line', 'bar'}.")
+    ax.yaxis.set_units(s.pint.units)
 
 
 mpl.style.use("seaborn")

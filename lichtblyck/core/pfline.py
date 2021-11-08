@@ -4,14 +4,13 @@ Dataframe-like class to hold general energy-related timeseries; either volume ([
 """
 
 from __future__ import annotations
-
 from ..tools.frames import set_ts_index
-from ..tools import stamps
+from ..tools.nits import name2unit, ureg
 from .output_text import PfLineTextOutput
 from .output_plot import PfLinePlotOutput
 from .dunder_arithmatic import PfLineArithmatic
 from .utils import changefreq_sum
-from typing import Union
+from typing import Callable, Union
 import pandas as pd
 import numpy as np
 
@@ -57,7 +56,9 @@ def _make_df(data) -> pd.DataFrame:
     # Get price information.
     if p is not None and w is None and q is None and r is None:
         # We only have price information. Return immediately.
-        return set_ts_index(pd.DataFrame({"p": p}))  # kind == 'p'
+        return set_ts_index(
+            pd.DataFrame({"p": p.astype("pint[Eur/MWh]")})
+        )  # kind == 'p'
 
     # Get quantity information (and check consistency).
     if q is None and w is None:
@@ -71,7 +72,7 @@ def _make_df(data) -> pd.DataFrame:
 
     # Get revenue information (and check consistency).
     if p is None and r is None:
-        return set_ts_index(pd.DataFrame({"q": q}))  # kind == 'q'
+        return set_ts_index(pd.DataFrame({"q": q.astype("pint[MWh]")}))  # kind == 'q'
     if r is None:  # must calculate from p
         r = p * q
         i = r.isna()  # edge case p==nan. If q==0, assume r=0. If q!=0, raise error
@@ -84,7 +85,9 @@ def _make_df(data) -> pd.DataFrame:
         i = p.isna()
         if not (abs(q[i]) < 0.001).all() or not np.allclose(r[~i], p[~i] * q[~i]):
             raise ValueError("Passed values for `q`, `p` and `r` not consistent.")
-    return set_ts_index(pd.DataFrame({"q": q, "r": r}).dropna())  # kind == 'all'
+    return set_ts_index(
+        pd.DataFrame({"q": q.astype("pint[MWh]"), "r": r.astype("pint[Eur]")}).dropna()
+    )  # kind == 'all'
 
 
 class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
@@ -109,8 +112,6 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
         Columns available in instance. One of {'wq', 'p', 'wqpr'}.
     index : pandas.DateTimeIndex
         Left timestamp of row.
-    ts_right, duration : pandas.Series
-        Right timestamp, and duration [h] of row.
 
     Notes
     -----
@@ -134,13 +135,13 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
     def q(self) -> pd.Series:
         if "q" in self._df:
             return self._df["q"]
-        return pd.Series(np.nan, self.index, name="q")
+        return pd.Series(np.nan, self.index, name="q", dtype="pint[MWh]")
 
     @property
     def w(self) -> pd.Series:
         if "q" in self._df:
             return pd.Series(self._df["q"] / self._df.index.duration, name="w")
-        return pd.Series(np.nan, self.index, name="w")
+        return pd.Series(np.nan, self.index, name="w", dtype="pint[MW]")
 
     @property
     def r(self) -> pd.Series:
@@ -148,7 +149,7 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
             return self._df["r"]
         if "q" in self._df and "p" in self._df:
             return pd.Series(self._df["q"] * self._df["p"], name="r")
-        return pd.Series(np.nan, self.index, name="r")
+        return pd.Series(np.nan, self.index, name="r", dtype="pint[Eur]")
 
     @property
     def p(self) -> pd.Series:
@@ -156,7 +157,7 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
             return self._df["p"]
         if "q" in self._df and "r" in self._df:
             return pd.Series(self._df["r"] / self._df["q"], name="p")
-        return pd.Series(np.nan, self.index, name="p")
+        return pd.Series(np.nan, self.index, name="p", dtype="pint[Eur/MWh]")
 
     @property
     def kind(self) -> str:
@@ -185,8 +186,8 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
 
         Parameters
         ----------
-        cols : str, optional
-            The columns to include. Default: include all that are available.
+        cols : str, optional (default: all that are available)
+            The columns to include in the dataframe.
 
         Returns
         -------
@@ -201,15 +202,22 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
     volume: PfLine = property(lambda self: PfLine({"q": self.q}))  # possibly nan-Series
     price: PfLine = property(lambda self: PfLine({"p": self.p}))  # possibly nan-Series
 
-    set_q: PfLine = lambda self, val: self._set_key_val("q", val)
-    set_w: PfLine = lambda self, val: self._set_key_val("w", val)
-    set_r: PfLine = lambda self, val: self._set_key_val("r", val)
-    set_p: PfLine = lambda self, val: self._set_key_val("p", val)
+    set_q: Callable[..., PfLine] = lambda self, val: self._set_key_val("q", val)
+    set_w: Callable[..., PfLine] = lambda self, val: self._set_key_val("w", val)
+    set_r: Callable[..., PfLine] = lambda self, val: self._set_key_val("r", val)
+    set_p: Callable[..., PfLine] = lambda self, val: self._set_key_val("p", val)
 
     def _set_key_val(self, key: str, val: Union[PfLine, pd.Series]) -> PfLine:
         """Set or update a timeseries and return the modified PfLine."""
+        # Get pd.Series, in correct unit.
         if isinstance(val, PfLine):
-            val = val[key]  # Get pd.Series
+            val = val[key]  
+        elif isinstance(val, float) or isinstance(val, int):
+            val = pd.Series(val, self.index)
+        elif isinstance(val, ureg.Quantity):
+            val = pd.Series(val.magnitude, self.index).astype(f"pint[{val.units}]")
+        val = val.astype(f"pint[{name2unit(key)}]")
+
         if self.kind == "all" and key == "r":
             raise NotImplementedError(
                 "Cannot set `r`; first select `.volume` or `.price`."
@@ -220,12 +228,6 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
         elif key in ["p", "r"] and self.kind in ["q", "all"]:
             data["q"] = self["q"]
         return PfLine(data)
-
-    def concat(self, other) -> PfLine:
-        """Concatenate two PfLines (along index)."""
-        if self.kind != other.kind:
-            raise ValueError("Cannot concatenate pflines of unequal kind.")
-        pass  # TODO
 
     def changefreq(self, freq: str = "MS") -> PfLine:
         """Resample the PfLine to a new frequency.
