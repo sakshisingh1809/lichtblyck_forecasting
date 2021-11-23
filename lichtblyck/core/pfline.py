@@ -30,8 +30,8 @@ import numpy as np
 
 
 def _make_df(data) -> pd.DataFrame:
-    """From data, create a DataFrame with column `q`, column `p`, or columns `q` and `r`.
-    Also, do some data verification."""
+    """From data, create a DataFrame with column `q`, column `p`, or columns `q` and `r`,
+    with relevant units set to them. Also, do some data verification."""
 
     # Do checks on indices.
     indices = [
@@ -47,7 +47,10 @@ def _make_df(data) -> pd.DataFrame:
     # Get timeseries.
     def series_or_none(df, col):  # remove series that are passed but only contain na
         s = df.get(col)
-        return s if s is not None and not s.isna().all() else None
+        if s is None or s.isna().all():
+            return None
+        unit = name2unit(col)
+        return s.astype(f"pint[{unit}]")  # set (i.e., assume) unit, or convert to unit.
 
     if not isinstance(data, PfLine):
         data = set_ts_index(pd.DataFrame(data))  # make df in case info passed as float
@@ -56,9 +59,7 @@ def _make_df(data) -> pd.DataFrame:
     # Get price information.
     if p is not None and w is None and q is None and r is None:
         # We only have price information. Return immediately.
-        return set_ts_index(
-            pd.DataFrame({"p": p.astype("pint[Eur/MWh]")})
-        )  # kind == 'p'
+        return set_ts_index(pd.DataFrame({"p": p}))  # kind == 'p'
 
     # Get quantity information (and check consistency).
     if q is None and w is None:
@@ -72,7 +73,7 @@ def _make_df(data) -> pd.DataFrame:
 
     # Get revenue information (and check consistency).
     if p is None and r is None:
-        return set_ts_index(pd.DataFrame({"q": q.astype("pint[MWh]")}))  # kind == 'q'
+        return set_ts_index(pd.DataFrame({"q": q}))  # kind == 'q'
     if r is None:  # must calculate from p
         r = p * q
         i = r.isna()  # edge case p==nan. If q==0, assume r=0. If q!=0, raise error
@@ -85,9 +86,7 @@ def _make_df(data) -> pd.DataFrame:
         i = p.isna()
         if not (abs(q[i]) < 0.001).all() or not np.allclose(r[~i], p[~i] * q[~i]):
             raise ValueError("Passed values for `q`, `p` and `r` not consistent.")
-    return set_ts_index(
-        pd.DataFrame({"q": q.astype("pint[MWh]"), "r": r.astype("pint[Eur]")}).dropna()
-    )  # kind == 'all'
+    return set_ts_index(pd.DataFrame({"q": q, "r": r}).dropna())  # kind == 'all'
 
 
 class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
@@ -129,7 +128,17 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
 
     # Methods/Properties that return most important information.
 
-    index: pd.DatetimeIndex = property(lambda self: self._df.index)
+    @property
+    def index(self) -> pd.DatetimeIndex:
+        return self._df.index
+
+    @property
+    def w(self) -> pd.Series:
+        if "q" in self._df:
+            return pd.Series(self._df["q"] / self._df.index.duration, name="w").pint.to(
+                "MW"
+            )
+        return pd.Series(np.nan, self.index, name="w", dtype="pint[MW]")
 
     @property
     def q(self) -> pd.Series:
@@ -138,26 +147,36 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
         return pd.Series(np.nan, self.index, name="q", dtype="pint[MWh]")
 
     @property
-    def w(self) -> pd.Series:
-        if "q" in self._df:
-            return pd.Series(self._df["q"] / self._df.index.duration, name="w")
-        return pd.Series(np.nan, self.index, name="w", dtype="pint[MW]")
+    def p(self) -> pd.Series:
+        if "p" in self._df:
+            return self._df["p"]
+        if "q" in self._df and "r" in self._df:
+            return pd.Series(self._df["r"] / self._df["q"], name="p").pint.to("Eur/MWh")
+        return pd.Series(np.nan, self.index, name="p", dtype="pint[Eur/MWh]")
 
     @property
     def r(self) -> pd.Series:
         if "r" in self._df:
             return self._df["r"]
         if "q" in self._df and "p" in self._df:
-            return pd.Series(self._df["q"] * self._df["p"], name="r")
+            return pd.Series(self._df["q"] * self._df["p"], name="r").pint.to("Eur")
         return pd.Series(np.nan, self.index, name="r", dtype="pint[Eur]")
 
-    @property
-    def p(self) -> pd.Series:
-        if "p" in self._df:
-            return self._df["p"]
-        if "q" in self._df and "r" in self._df:
-            return pd.Series(self._df["r"] / self._df["q"], name="p")
-        return pd.Series(np.nan, self.index, name="p", dtype="pint[Eur/MWh]")
+    def df(self, cols: str = None) -> pd.DataFrame:
+        """DataFrame for this PfLine.
+
+        Parameters
+        ----------
+        cols : str, optional (default: all that are available)
+            The columns to include in the dataframe.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        if cols is None:
+            cols = self.available
+        return pd.DataFrame({col: self[col] for col in cols})
 
     @property
     def kind(self) -> str:
@@ -181,51 +200,37 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
     def available(self) -> str:  # which time series have values
         return {"p": "p", "q": "qw", "all": "wqpr"}[self.kind]
 
-    def df(self, cols: str = None) -> pd.DataFrame:
-        """DataFrame for this PfLine.
-
-        Parameters
-        ----------
-        cols : str, optional (default: all that are available)
-            The columns to include in the dataframe.
-
-        Returns
-        -------
-        pd.DataFrame
-        """
-        if cols is None:
-            cols = self.available
-        return pd.DataFrame({col: self[col] for col in cols})
-
     # Methods/Properties that return new class instance.
 
     volume: PfLine = property(lambda self: PfLine({"q": self.q}))  # possibly nan-Series
     price: PfLine = property(lambda self: PfLine({"p": self.p}))  # possibly nan-Series
 
-    set_q: Callable[..., PfLine] = lambda self, val: self._set_key_val("q", val)
-    set_w: Callable[..., PfLine] = lambda self, val: self._set_key_val("w", val)
-    set_r: Callable[..., PfLine] = lambda self, val: self._set_key_val("r", val)
-    set_p: Callable[..., PfLine] = lambda self, val: self._set_key_val("p", val)
+    set_q: Callable[..., PfLine] = lambda self, val: self._set_col_val("q", val)
+    set_w: Callable[..., PfLine] = lambda self, val: self._set_col_val("w", val)
+    set_r: Callable[..., PfLine] = lambda self, val: self._set_col_val("r", val)
+    set_p: Callable[..., PfLine] = lambda self, val: self._set_col_val("p", val)
 
-    def _set_key_val(self, key: str, val: Union[PfLine, pd.Series]) -> PfLine:
+    def _set_col_val(
+        self, col: str, val: Union[pd.Series, PfLine, float, int, ureg.Quantity]
+    ) -> PfLine:
         """Set or update a timeseries and return the modified PfLine."""
         # Get pd.Series, in correct unit.
         if isinstance(val, PfLine):
-            val = val[key]  
+            val = val[col]
         elif isinstance(val, float) or isinstance(val, int):
             val = pd.Series(val, self.index)
         elif isinstance(val, ureg.Quantity):
-            val = pd.Series(val.magnitude, self.index).astype(f"pint[{val.units}]")
-        val = val.astype(f"pint[{name2unit(key)}]")
+            val = pd.Series(val.m, self.index).astype(f"pint[{val.u}]")
+        val = val.astype(f"pint[{name2unit(col)}]")
 
-        if self.kind == "all" and key == "r":
+        if self.kind == "all" and col == "r":
             raise NotImplementedError(
                 "Cannot set `r`; first select `.volume` or `.price`."
             )
-        data = {key: val}
-        if key in ["w", "q", "r"] and self.kind in ["p", "all"]:
+        data = {col: val}
+        if col in ["w", "q", "r"] and self.kind in ["p", "all"]:
             data["p"] = self["p"]
-        elif key in ["p", "r"] and self.kind in ["q", "all"]:
+        elif col in ["p", "r"] and self.kind in ["q", "all"]:
             data["q"] = self["q"]
         return PfLine(data)
 

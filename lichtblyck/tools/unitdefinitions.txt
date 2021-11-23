@@ -1,0 +1,51 @@
+
+@defaults
+    system = energysector1
+@end
+
+
+# prefixes
+centi- = 1e-2 = c-
+kilo- = 1e3 = k- = K-
+mega- = 1e6 = M-
+giga- = 1e9 = G-
+terra- = 1e12 = T-
+
+### Base dimensions and their units. Base unit without prefix. ###
+
+# Duration / Time
+hour = [time] = h = hr
+minute = hour / 60 = min
+second = minute / 60 = s = sec
+
+# Energy
+watthour = [energy] = Wh
+joule = watt * second = J
+
+# Revenue / Currency
+euro = [currency] = Eur = €
+eurocent = Eur / 100 = cEur = cent = ct = c€ = ct€ 
+
+# Temperature
+degC = [temperature] = degC
+
+
+### Derived dimensions and their units. ###
+
+# Power
+[power] = [energy] / [time]
+watt = watthour / hour = W
+
+# Price
+[price] = [currency] / [energy]
+euro_per_MWh = euro / (1_000_000 * watthour)  = Eur/MWh
+cent_per_kWh = (euro / 100) / (1000 * watthour)
+
+
+@system energybase
+    megawatthour
+@end
+
+@system powerbase
+    megawatt:watthour
+@end

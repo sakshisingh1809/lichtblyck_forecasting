@@ -12,6 +12,8 @@ if TYPE_CHECKING:  # needed to avoid circular imports
     from .pfstate import PfState
     from .pfline import PfLine
 
+DEFAULTPLOTTYPES = {"r": "bar", "q": "bar", "p": "step", "w": "line"}
+
 
 class PfLinePlotOutput:
     def plot_to_ax(self: PfLine, ax: plt.Axes, col: str = None, **kwargs) -> None:
@@ -28,7 +30,7 @@ class PfLinePlotOutput:
         """
         if not col:
             col = "w" if "w" in self.available else "p"
-        how = {"r": "bar", "q": "bar", "p": "step", "w": "line"}.get(col)
+        how = DEFAULTPLOTTYPES.get(col)
         if not how:
             raise ValueError(f"`col` must be one of {', '.join(self.available)}.")
         s = self[col]
@@ -99,15 +101,11 @@ class PfStatePlotOutput:
         plt.Figure
             The figure object to which the series was plotted.
         """
-        cols = [col for col in cols if col in self.available]
-        fig, axes = plt.subplots(
-            len(cols), 1, True, False, squeeze=False, figsize=(10, len(cols) * 3)
-        )
 
-        for col, ax in zip(cols, axes.flatten()):
-            color = getattr(vis.Colors.Wqpr, col)
-            self.plot_to_ax(ax, col, color=color)
-        return fig
+        fig, axes = plt.subplots(1, 2, True, False, squeeze=True, figsize=(20, 10))
+        (-self.offtake).plot_to_ax(axes[0], "q")
+        hedgefraction = self.offtake.volume / -self.sourced.volume
+        vis.plot_timeseries_as_bar(axes[1], hedgefraction, color="grey")
 
 
 def plot_pfstates(dic: Dict[str, PfState]) -> plt.Figure:

@@ -3,6 +3,7 @@ Visualize portfolio lines, etc.
 """
 
 from ..tools.stamps import freq_shortest
+from ..tools import nits
 from typing import Dict, List, Optional, Iterable
 from collections import namedtuple
 from matplotlib import pyplot as plt
@@ -113,33 +114,6 @@ def append_to_doc(text):
 
 
 @append_to_doc(docstringliteral_plotparameters)
-def plot_timeseries_as_bar(
-    ax: plt.Axes, s: pd.Series, cat: bool = None, **kwargs
-) -> None:
-    """Plot timeseries `s` to axis `ax`, as bar graph."""
-    categories = _categories(ax, s, cat)
-    if categories:
-        ax.bar(categories, s.values, 0.8, **kwargs)
-    else:
-        x = s.index + 0.5 * (s.index.ts_right - s.index)
-        width = (s.index.duration / 24).median() * 0.8
-        ax.bar(x, s.values, width, **kwargs)
-
-
-@append_to_doc(docstringliteral_plotparameters)
-def plot_timeseries_as_hline(
-    ax: plt.Axes, s: pd.Series, cat: bool = None, **kwargs
-) -> None:
-    """Plot timeseries `s` to axis `ax`, as horizontal lines."""
-    categories = _categories(ax, s, cat)
-    if categories:
-        x = np.arange(len(categories))
-        ax.hlines(s.values, x - 0.4, x + 0.4, label=categories, **kwargs)
-    else:
-        ax.hlines(s.values, s.index, s.index.ts_right, **kwargs)
-
-
-@append_to_doc(docstringliteral_plotparameters)
 def plot_timeseries_as_line(
     ax: plt.Axes, s: pd.Series, cat: bool = None, **kwargs
 ) -> None:
@@ -152,19 +126,49 @@ def plot_timeseries_as_line(
 
 
 @append_to_doc(docstringliteral_plotparameters)
+def plot_timeseries_as_bar(
+    ax: plt.Axes, s: pd.Series, cat: bool = None, **kwargs
+) -> None:
+    """Plot timeseries `s` to axis `ax`, as bar graph."""
+    categories = _categories(ax, s, cat)
+    if categories:
+        ax.bar(categories, s.values, 0.8, **kwargs)
+    else:
+        x = s.index + 0.5 * (s.index.ts_right - s.index)
+        width = (s.index.duration.median() / nits.Q_(24, "h")).magnitude * 0.8
+        ax.bar(x.values, s.values, width, **kwargs)
+
+
+@append_to_doc(docstringliteral_plotparameters)
+def plot_timeseries_as_hline(
+    ax: plt.Axes, s: pd.Series, cat: bool = None, **kwargs
+) -> None:
+    """Plot timeseries `s` to axis `ax`, as horizontal lines."""
+    categories = _categories(ax, s, cat)
+    if categories: # Cannot create a step graph on a categories axis. Try anyway.
+        x = np.arange(len(categories))
+        ax.hlines(s.values, x - 0.4, x + 0.4, **kwargs)
+        ax.set_xticks(x)
+        ax.set_xticklabels(categories)
+    else:
+        ax.hlines(s.values, s.index, s.index.ts_right, **kwargs)
+
+
+@append_to_doc(docstringliteral_plotparameters)
 def plot_timeseries_as_step(
     ax: plt.Axes, s: pd.Series, cat: bool = None, **kwargs
 ) -> None:
     """Plot timeseries `s` to axis `ax`, as stepped line (horizontal and vertical lines)."""
+    s = s.copy()
+    s[s.index.ts_right[-1]] = s.values[-1]  # add final datapoint
     categories = _categories(ax, s, cat)
-    if categories:  # Cannot create a step graph on a categories axis.
-        x = np.arange(len(categories) + 1) - 0.5  # add final datapoint
-        y = [*s.values, s.values[-1]]  # repeat final datapoint
-        ax.step(x, y, where="post", **kwargs)
+    if categories:  # Cannot create a step graph on a categories axis. Try anyway.
+        x = np.arange(len(categories))  
+        ax.step(x - 0.5, s.values, where="post", **kwargs) # move to left slightly
+        ax.set_xticks(x)
+        ax.set_xticklabels(categories)
     else:
-        x = [*s.index, s.index.ts_right[-1]]  # add final datapoint
-        y = [*s.values, s.values[-1]]  # repeat final datapoint
-        ax.step(x, y, where="post", **kwargs)
+        ax.step(s.index, s.values, where="post", **kwargs)
 
 
 def plot_timeseries(
@@ -173,14 +177,14 @@ def plot_timeseries(
     """Plot timeseries `s` to axis `ax`, as (`how`) 'hline' (default), 'step', 'line', 
     or 'bar'. 
     """
-    if how == "hline":
-        plot_timeseries_as_hline(ax, s, cat, **kwargs)
-    elif how == "line":
+    if how == "line":
         plot_timeseries_as_line(ax, s, cat, **kwargs)
-    elif how == "step":
-        plot_timeseries_as_step(ax, s, cat, **kwargs)
     elif how == "bar":
         plot_timeseries_as_bar(ax, s, cat, **kwargs)
+    elif how == "hline":
+        plot_timeseries_as_hline(ax, s, cat, **kwargs)
+    elif how == "step":
+        plot_timeseries_as_step(ax, s, cat, **kwargs)
     else:
         raise ValueError("`how` must be one of {'hline', 'step', 'line', 'bar'}.")
     ax.yaxis.set_units(s.pint.units)

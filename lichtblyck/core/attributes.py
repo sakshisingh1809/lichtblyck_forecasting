@@ -11,8 +11,8 @@ import pandas as pd
 
 
 @functools.lru_cache
-def _hours(td) -> pint.Quantity:
-    return td.total_seconds() / 3600 * ureg.h
+def _hours(td) -> float:
+    return td.total_seconds() / 3600
 
 
 def _ts_right_frame(fr: pd.core.generic.NDFrame) -> pd.Series:
@@ -74,8 +74,8 @@ def _duration(i: pd.DatetimeIndex) -> pd.Series:
     """
     # Speed-up things for fixed-duration frequencies.
     if i.freq == "15T":
-        return pd.Series(0.25 * ureg.h, i).rename("duration")
+        return pd.Series(0.25, i).rename("duration").astype('pint[h]')
     elif i.freq == "H":
-        return pd.Series(1 * ureg.h, i).rename("duration")
+        return pd.Series(1, i).rename("duration").astype('pint[h]')
     # Old-fashioned individual calculations for non-fixed-duration frequencies.
-    return (_ts_right(i) - i).apply(_hours).rename("duration")
+    return (_ts_right(i) - i).apply(_hours).rename("duration").astype('pint[h]')
