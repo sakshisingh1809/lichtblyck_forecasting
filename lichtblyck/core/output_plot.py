@@ -73,7 +73,7 @@ class PfStatePlotOutput:
             The axes object to which to plot the timeseries.
         line : str, optional
             The pfline to plot. One of {'offtake' (default), 'sourced', 'unsourced',
-            'netposition', 'pnl_costs'}.
+            'netposition', 'pnl_costs', 'hedgedfraction'}.
         col : str, optional
             The column to plot. Default: plot volume `w` [MW] (if available) or else
             price `p` [Eur/MWh].
@@ -102,10 +102,49 @@ class PfStatePlotOutput:
             The figure object to which the series was plotted.
         """
 
-        fig, axes = plt.subplots(1, 2, True, False, squeeze=True, figsize=(20, 10))
-        (-self.offtake).plot_to_ax(axes[0], "q")
-        hedgefraction = self.offtake.volume / -self.sourced.volume
-        vis.plot_timeseries_as_bar(axes[1], hedgefraction, color="grey")
+        fig = plt.figure()
+        fig.set_size_inches(20, 10)
+
+        # plot Offtake
+        ax1 = plt.subplot2grid(shape=(2, 2), loc=(0, 0), colspan=1)
+        ax1.xaxis.set_tick_params(
+            labeltop=True
+        )  # make x-axis tick labels on the top of a plot
+        ax1.xaxis.set_tick_params(labelbottom=False)
+        ax1.set_title("Offtake Volume")
+        (-self.offtake).plot_to_ax(ax1, "q")
+
+        ax1.bar_label(
+            ax1.containers[0], label_type="edge", fmt="%.0f"
+        )  # print labels on top of each bar
+
+        # plot Hedged volumne (%)
+        ax2 = plt.subplot2grid(shape=(2, 2), loc=(0, 1), colspan=1)
+        hedgefraction = -self.sourced.volume / self.offtake.volume
+        ax2.set_title("Hedged Fraction")
+        ax2.set_ylabel("Percentage")
+        ax2.xaxis.set_tick_params(
+            labeltop=True
+        )  # make x-axis tick labels on the top of a plot
+        ax2.xaxis.set_tick_params(labelbottom=False)
+        vis.plot_timeseries_as_bar(ax2, hedgefraction * 100, color="grey")
+        ax2.bar_label(
+            ax2.containers[0], label_type="edge", fmt="%.0f",
+        )  # print labels on top of each bar
+
+        # plot price
+        ax3 = plt.subplot2grid(shape=(2, 2), loc=(1, 0), colspan=1)
+        ax3.set_frame_on(False)
+        plt.ylim(-1000000, 1000000)
+        ax3.set_yticklabels([])  # make yticks disappear
+        ax3.get_xaxis().tick_bottom()
+        ax3.set_title("Portfolio Price")
+        ax3.axes.get_xaxis().set_visible(False)
+        plt.yticks(color="w")
+        vis.plot_timeseries_as_bar(ax3, self.unsourcedprice["p"], alpha=0.0)
+        ax3.bar_label(
+            ax3.containers[0], label_type="center"
+        )  # print labels on top of each bar
 
 
 def plot_pfstates(dic: Dict[str, PfState]) -> plt.Figure:
