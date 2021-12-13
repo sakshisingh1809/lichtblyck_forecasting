@@ -30,3 +30,5 @@ from .tools.frames import fill_gaps, set_ts_index, wavg
 from .prices.hedge import hedge
 from .prices.utils import is_peak_hour
 from .core.utils import changefreq_avg, changefreq_sum
+from .core.output_plot import plot_pfstates
+

@@ -75,32 +75,32 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmat
     Parameters
     ----------
     offtakevolume, unsourcedprice, sourced : PfLine
-        `offtakevolume` may also be passed as pd.Series with name `q` or `w`. 
-        `unsourcedprice` may also be passed as pd.Series. 
+        `offtakevolume` may also be passed as pd.Series with name `q` or `w`.
+        `unsourcedprice` may also be passed as pd.Series.
         `sourced` is optional; if non is specified, assume no sourcing has taken place.
 
     Attributes
     ----------
     offtake : PfLine ('q')
-        Offtake. Volumes are <0 for all timestamps (see 'Notes' below). 
+        Offtake. Volumes are <0 for all timestamps (see 'Notes' below).
     sourced : PfLine ('all')
-        Procurement. Volumes (and normally, revenues) are >0 for all timestamps (see 
-        'Notes' below). 
+        Procurement. Volumes (and normally, revenues) are >0 for all timestamps (see
+        'Notes' below).
     unsourced : PfLine ('all')
         Procurement/trade that is still necessary until delivery. Volumes (and normally,
-        revenues) are >0 if more volume must be bought, <0 if volume must be sold for a 
-        given timestamp (see 'Notes' below). NB: if volume for a timestamp is 0, its 
-        price is undefined (NaN) - to get the market prices in this portfolio, use the 
+        revenues) are >0 if more volume must be bought, <0 if volume must be sold for a
+        given timestamp (see 'Notes' below). NB: if volume for a timestamp is 0, its
+        price is undefined (NaN) - to get the market prices in this portfolio, use the
         property `.unsourcedprice` instead.
     unsourcedprice : PfLine ('p')
         Prices of the unsourced volume.
     netposition : PfLine ('all')
         Net portfolio positions. Convenience property for users with a "traders' view".
-        Does not follow sign conventions (see 'Notes' below); volumes are <0 if 
-        portfolio is short and >0 if long. Identical to `.unsourced`, but with sign 
+        Does not follow sign conventions (see 'Notes' below); volumes are <0 if
+        portfolio is short and >0 if long. Identical to `.unsourced`, but with sign
         change for volumes and revenues (but not prices).
     pnl_costs : PfLine ('all')
-        The expected costs needed to source the offtake volume; the sum of the sourced 
+        The expected costs needed to source the offtake volume; the sum of the sourced
         and unsourced positions.
         
     # index : pandas.DateTimeIndex
@@ -109,9 +109,9 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmat
     Notes
     -----
     Sign conventions: 
-    . Volumes (`q`, `w`): >0 if volume flows into the portfolio. 
-    . Revenues (`r`): >0 if money flows out of the portfolio (i.e., costs).    
-    . Prices (`p`): normally positive. 
+    . Volumes (`q`, `w`): >0 if volume flows into the portfolio.
+    . Revenues (`r`): >0 if money flows out of the portfolio (i.e., costs).  
+    . Prices (`p`): normally positive.
     """
 
     @classmethod
@@ -134,7 +134,7 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmat
         offtake volume: one of
             `qo` [MWh]
             `wo` [MW]
-        sourced volume and revenue: two of 
+        sourced volume and revenue: two of
             (`qs` [MWh] or `ws` [MW])
             `rs` [Eur]
             `ps` [Eur/MWh]
@@ -221,11 +221,11 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmat
 
     def changefreq(self, freq: str = "MS") -> PfState:
         """Resample the Portfolio to a new frequency.
-        
+
         Parameters
         ----------
         freq : str, optional
-            The frequency at which to resample. 'AS' for year, 'QS' for quarter, 'MS' 
+            The frequency at which to resample. 'AS' for year, 'QS' for quarter, 'MS'
             (default) for month, 'D for day', 'H' for hour, '15T' for quarterhour.
         
         Returns

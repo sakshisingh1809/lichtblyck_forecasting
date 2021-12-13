@@ -133,6 +133,7 @@ def plot_timeseries_as_bar(
     categories = _categories(ax, s, cat)
     if categories:
         ax.bar(categories, s.values, 0.8, **kwargs)
+
     else:
         x = s.index + 0.5 * (s.index.ts_right - s.index)
         width = (s.index.duration.median() / nits.Q_(24, "h")).magnitude * 0.8
@@ -145,7 +146,7 @@ def plot_timeseries_as_hline(
 ) -> None:
     """Plot timeseries `s` to axis `ax`, as horizontal lines."""
     categories = _categories(ax, s, cat)
-    if categories: # Cannot create a step graph on a categories axis. Try anyway.
+    if categories:  # Cannot create a step graph on a categories axis. Try anyway.
         x = np.arange(len(categories))
         ax.hlines(s.values, x - 0.4, x + 0.4, **kwargs)
         ax.set_xticks(x)
@@ -163,8 +164,8 @@ def plot_timeseries_as_step(
     s[s.index.ts_right[-1]] = s.values[-1]  # add final datapoint
     categories = _categories(ax, s, cat)
     if categories:  # Cannot create a step graph on a categories axis. Try anyway.
-        x = np.arange(len(categories))  
-        ax.step(x - 0.5, s.values, where="post", **kwargs) # move to left slightly
+        x = np.arange(len(categories))
+        ax.step(x - 0.5, s.values, where="post", **kwargs)  # move to left slightly
         ax.set_xticks(x)
         ax.set_xticklabels(categories)
     else:
