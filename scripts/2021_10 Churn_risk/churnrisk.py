@@ -140,7 +140,7 @@ ax.plot(lb.changefreq_avg(current.pu, "D"), color="r")
 # %% OFFER (=INITIAL SITUATION)
 
 # Find 'eventual' sourced volume at offer time, and current (best-guess) offer price.
-w_hedge_missing = lb.hedge(current.wu, current.pu, "AS", "val", bpo=True)
+w_hedge_missing = lb.hedge(current.wu, current.pu, "AS", "val", po=True)
 w_hedge = current.ws + w_hedge_missing
 r_hedge = current.rs + w_hedge_missing * w_hedge_missing.index.duration * current.pu
 

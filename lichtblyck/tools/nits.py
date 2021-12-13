@@ -32,13 +32,26 @@ Q_ = ureg.Quantity
 #     return Q_(val, unit)
 
 NAMES_AND_UNITS = {
-        "w": ureg.MW,
-        "q": ureg.MWh,
-        "p": ureg.euro_per_MWh,
-        "r": ureg.euro,
-        "duration": ureg.hour,
-        "t": ureg.degC,
-    }
+    "w": ureg.MW,
+    "q": ureg.MWh,
+    "p": ureg.euro_per_MWh,
+    "r": ureg.euro,
+    "duration": ureg.hour,
+    "t": ureg.degC,
+}
+
+
+def to_compact(value: Union[pint.Quantity, pd.Series, pd.DataFrame]):
+    """Convert to more compact unit by moving absolute magnitude into readable range."""
+    if isinstance(value, pint.Quantity):
+        return value.to_compact()
+    elif isinstance(value, pd.Series):
+        newunits = value.abs().max().to_compact().units
+        return value.pint.to(newunits)
+    elif isinstance(value, pd.DataFrame):
+        return pd.DataFrame({name: to_compact(s) for name, s in value.items()})
+    else: 
+        raise TypeError('`value` must be a Quantity, or Series or DataFrame of quantities.')
 
 
 def unit2name(unit: pint.Unit) -> str:
@@ -47,6 +60,7 @@ def unit2name(unit: pint.Unit) -> str:
         if u.dimensionality == unit.dimensionality:
             return name
     return ValueError(f"No standard name found for unit '{unit}'.")
+
 
 def name2unit(name: str) -> pint.Unit:
     """Find standard unit belonging to a column name."""
@@ -96,5 +110,4 @@ def set_units(
     for name, unit in units.items():
         df[name] = set_unit(df[name], unit)
     return df
-
 

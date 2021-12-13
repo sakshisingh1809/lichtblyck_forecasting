@@ -120,9 +120,9 @@ class _Connection:
         response = self.request(path, *queryparts)
         if response.status_code == 200:
             return json.loads(response.text)
-        elif response.status_code == 401 and self._lastquery is not None:
+        elif self._lastquery is not None:  # authentication might be expired.
             self.redo_auth()
-            return self.query_general(path, *queryparts) # retry.
+            return self.query_general(path, *queryparts)  # retry.
         else:
             raise RuntimeError(response)
 
@@ -226,12 +226,15 @@ def auth_with_token():
         source.connection.auth_with_token()
 
 
-def update_cache_files():
-    """Update the cache files for all timeseries of all commodities. Takes a long time, 
-    only run when portfolio structure changed or when relevant timeseries added/changed."""
-    for commodity, source in _sources.items():
-        print(f"Updating files of commodity '{commodity}'.")
-        source.update_cache_files()
+def update_cache_files(commodity: str = None):
+    """Update the cache files for all timeseries of a commodity (or all commodities, if
+    none specified). Takes a long time, only run when portfolio structure changed or 
+    when relevant timeseries added/changed."""
+    if not commodity:
+        for commodity in _sources:
+            update_cache_files(commodity)
+    print(f"Updating files of commodity '{commodity}'.")
+    _source(commodity).update_cache_files()
     print("Done.")
 
 
@@ -274,7 +277,7 @@ def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str
         Name of portfolio.
     strict : bool, optional (default: False)
         If True, only returns portfolios if the name exactly matches. Otherwise, also
-        return if name partially matches.
+        return if name partially matches. Always case insensitive.
 
     Returns
     -------
@@ -287,9 +290,10 @@ def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str
     Always uses cached information. If portfolio structure in Belvis is changed, run 
     the `.update_cache_files()` function to manually update the cache.
     """
+    name = name.lower()
 
-    def matchingname(tsname: str) -> bool:
-        return name == tsname if strict else name in tsname
+    def matchingname(pfname: str) -> bool:
+        return name == pfname.lower() if strict else name in pfname.lower()
 
     # Keep the portfolio abbreviations with matching names.
     hits = {
@@ -307,48 +311,82 @@ def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str
     return hits
 
 
-def all_tsids_in_pf(commodity: str, pfid: str, use_cache: bool = True) -> List[int]:
+def find_tsids(
+    commodity: str,
+    pfid: str = None,
+    name: str = "",
+    strict: bool = False,
+    use_cache: bool = True,
+) -> Dict[int, Tuple[str]]:
     """Gets ids of all timeseries in a portfolio.
 
     Parameters
     ----------
     commodity : str
         Commodity. One of {'power', 'gas'}.
-    pfid : str
+    pfid : str, optional (default: search in all portfolios. Only possible if use_cache)
         Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
+    name : str, optional (default: return all timeseries).
+        Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf'). 
+    strict : bool, optional (default: False)
+        If True, only returns timeseries if the name exactly matches. Otherwise, also
+        return if name partially matches. Always case insensitive.
     use_cache : bool, optional (default: True)
         If True, use the cached information to find the ids. Otherwise, use the API.
 
     Returns
     -------
-    List[int]
-        Found timeseries ids.
+    Dict[int, Tuple[str]]
+        Dictionary with found timeseries. Keys are the timeseries ids, the values are 
+        (portfolio abbreviation, timeseries name)-tuples.
     """
+    name = name.lower()
+
+    def matchingname(tsname: str) -> bool:
+        return name == tsname.lower() if strict else name in tsname.lower()
+
+    if pfid is None and not use_cache:
+        raise ValueError(
+            "Must specify `pfid` when using 'live' (i.e., not cached) information."
+        )
+
+    hits = {}
     if use_cache:
 
+        # Filter on pf.
         pfs = _source(commodity).pfscache
 
-        if pfid not in pfs:
+        if pfid is not None and pfid not in pfs:
             raise ValueError(
                 f"No Portfolio with abbreviation '{pfid}' found in commodity '{commodity}'."
             )
+        elif pfid is None:
+            # Get all timeseries ids of all portfolios.
+            tsids = [tsid for pf in pfs.values() for tsid in pf["tsids"]]
+        else:
+            # Get all timeseries ids in the portfolio.
+            tsids = pfs[pfid]["tsids"]
 
-        # Keep timeseries ids of wanted portfolio.
-        tsids = pfs[pfid]["tsids"]
-
+        # Filter on timeseries name.
+        for tsid, inf in _source(commodity).tsscache.items():
+            if tsid in tsids and matchingname(inf["timeSeriesName"]):
+                hits[tsid] = (inf["instanceToken"], inf["timeSeriesName"])
     else:
 
+        # Filter on pf.
         # Get all timeseries ids in the portfolio.
         paths = _source(commodity).connection.query_timeseries(
             "", f"instancetoken={pfid}"
         )
         tsids = [int(path.split("/")[-1]) for path in paths]
 
-    if not tsids:
-        raise ValueError(
-            f"No timeseries found in commodity '{commodity}' and portfolio '{pfid}'."
-        )
-    return tsids
+        # Filter on timeseries name.
+        for tsid in tsids:
+            inf = info(tsid)
+            if matchingname(inf["timeseriesName"]):
+                hits[int(inf["id"])] = (inf["instanceToken"], inf["timeSeriesName"])
+
+    return hits
 
 
 def find_tsid(
@@ -366,7 +404,7 @@ def find_tsid(
         Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf').
     strict : bool, optional (default: False)
         If True, only returns timeseries if the name exactly matches. Otherwise, also
-        return if name partially matches.
+        return if name partially matches. Always case insensitive.
     use_cache : bool, optional (default: True)
         If True, use the cached information to find the id. Otherwise, use the API.
 
@@ -375,24 +413,12 @@ def find_tsid(
     int
         id of found timeseries.
     """
-
-    def matchingname(tsname: str) -> bool:
-        return name == tsname if strict else name in tsname
-
-    # Filter on pf.
-    tsids = all_tsids_in_pf(commodity, pfid, use_cache)
-
-    # Filter on timeseries name.
-    hits = {}
-    if use_cache:
-        for tsid, inf in _source(commodity).tsscache.items():
-            if tsid in tsids and matchingname(inf["timeSeriesName"]):
-                hits[tsid] = inf["timeSeriesName"]
-    else:
-        for tsid in tsids:
-            inf = info(tsid)
-            if matchingname(inf["timeseriesName"]):
-                hits[int(inf["id"])] = inf["timeSeriesName"]
+    # Find all hits
+    hits = find_tsids(commodity, pfid, name, strict, use_cache)
+    
+    #custom quick-fix
+    if set(hits.keys()) == set([44578448, 44580972]):
+        hits = {44578448: hits[44578448]}
 
     # Raise error if 0 or > 1 found.
     if len(hits) == 0:
@@ -400,9 +426,9 @@ def find_tsid(
             f"No timeseries with name '{name}' found in commodity '{commodity}' and portfolio '{pfid}'. Use `.find_pfids` to check if `pfid` is correct."
         )
     elif len(hits) > 1:
-        raise ValueError(f"Found more than 1 timeseries found: {hits}.")
+        raise ValueError(f"Found more than 1 timeseries: {hits}.")
 
-    return next(iter(hits))  # return only the tsid of the (only) hit.
+    return next(iter(hits.keys()))  # return only the tsid of the (only) hit.
 
 
 def records(
@@ -429,7 +455,7 @@ def series(
     tsid: int,
     ts_left: Union[pd.Timestamp, dt.datetime],
     ts_right: Union[pd.Timestamp, dt.datetime],
-    missing2zero: bool = True
+    missing2zero: bool = True,
 ) -> pd.Series:
     """Return series from timeseries with id `id` in given delivery time interval.
 
@@ -458,7 +484,7 @@ def series(
     vals = records(commodity, tsid, ts_left, ts_right)
     df = pd.DataFrame.from_records(vals)
     mask = df["pf"] == "missing"
-    df.loc[mask, 'v'] = (0 if missing2zero else np.na)
+    df.loc[mask, "v"] = 0 if missing2zero else np.na
     s = pd.Series(
         df["v"].to_list(), pd.DatetimeIndex(df["ts"]).tz_convert("Europe/Berlin")
     )

@@ -29,7 +29,7 @@ import pytest
 @pytest.mark.parametrize("tz", ["Europe/Berlin", None])
 @pytest.mark.parametrize("freq", ["MS", "D"])
 def test_makedf1(freq, tz):
-    i = dev.get_index(tz, freq)
+    i = dev.get_index(freq, tz)
     q = dev.get_series(i, "q")
     testresult1 = _make_df({"q": q})
 
@@ -120,7 +120,7 @@ def combination_of_two(choice, df):
     ],
 )
 def test_makedf_consistency(tz, freq, choice):
-    i = dev.get_index(tz, freq)
+    i = dev.get_index(freq, tz)
     df = dev.get_dataframe(i, choice)
     # dic = {key: df[key] for key in choice}
 

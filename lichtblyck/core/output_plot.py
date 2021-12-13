@@ -96,11 +96,14 @@ class PfStatePlotOutput:
             The figure object to which the series was plotted.
         """
         fig, axes = plt.subplots(
-            1, 2, True, False, squeeze=True, figsize=(20, 10)
+            1, 2, sharex=True, sharey=True, squeeze=True, figsize=(20, 10)
         )
         (-self.offtake).plot_to_ax(axes[0], 'q')
-        hedgefraction = self.offtake.volume / -self.sourced.volume
-        vis.plot_timeseries_as_bar(axes[1], hedgefraction, color='grey')
+        self.sourced.plot_to_ax(axes[1], 'q', color='grey')
+        axes[0].set_title('Offtake')
+        axes[1].set_title('Sourced')
+        # hedgefraction = self.sourced.volume / -self.offtake.volume
+        # vis.plot_timeseries_as_bar(axes[1], hedgefraction, color='grey')
 
 
 def plot_pfstates(dic: Dict[str, PfState]) -> plt.Figure:

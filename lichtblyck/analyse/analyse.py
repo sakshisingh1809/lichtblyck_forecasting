@@ -3,6 +3,7 @@ Module to analyse scenario data
 """
 
 from scipy.stats import norm
+import math
 
 
 def expected_shortfall(
@@ -30,3 +31,27 @@ def expected_shortfall(
 
     expected_cost = loc + scale * norm.pdf(norm.ppf(quantile)) / (1 - quantile)
     return expected_cost - x0
+
+
+def multiplication_factor(vola: float, time: float, quantile: float) -> float:
+    """Factor with which to multiply the current price (or any other fluctuating value)
+    to get a scenario price.
+    
+    Parameters
+    ----------
+    vola : float
+        Volatility in [fraction/year].
+    time : float
+        How much time will pass in [years].
+    quantile : float
+        Desired quantile, i.e. in interval (0, 1).
+
+    Returns
+    -------
+    float
+        Ratio between future price and current price.
+    """
+    sigma = vola * math.sqrt(time) # as fraction
+    mu = - 0.5 * sigma ** 2 # as fraction
+    exponent = norm(mu, sigma).ppf(quantile)
+    return math.exp(exponent)

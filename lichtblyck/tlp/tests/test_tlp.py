@@ -81,7 +81,7 @@ def test_power_series_fromsource(source):
 
 @pytest.mark.parametrize("source", np.random.choice(lb.tlp.power.SOURCES, 8, False))
 def test_power_fromsource(source):
-    i = get_index(freq="D")  # some random time index in days
+    i = get_index("D")  # some random time index in days
     t = pd.Series(np.random.uniform(-30, 30, len(i)), i)
     tlp1 = lb.tlp.power.fromsource(source["name"], spec=1)
     w1 = tlp1(t)
@@ -95,7 +95,7 @@ def test_power_fromsource(source):
 
 
 def test_gas_D14():
-    i = get_index(freq="D")  # some random time index in days
+    i = get_index("D")  # some random time index in days
     t = pd.Series(np.random.uniform(-30, 30, len(i)), i)
     tlp1 = lb.tlp.gas.D14(kw=1)
     w1 = tlp1(t)

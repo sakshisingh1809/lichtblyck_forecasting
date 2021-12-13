@@ -459,7 +459,7 @@ for n in range(10000):
     hourly[("S", "pu")] = hourly.L.pu + hourly.S.delta_pu  # ..and hourly prices S
     hourly = hourly.drop([("S", "pu_m"), ("S", "pu_m2h")], axis=1)
     hourly[("O", "qhedge")] = lb.hedge(
-        hourly.O.qo, hourly.O.pu, "MS", bpo=True
+        hourly.O.qo, hourly.O.pu, "MS", po=True
     )  # hedge
     hourly[("O", "ro")] = hourly.O.qo * hourly.O.po
     hourly[("S", "qspot")] = hourly.S.qo - hourly.O.qhedge

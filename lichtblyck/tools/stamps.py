@@ -6,11 +6,72 @@ from typing import Iterable, Union, Tuple
 import datetime as dt
 import pandas as pd
 import numpy as np
+from .nits import Q_
+
 
 # Allowed frequencies.
 # Perfect containment; a short-frequency time period always entirely falls within a single high-frequency time period.
 # AS -> 4 QS; QS -> 3 MS; MS -> 28-31 D; D -> 23-25 H; H -> 4 15T
 FREQUENCIES = ["AS", "QS", "MS", "D", "H", "15T"]
+
+
+def ts_right(
+    ts_left: Union[pd.Timestamp, pd.DatetimeIndex]
+) -> Union[pd.Timestamp, pd.Series]:
+    """
+    Return right-bound timestamp of a timestamp, or of each timestamp in index.
+    """
+    if ts_left.tz is None:
+        raise ValueError("Index is missing timezone information.")
+
+    # Get right timestamp for each index value, based on the frequency.
+    # . This one breaks for 'MS':
+    # (i + pd.DateOffset(nanoseconds=i.freq.nanos))
+    # . This drops a value at some DST transitions:
+    # (i.shift(1))
+    # . This one gives wrong value at DST transitions:
+    # i + i.freq
+    if ts_left.freq == "15T":
+        ts_right = ts_left + pd.Timedelta(hours=0.25)
+    elif ts_left.freq == "H":
+        ts_right = ts_left + pd.Timedelta(hours=1)
+    else:
+        if ts_left.freq == "D":
+            kwargs = {"days": 1}
+        elif ts_left.freq == "MS":
+            kwargs = {"months": 1}
+        elif ts_left.freq == "QS":
+            kwargs = {"months": 3}
+        elif ts_left.freq == "AS":
+            kwargs = {"years": 1}
+        else:
+            raise ValueError(f"Invalid frequency: {ts_left.freq}.")
+        ts_right = ts_left + pd.DateOffset(**kwargs)
+    # Return in correct format.
+    if isinstance(ts_left, pd.Timestamp):
+        return ts_right
+    else:
+        return pd.Series(ts_right, ts_left, name="ts_right")
+
+
+def duration(ts_left: Union[pd.Timestamp, pd.DatetimeIndex]) -> Union[Q_, pd.Series]:
+    """
+    Return duration of a timestamp, or of each timestamp in index.
+    """
+    if isinstance(ts_left, pd.Timestamp):
+        if ts_left.freq in ["15T", "H"]:
+            # Speed-up things for fixed-duration frequencies.
+            return Q_(1 if ts_left.freq == "H" else 0.25, "h")
+        else:
+            # Individual calculations for non-fixed-duration frequencies.
+            return Q_((ts_right(ts_left) - ts_left).total_seconds() / 3600, "h")
+    else:
+        if ts_left.freq in ["15T", "H"]:
+            dur = 1 if ts_left.freq == "H" else 0.25
+            return pd.Series(dur, ts_left, dtype="pint[h]").rename("duration")
+        else:
+            dur = [td.total_seconds() / 3600 for td in ts_right(ts_left) - ts_left]
+            return pd.Series(dur, ts_left, dtype="pint[h]").rename("duration")
 
 
 def floor_ts(
@@ -90,10 +151,32 @@ def ceil_ts(
 
     Notes
     -----
-    Except if `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor(ts, 1).
+    If `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor(ts, 0) == ts.
     """
-    offset = 1 if ts != floor_ts(ts, 0, freq) else 0 # if ts at start of period, ceil==floor
+    offset = (
+        1 if ts != floor_ts(ts, 0, freq) else 0
+    )  # if ts at start of period, ceil==floor
     return floor_ts(ts, future + offset, freq)
+
+
+def trim_index(i: pd.DatetimeIndex, freq: str) -> pd.DatetimeIndex:
+    """Trim index to only keep full periods.
+
+    Parameters
+    ----------
+    i : pd.DatetimeIndex
+        The (untrimmed) DatetimeIndex
+    freq : str
+        Frequency to trim to. E.g. 'MS' to only keep full months.
+
+    Returns
+    -------
+    pd.DatetimeIndex
+        Subset of `i`, with same frequency.
+    """
+    start = ceil_ts(i[0], 0, freq)
+    end = floor_ts(ts_right(i[-1]), 0, freq)
+    return i[(i >= start) & (i < end)]
 
 
 def ts_leftright(left=None, right=None) -> Tuple:
@@ -159,7 +242,9 @@ def freq_up_or_down(freq_source, freq_target) -> int:
     Returns
     -------
     1 (-1, 0) if source frequency must be upsampled (downsampled, no change) to obtain
-        target frequency.
+        target frequency. 
+        Upsampling meaning, the number of values increases - one value in the source 
+        corresponds to multiple values in the target.
 
     Notes
     -----

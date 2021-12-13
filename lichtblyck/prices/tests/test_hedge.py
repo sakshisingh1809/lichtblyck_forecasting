@@ -63,9 +63,9 @@ def test_basic_volhedge(values, start, notbpo, bpo):
     w = pd.Series(
         values, pd.date_range(start, freq="H", periods=len(values), tz="Europe/Berlin")
     )
-    assert np.isclose(notbpo, hedge._w_hedge(w, how="vol", bpo=False))
+    assert np.isclose(notbpo, hedge._hedge(w, how="vol", po=False))
     pd.testing.assert_series_equal(
-        hedge._w_hedge(w, how="vol", bpo=True).sort_index(),
+        hedge._hedge(w, how="vol", po=True).sort_index(),
         pd.Series({"w_peak": bpo[0], "w_offpeak": bpo[1]}).dropna().sort_index(),
         check_dtype=False,
     )
@@ -170,7 +170,7 @@ def test__w_hedge_bpoFalse(start, freq_bpoFalse, count, tz):
     freq = freq_bpoFalse
     w, p, ref_results = get_hedgeresults(start, freq, count, tz, False, None)
     for how in ["vol", "val"]:
-        test_result = hedge._w_hedge(w, p, how, False)
+        test_result = hedge._hedge(w, p, how, False)
         ref_result = ref_results[None][how][0]
         assert np.isclose(test_result, ref_result)
 
@@ -179,7 +179,7 @@ def test__w_hedge_bpoTrue(start, freq_bpoTrue, count, tz):
     freq = freq_bpoTrue
     w, p, ref_results = get_hedgeresults(start, freq, count, tz, True, None)
     for how in ["vol", "val"]:
-        test_result = hedge._w_hedge(w, p, how, True).sort_index()
+        test_result = hedge._hedge(w, p, how, True).sort_index()
         ref_bpo = ref_results[None][how]
         records = {"w_peak": ref_bpo[0], "w_offpeak": ref_bpo[1]}
         ref_result = pd.Series(records).dropna().sort_index()

@@ -13,6 +13,8 @@ from .core import basics  # extend functionalty of pandas
 from .core.pfline import PfLine
 from .core.pfstate import PfState
 
+from . import portfolios 
+
 # Methods/attributes directly available at package root.
 
 from .tools.stamps import (
