@@ -12,6 +12,7 @@ from .core import dev
 from .core import basics  # extend functionalty of pandas
 from .core.pfline import PfLine
 from .core.pfstate import PfState
+from .core.output_plot import plot_pfstates
 
 # Methods/attributes directly available at package root.
 
@@ -28,5 +29,3 @@ from .tools.frames import fill_gaps, set_ts_index, wavg
 from .prices.hedge import hedge
 from .prices.utils import is_peak_hour
 from .core.utils import changefreq_avg, changefreq_sum
-from .core.output_plot import plot_pfstates
-

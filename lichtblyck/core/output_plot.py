@@ -8,6 +8,7 @@ import matplotlib
 from ..visualize import visualize as vis
 from ..tools import nits
 from typing import Dict, TYPE_CHECKING
+import numpy as np
 from matplotlib import pyplot as plt
 
 if TYPE_CHECKING:  # needed to avoid circular imports
@@ -67,7 +68,7 @@ class PfStatePlotOutput:
     def plot_to_ax(
         self: PfState, ax: plt.Axes, line: str = "offtake", col: str = None, **kwargs
     ) -> None:
-        """Plot a timeseries of a PfLine in the portfolio state to a specific axes.
+        """Plot a timeseries of a PfState in the portfolio state to a specific axes.
 
         Parameters
         ----------
@@ -154,7 +155,7 @@ class PfStatePlotOutput:
 
 
 def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
-    """Plot multiple PfState instances. 
+    """Plot multiple PfState instances.
 
     Parameters
     ----------
@@ -168,6 +169,67 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     plt.Figure
         The figure object to which the instances were plotted.
     """
+    fig, axes = plt.subplots(len(dic) * 2, 2)
+    fig.set_size_inches(20, 10)
+    pfnames = list(dic.keys())
+    pfstates = list(dic.values())
+    j = 0
+
+    for i in range(1, len(axes), 2):
+        # print(pfnames[j])
+        pfs = pfstates[j].changefreq(freq)
+        axes[i, 1].axis("off")
+        axes[i - 1, 0].set_yticklabels([])
+
+        if i != 1:  # don't remove labels from axes[0,0]
+            axes[i - 1, 0].set_xticklabels([])
+            axes[i - 1, 1].set_xticklabels([])
+
+        # axes[1, 1].text(0.5, 0.5, "my text")
+
+        pfs.plot_to_ax(axes[i - 1, 0], "offtake", "q")  # plot offtake
+        pfs.plot_to_ax(axes[i - 1, 1], "hedgedfraction")  # plot hedgedfraction
+        pfs.plot_to_ax(axes[i, 0], "price")  # plot price
+
+        axes[i, 0].set_frame_on(False)
+        plt.ylim(-1000000, 1000000)
+        axes[i, 0].set_yticklabels([])
+        axes[i, 0].get_xaxis().tick_bottom()
+        axes[i, 0].axes.get_xaxis().set_visible(False)
+        plt.yticks(color="w")
+        j = j + 1
+
+    axes[0, 0].set_title("Offtake Volume")
+    axes[0, 1].set_title("Hedged Fraction")
+    axes[0, 0].xaxis.tick_top()
+    axes[0, 1].xaxis.tick_top()
+
+    # rearange the axes for no overlap
+    fig.tight_layout()
+
+    # Get the bounding boxes of the axes including text decorations
+    r = fig.canvas.get_renderer()
+    get_bbox = lambda ax: ax.get_tightbbox(r).transformed(fig.transFigure.inverted())
+    bboxes = np.array(
+        list(map(get_bbox, axes.flat)), matplotlib.transforms.Bbox
+    ).reshape(axes.shape)
+
+    # Get the minimum and maximum extent, get the coordinate half-way between those
+    ymax = (
+        np.array(list(map(lambda b: b.y1, bboxes.flat))).reshape(axes.shape).max(axis=1)
+    )
+    ymin = (
+        np.array(list(map(lambda b: b.y0, bboxes.flat))).reshape(axes.shape).min(axis=1)
+    )
+    ys = np.c_[ymax[1:], ymin[:-1]].mean(axis=1)
+
+    # Draw a horizontal lines at those coordinates
+    for y in ys:
+        line = plt.Line2D([0, 1], [y, y], transform=fig.transFigure, color="black")
+        fig.add_artist(line)
+
+
+def plot_pfstates_extra(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     fig = plt.figure()
     fig.set_size_inches(20, 10)
 
@@ -196,12 +258,6 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
         plt.ylim(-1000000, 1000000)
         ax3.set_yticklabels([])  # make yticks disappear
         ax3.get_xaxis().tick_bottom()
-        ax3.set_title("Portfolio Price")
         ax3.axes.get_xaxis().set_visible(False)
         plt.yticks(color="w")
         pfs.plot_to_ax(ax3, "price")
-
-        # draw 2d line after one portfolio
-        # line = plt.Line2D([0, 1], [y, y], transform=fig.transFigure, color="black")
-        # fig.add_artist(line)
-
