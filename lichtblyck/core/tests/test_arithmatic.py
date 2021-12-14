@@ -14,7 +14,7 @@ i3 = pd.date_range("2020", periods=8, freq="QS")  # longer frequency, part overl
 
 
 @pytest.mark.parametrize(
-    ("pfl_in", "value", "returntype", 'returnkind'),
+    ("pfl_in", "value", "returntype", "returnkind"),
     [
         (dev.get_pfline(i, "p"), 12, PfLine, "p", "more"),
         (dev.get_pfline(i, "p"), nits.ureg("12 Eur/MWh"), PfLine, "p"),
@@ -31,15 +31,15 @@ i3 = pd.date_range("2020", periods=8, freq="QS")  # longer frequency, part overl
         (dev.get_pfline(i, "all"), nits.ureg("12 Eur"), None),
         (dev.get_pfline(i, "all"), nits.ureg("6 Eur/MWh"), None),
         (dev.get_pfline(i, "all"), nits.ureg("6 MW"), None),
-        (dev.get_pfline(i, "p"), dev.get_series(i, "p").pint.magnitude, PfLine, 'p'),
-        (dev.get_pfline(i, "p"), dev.get_series(i, "p"), PfLine, 'p'),
-        (dev.get_pfline(i, "p"), dev.get_pfline(i, "p"), PfLine, 'p'),
+        (dev.get_pfline(i, "p"), dev.get_series(i, "p").pint.magnitude, PfLine, "p"),
+        (dev.get_pfline(i, "p"), dev.get_series(i, "p"), PfLine, "p"),
+        (dev.get_pfline(i, "p"), dev.get_pfline(i, "p"), PfLine, "p"),
         (dev.get_pfline(i, "p"), dev.get_series(i, "q"), None),
         (dev.get_pfline(i, "p"), dev.get_pfline(i, "q"), None),
         (dev.get_pfline(i, "p"), dev.get_pfline(i, "all"), None),
-        (dev.get_pfline(i, "q"), dev.get_series(i, "q").pint.magnitude, PfLine, 'q'),
-        (dev.get_pfline(i, "q"), dev.get_series(i, "q"), PfLine, 'q'),
-        (dev.get_pfline(i, "q"), dev.get_pfline(i, "q"), PfLine, 'q'),
+        (dev.get_pfline(i, "q"), dev.get_series(i, "q").pint.magnitude, PfLine, "q"),
+        (dev.get_pfline(i, "q"), dev.get_series(i, "q"), PfLine, "q"),
+        (dev.get_pfline(i, "q"), dev.get_pfline(i, "q"), PfLine, "q"),
         (dev.get_pfline(i, "all"), dev.get_pfline(i, "all"), None),
     ],
 )

@@ -265,3 +265,4 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, PfStateArithmatic):
         return all(
             [self[part] == other[part] for part in ["offtake", "unsourced", "sourced"]]
         )
+
