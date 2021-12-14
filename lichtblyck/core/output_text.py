@@ -61,6 +61,7 @@ def _unitsline(headerline: str) -> str:
             text = text.replace(col.rjust(len(to_add)), to_add)
     return text
 
+
 def _unitsline2(headerline: str, units: Dict[str, nits.ureg.Unit]) -> str:
     """Return a line of text with units that line up with the provided header."""
     text = headerline
@@ -128,8 +129,8 @@ def _formatval(pfl, col, width, ts):
     if isinstance(val, str):
         return f" {val:>{width-1}}"
     if isinstance(val, nits.Q_):
-        val = val.magnitude  # keep number only
-    return f" {val:>{width-1}.{decimals}f}"
+        val = val.magnitude
+    return f" {val:>{width-1},.{decimals}f}".replace(",", " ")
 
 
 def _datablockfn_time_as_cols(
@@ -196,7 +197,7 @@ def _bodyblock(pfl_bodyfn, pfs, parts):
 
 
 def _time_as_rows(pfs: PfState, cols="wqpr", num_of_ts=5, colorful: bool = True) -> str:
-    """Print portfolio structure, with attributes as columns, and timestamps as rows."""
+    """Print portfolio structure, with attributes as columns, and one row per timestamp."""
 
     stamps = pfs.offtake.index  # TODO fix
     parts = {"offtake": {}, "pnl_cost": {"sourced": {}, "unsourced": {}}}
@@ -225,7 +226,7 @@ def _time_as_rows(pfs: PfState, cols="wqpr", num_of_ts=5, colorful: bool = True)
 
 
 def _time_as_cols(pfs: PfState, cols="qp", colorful: bool = True) -> str:
-    """Print portfolio structure, with timestamps as columns, and attributes as rows."""
+    """Print portfolio structure, with one column per timestamp, and attributes as rows."""
 
     stamps = pfs.offtake.index  # TODO fix
     parts = {"offtake": {}, "pnl_cost": {"sourced": {}, "unsourced": {}}}
@@ -256,6 +257,7 @@ def _time_as_cols(pfs: PfState, cols="qp", colorful: bool = True) -> str:
 
 class PfLineTextOutput:
     FORMAT = {"w": "{:7,.2f}", "q": "{:11,.0f}", "p": "{:11,.2f}", "r": "{:13,.0f}"}
+
     def __repr__(self: PfLine):
         what = {"p": "price", "q": "volume", "all": "price and volume"}[self.kind]
         header = f"Lichtblick PfLine object containing {what} information."
@@ -265,7 +267,9 @@ class PfLineTextOutput:
         for name, s in self.df().items():
             units[name] = s.pint.units
             formatting = self.FORMAT.get(name, "{}").format
-            stringseries[name] = s.pint.magnitude.apply(formatting).str.replace(",", " ")
+            stringseries[name] = s.pint.magnitude.apply(formatting).str.replace(
+                ",", " "
+            )
         body = repr(pd.DataFrame(stringseries))
 
         unitsline = _unitsline2(body.split("\n")[0], units)

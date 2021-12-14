@@ -3,7 +3,7 @@ Module with mixins, to add arithmatic functionality to PfLine and PfState classe
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 import pandas as pd
 from ..tools.nits import ureg, Q_, unit2name
 
@@ -47,32 +47,94 @@ def dimensionless_series(value):
     raise ValueError("Not a pandas Series, or not dimensionless.")
 
 
+# Compatibility:
+#
+# General
+#
+# Physically true:
+# unitA + unitA = unitA
+# unitA * dimensionless = unitA
+# unitA / dimensionless = unitA
+# dimensionless / unitA = 1/unitA
+#
+# In addition, accepted as true:
+# unitA + dimensionless = unitA
+# Eur/MWh * MWh -> all-PfLine
+# Eur/MWh * MW -> all-PfLine
+#
+#
+# Implementation
+#
+# Before anything else: turn 'other' into p-PfLine or q-PfLine if possible, or else into
+# a pd.Series. So, if other is single quantity, or pd.Series, in Eur/MWh, MW, or MWh,
+# this is turned into p-PfLine or q-PfLine.
+#                 other
+#                 Eur/MWh                                          => p-PfLine
+#                 MW, MWh                                          => q-PfLine
+#                 other unit or dimensionless                      => pd.Series
+# Values and Series in other units are considered under 'dimension', below.
+#
+# self            other                                               return
+# -------------------------------------------------------------------------------
+# p-PfLine      + p-PfLine, dimensionless                           = p-PfLine
+#               + q-PfLine, all-PfLine, dimension                   = error
+#               - anything                                          => + and neg
+#               * dimensionless                                     = p-PfLine
+#               * q-PfLine                                          = all-PfLine
+#               * p-PfLine, all-PfLine, dimension                   = error
+#               / dimensionless, dimension                          => *
+#               / p-PfLine                                          = pd.Series
+#               / q-PfLine, all-PfLine                              = error
+# q-PfLine      + p-PfLine                                          => see above
+#               + q-PfLine                                          = q-PfLine
+#               + dimensionless, dimension, all-PfLine              = error
+#               - anything                                          => + and neg
+#               * p-PfLine                                          => see above
+#               * dimensionless                                     = q-PfLine
+#               * q-PfLine, all-PfLine, dimension                   = error
+#               / dimensionless, dimension                          => *
+#               / q-PfLine                                          = pd.Series
+#               / p-PfLine, all-PfLine                              = error
+# all-PfLine    + p-PfLine, q-PfLine                                => see above
+#               + all-PfLine                                        = all-PfLine
+#               + dimensionless, dimension                          = error
+#               - anything                                          => * and neg
+#               * p-PfLine, q-PfLine                                => see above
+#               * dimensionless                                     = all-PfLine (keep p)
+#               * dimension, all-PfLine                             = error
+#               / dimensionless, dimension, p-PfLine, q-PfLine, all-PfLine = error
+
+
 class PfLineArithmatic:
+    def _prep_other(self: PfLine, other) -> Union[pd.Series, PfLine]:
+        """Turn `other` into PfLine if possible. If not, turn into (normal or unit-aware)
+        Series."""
+        if isinstance(other, int) or isinstance(other, float):
+            return pd.Series(other, self.index)
+        elif isinstance(other, Q_):
+            s = pd.Series(other.magnitude, self.index).astype(f"pint[{other.units}]")
+            return self._prep_other(s)
+        elif isinstance(other, pd.Series):
+            if not hasattr(other, "pint"):
+                return other  # has no unit
+            try:
+                name = unit2name(other.pint.units)
+            except ValueError:
+                return other  # has unit, but unknown
+            if name not in ["p", "q", "w"]:
+                return other  # has know unit, but none from which PfLine can be made
+            return self.__class__({name: other})
+        elif isinstance(other, self.__class__):
+            return other
+        raise TypeError(f"Cannot handle inputs of this type ({type(other)}).")
+
     def __add__(self: PfLine, other) -> PfLine:
         if not other:
             return self
-        # Other is single value (dimensionality unknown).
-        elif (
-            isinstance(other, float) or isinstance(other, int) or isinstance(other, Q_)
-        ):
-            if self.kind == "p":  # cast single value to price
-                return self.__class__({"p": self.p + Q_(other, "Eur/MWh")})
-            else:
-                raise NotImplementedError(
-                    "Single value can only be added to portfolio line with price information."
-                )
-        # Other is a series (dimensionality unknown).
-        elif isinstance(other, pd.Series):
-            if self.index.freq != other.index.freq:
-                raise NotImplementedError("Cannot add timeseries of unequal frequency.")
-            if self.kind == "p":  # cast series to price
-                return self.__class__({"p": self.p + other.astype("pint[Eur/MWh]")})
-            else:  # ...or with a dimension
-                raise NotImplementedError(
-                    "Series can only be added to portfolio line with price information."
-                )
+        other = self._prep_other(other)  # other is now a PfLine or Series.
+
         # Other is a PfLine.
-        elif isinstance(other, self.__class__):
+        if isinstance(other, self.__class__):
             if self.kind != other.kind:
                 raise NotImplementedError("Cannot add portfolio lines of unequal kind.")
             if self.index.freq != other.index.freq:
@@ -82,54 +144,46 @@ class PfLineArithmatic:
             # Get addition and keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
             dfs = [pfl.df(pfl._summable) for pfl in [self, other]]
             df = sum(dfs).dropna().resample(self.index.freq).asfreq()
-        else:
-            raise NotImplementedError("This addition is not defined.")
-        return self.__class__(df)
+            return self.__class__(df)
+
+        # Other is a Series (but not containing [power], [energy] or [price]).
+        elif isinstance(other, pd.Series):
+            if not hasattr(other, "pint"):  # no unit information
+                if self.index.freq != other.index.freq:
+                    raise NotImplementedError(
+                        "Cannot add timeseries of unequal frequency."
+                    )
+                if self.kind != "p":
+                    raise NotImplementedError(
+                        "Value(s) without unit can only be added to portfolio line with price information."
+                    )
+                # Cast to price, keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
+                df = pd.DataFrame({"p": self.p + other.astype("pint[Eur/MWh]")})
+                df = df.dropna().resample(self.index.freq).asfreq()
+                return self.__class__(df)
+        raise NotImplementedError("This addition is not defined.")
 
     __radd__ = __add__
 
     def __sub__(self: PfLine, other):
-        return self + -1 * other if other else self  # defer to mul and add
+        return self + -other if other else self  # defer to mul and neg
 
     def __rsub__(self: PfLine, other):
-        return other + -1 * self  # defer to mul and add
+        return other + -self  # defer to mul and neg
 
     def __mul__(self: PfLine, other) -> PfLine:
-        if self.kind == "all":
-            raise NotImplementedError(
-                "Cannot multiply a portfolio line that has both price and volume information."
-            )
-        # Other is single value...
-        elif is_dimensionless_value(other):  # ...without a dimension
-            # Scale the price p (kind == 'p') or the volume q (kind == 'q'), returning PfLine of same kind.
-            return self.__class__(self._df * dimensionless_value(other))
-        elif isinstance(other, Q_):  # ... or with a dimension
-            if self.kind == "p":  # price must be multiplied by *power*
-                df = pd.DataFrame({"w": other.to("MW"), "p": self.p})
-            elif self.kind == "q":  # volume must be multiplied by price
-                df = pd.DataFrame({"q": self.q, "p": other.to("Eur/MWh")})
-            else:
-                NotImplementedError("Can only multiply volume with price information.")
-        # Other is a series...
-        elif isinstance(other, pd.Series):
-            if self.index.freq != other.index.freq:
-                raise NotImplementedError(
-                    "Cannot multiply timeseries of unequal frequency."
-                )
-            if is_dimensionless_series(other):  # ...without a dimension
-                # Scale the price p (kind == 'p') or the volume q (kind == 'q') with the values, returning a PfLine of same kind.
-                df = self._df * dimensionless_series(other)
-            else:  # ...or with a dimension
-                raise NotImplementedError(
-                    "To multiply with a series that has a unit, first turn it into a portfolio line."
-                )
+        if self.kind == 'all':
+            raise NotImplementedError("Cannot multiply PfLine containing volume and price information.")
+        other = self._prep_other(other)  # other is now a PfLine or Series.
+
         # Other is a PfLine.
-        elif isinstance(other, self.__class__):
+        if isinstance(other, self.__class__):
+
             if self.index.freq != other.index.freq:
                 raise NotImplementedError(
                     "Cannot multiply portfolio lines of unequal frequency."
                 )
-            if self.kind == "p" and other.kind == "q":
+            elif self.kind == "p" and other.kind == "q":
                 df = pd.DataFrame({"q": other.q, "p": self.p})
             elif self.kind == "q" and other.kind == "p":
                 df = pd.DataFrame({"q": self.q, "p": other.p})
@@ -137,31 +191,38 @@ class PfLineArithmatic:
                 raise NotImplementedError(
                     "Can only multiply volume with price information."
                 )
-        else:
-            raise NotImplementedError("This multiplication is not defined.")
-        # Keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
-        df = df.dropna().resample(self.index.freq).asfreq()
-        return self.__class__(df)
+            # Keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
+            df = df.dropna().resample(self.index.freq).asfreq()
+            return self.__class__(df)
+
+        # Other is a Series (but not containing [power], [energy] or [price]).
+        elif isinstance(other, pd.Series):
+            if not hasattr(other, "pint"):  # no unit information
+                if self.index.freq != other.index.freq:
+                    raise NotImplementedError(
+                        "Cannot multiply timeseries of unequal frequency."
+                    )
+                # Scale the price p (kind == 'p') or the volume q (kind == 'q'), returning PfLine of same kind.
+                df = self._df.mul(other, axis=0)  # multiplication with index-alignment
+                df = df.dropna().resample(self.index.freq).asfreq()
+                return self.__class__(df)
+        raise NotImplementedError("This multiplication is not defined.")
 
     __rmul__ = __mul__
 
     def __neg__(self: PfLine):
-        return self * -1  # defer to mul
+        # invert price (kind == 'p'), volume (kind == 'q') or volume and revenue (kind == 'all')
+        return self.__class__((-self._df.pint.dequantify()).pint.quantify())
 
     def __truediv__(self: PfLine, other):
-        # Other is single value (dimensionality unknown) or a series (dimensionality unknown).
-        if (
-            isinstance(other, float)
-            or isinstance(other, int)
-            or isinstance(other, Q_)
-            or isinstance(other, pd.Series)
-        ):
-            return self * (1 / other)  # defer to mul
+        other = self._prep_other(other)  # other is now a PfLine or Series.
+
         # Other is a PfLine.
-        elif isinstance(other, self.__class__):
+        if isinstance(other, self.__class__):
+
             if self.kind != other.kind or self.kind == "all":
                 raise NotImplementedError(
-                    "Can only divide portfolio lines if both contain only price or both contain only volume information."
+                    "Can only divide portfolio lines if both contain price-only or both contain volume-only information."
                 )
             if self.index.freq != other.index.freq:
                 raise NotImplementedError(
@@ -171,12 +232,26 @@ class PfLineArithmatic:
                 s = self.p / other.p
             else:  # self.kind == "q"
                 s = self.q / other.q
+            s = s.dropna().resample(self.index.freq).asfreq()
             return s.pint.magnitude.rename("fraction")
-        else:
-            raise NotImplementedError("This division is not defined.")
+
+        # Other is a Series (but not containing [power], [energy] or [price]).
+        elif isinstance(other, pd.Series):
+            return self * (1 / other)  # defer to mul
+        raise NotImplementedError("This division is not defined.")
 
 
 class PfStateArithmatic:
+    def _prep_other(self: PfState, other) -> Union[PfState, pd.Series]:
+        """If not a PfState instance, turn `other` into Series."""
+        if isinstance(other, int) or isinstance(other, float):
+            return pd.Series(other, self.index)
+        elif isinstance(other, Q_):
+            return pd.Series(other.magnitude, self.index).astype(f"pint[{other.units}]")
+        elif isinstance(other, pd.Series) or isinstance(other, self.__class__):
+            return other
+        raise TypeError(f"Cannot handle inputs of this type ({type(other)}).")
+
     def __add__(self: PfState, other):
         if not isinstance(other, self.__class__):
             raise NotImplementedError("This addition is not defined.")
@@ -188,16 +263,17 @@ class PfStateArithmatic:
     __radd__ = __add__
 
     def __sub__(self: PfState, other):
-        return self + -1 * other if other else self  # defer to mul and add
+        return self + -other if other else self  # defer to mul and neg
 
     def __rsub__(self: PfState, other):
-        return other + -1 * self  # defer to mul and add
+        return other + -self  # defer to mul and neg
 
     def __mul__(self: PfState, other):
 
-        
-        if not isinstance(other, float) and not isinstance(other, int):
+        other = self._prep_other(other)
+        if not isinstance(other, pd.Series):
             raise NotImplementedError("This multiplication is not defined.")
+        # Scale up volumes (and revenues), leave prices unchanged.
         offtakevolume = self.offtake.volume * other
         unsourcedprice = self.unsourcedprice
         sourced = self.sourced * other
@@ -206,15 +282,11 @@ class PfStateArithmatic:
     __rmul__ = __mul__
 
     def __neg__(self: PfState):
-        return self * -1  # defer to mul
+        # invert volumes and revenues, leave prices unchanged.
+        return self.__class__(-self.offtake.volume, self.unsourcedprice, -self.sourced)
 
     def __truediv__(self: PfState, other):
-        # Other is single value (dimensionality unknown) or a series (dimensionality unknown).
-        if (
-            isinstance(other, float)
-            or isinstance(other, int)
-            or isinstance(other, Q_)
-            or isinstance(other, pd.Series)
-        ):
-            return self * (1 / other)  # defer to mul
-        raise NotImplementedError("This division is not defined.")
+        other = self._prep_other(other)
+        if not isinstance(other, pd.Series):
+            raise NotImplementedError("This division is not defined.")
+        return self * (1 / other)  # defer to mul

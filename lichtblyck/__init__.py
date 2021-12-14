@@ -14,6 +14,8 @@ from .core.pfline import PfLine
 from .core.pfstate import PfState
 from .core.output_plot import plot_pfstates
 
+from . import portfolios 
+
 # Methods/attributes directly available at package root.
 
 from .tools.stamps import (

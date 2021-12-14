@@ -29,7 +29,7 @@ import pytest
 )
 def test_lbpf_equalindex(tz, freq, pffunction):
 
-    i = get_index(tz, freq)
+    i = get_index(freq, tz)
     offtake = pffunction(i)
     sourced = pffunction(i)
 
@@ -71,13 +71,13 @@ def test_lbpf_equalindex(tz, freq, pffunction):
 
     # for column in ["p", "r"]:
     #     with pytest.raises(ValueError):  # information about power is missing.
-    #         df = get_dataframe(get_index(tz, freq), column)
+    #         df = get_dataframe(get_index(freq, tz), column)
     #         SinglePf(df, "test").duration
 
     # # Specify two. That's good, if it's not (w and q).
 
     # for columns in ["pr", "qr", "pq", "wp", "wr"]:
-    #     df = get_dataframe(get_index(tz, freq), columns)
+    #     df = get_dataframe(get_index(freq, tz), columns)
     #     sp = SinglePf(df, "test")
     #     assert_w_q_compatible(sp)
     #     assert_p_q_r_compatible(sp)
@@ -86,12 +86,12 @@ def test_lbpf_equalindex(tz, freq, pffunction):
     #     assert sp.index.tz is not None
 
     # with pytest.raises(ValueError):
-    #     df = get_dataframe(get_index(tz, freq), "wq")
+    #     df = get_dataframe(get_index(freq, tz), "wq")
     #     SinglePf(df, "test").duration
 
     # # Specify three or four. Always incompatible.
 
     # for columns in ["pqr", "wpr", "qwp", "qwr", "pqrw"]:
     #     with pytest.raises(ValueError):
-    #         df = get_dataframe(get_index(tz, freq), columns)
+    #         df = get_dataframe(get_index(freq, tz), columns)
     #         SinglePf(df, "test").duration

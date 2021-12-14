@@ -12,7 +12,7 @@ import numpy as np
 OK_COL_COMBOS = ["w", "q", "p", "pr", "qr", "pq", "wp", "wr"]
 
 
-def get_index(tz="Europe/Berlin", freq="D", start=None) -> pd.DatetimeIndex:
+def get_index(freq="D", tz="Europe/Berlin", start=None) -> pd.DatetimeIndex:
     """Get index with random length and starting point (but always start at midnight)."""
     count = {"AS": 4, "QS": 4, "MS": 10, "D": 100, "H": 1000, "15T": 1000}.get(freq, 10)
     periods = np.random.randint(count, count * 3)

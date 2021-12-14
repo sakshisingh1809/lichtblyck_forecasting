@@ -8,7 +8,7 @@ import functools
 
 
 @pytest.mark.parametrize(
-    ("p_b", "p_p", "p_o", "ts_left", "ts_right"),
+    ("b", "p", "o", "ts_left", "ts_right"),
     [
         (1, 1, 1, "2020-01-06", "2020-01-11"),  # working days; 50% peak
         (1, 2, 0, "2020-01-06", "2020-01-11"),
@@ -19,12 +19,12 @@ import functools
         (100, np.nan, 100, "2020-01-11", "2020-01-13"),  # weekend only; 0% peak
     ],
 )
-def test_pbaseppeakpoffpeak_explicit(p_b, p_p, p_o, ts_left, ts_right):
-    assert np.isclose(convert.p_peak(p_b, p_o, ts_left, ts_right), p_p, equal_nan=True)
-    if p_p is np.nan:
-        p_p = 0
-    assert np.isclose(convert.p_offpeak(p_b, p_p, ts_left, ts_right), p_o)
-    assert np.isclose(convert.p_base(p_p, p_o, ts_left, ts_right), p_b)
+def test_pbaseppeakpoffpeak_explicit(b, p, o, ts_left, ts_right):
+    assert np.isclose(convert.peak(b, o, ts_left, ts_right), p, equal_nan=True)
+    if p is np.nan:
+        p = 0
+    assert np.isclose(convert.offpeak(b, p, ts_left, ts_right), o)
+    assert np.isclose(convert.base(p, o, ts_left, ts_right), b)
 
 
 @pytest.mark.parametrize(
@@ -32,38 +32,38 @@ def test_pbaseppeakpoffpeak_explicit(p_b, p_p, p_o, ts_left, ts_right):
     [
         pd.DataFrame(
             {
-                "p_peak": [100, 100, 100, 100],
-                "p_base": [80, 80, 80, 80],
-                "p_offpeak": [68.2051282, 69.4736842, 68.9770355, 68.421053],
+                "peak": [100, 100, 100, 100],
+                "base": [80, 80, 80, 80],
+                "offpeak": [68.2051282, 69.4736842, 68.9770355, 68.421053],
             },
             pd.date_range("2020", periods=4, freq="MS", tz="Europe/Berlin"),
         ),
         pd.DataFrame(
             {
-                "p_peak": [100, 100, 100, 100],
-                "p_base": [80, 80, 80, 80],
-                "p_offpeak": [68.8510638, 68.8699360, 68.9361702, 68.9361702],
+                "peak": [100, 100, 100, 100],
+                "base": [80, 80, 80, 80],
+                "offpeak": [68.8510638, 68.8699360, 68.9361702, 68.9361702],
             },
             pd.date_range("2020", periods=4, freq="AS", tz="Europe/Berlin"),
         ),
     ],
 )
 def test_completebpoframe_explicit(bpoframe):
-    p_b, p_p, p_o = bpoframe["p_base"], bpoframe["p_peak"], bpoframe["p_offpeak"]
-    p_b2 = convert.complete_bpoframe(pd.DataFrame({"p_peak": p_p, "p_offpeak": p_o}))[
-        "p_base"
+    b, p, o = bpoframe["base"], bpoframe["peak"], bpoframe["offpeak"]
+    b2 = convert.complete_bpoframe(pd.DataFrame({"peak": p, "offpeak": o}))[
+        "base"
     ]
 
-    p_o2 = convert.complete_bpoframe(pd.DataFrame({"p_peak": p_p, "p_base": p_b}))[
-        "p_offpeak"
+    o2 = convert.complete_bpoframe(pd.DataFrame({"peak": p, "base": b}))[
+        "offpeak"
     ]
 
-    p_p2 = convert.complete_bpoframe(pd.DataFrame({"p_offpeak": p_o, "p_base": p_b}))[
-        "p_peak"
+    p2 = convert.complete_bpoframe(pd.DataFrame({"offpeak": o, "base": b}))[
+        "peak"
     ]
-    pd.testing.assert_series_equal(p_b, p_b2, atol=0.01, check_dtype=False)
-    pd.testing.assert_series_equal(p_o, p_o2, atol=0.01, check_dtype=False)
-    pd.testing.assert_series_equal(p_p, p_p2, atol=0.01, check_dtype=False)
+    pd.testing.assert_series_equal(b, b2, atol=0.01, check_dtype=False)
+    pd.testing.assert_series_equal(o, o2, atol=0.01, check_dtype=False)
+    pd.testing.assert_series_equal(p, p2, atol=0.01, check_dtype=False)
 
 
 @pytest.fixture(params=["var", "MS", "QS", "AS"])
@@ -139,7 +139,7 @@ def series_and_frames():
     for freq, dic in bpoframes_sourcedata.items():
         for key in keys:
             dic[key] = [np.mean(l) if len(l) else np.nan for l in dic[key]]
-        df = pd.DataFrame({f"p_{key}": dic[key] for key in keys}, dic["index"])
+        df = pd.DataFrame({key: dic[key] for key in keys}, dic["index"])
         bpoframe = set_ts_index(df.resample(freq).asfreq())
         bpoframes[freq] = bpoframe
 
@@ -154,7 +154,7 @@ def series_and_frames():
         i1 = i0.map(lambda ts: ts.floor("d") + offset_f(1) + offset_f(-1))
         ispeak = utils.is_peak_hour(i0)
         df = bpoframe.loc[i1, :]
-        s = pd.Series(np.where(ispeak, df["p_peak"], df["p_offpeak"]), i0).rename("p")
+        s = pd.Series(np.where(ispeak, df["peak"], df["offpeak"]), i0)
         tseries[period] = {}
         tseries[period]["H"] = s
         tseries[period]["15T"] = cutils.changefreq_avg(s, "15T")
@@ -162,7 +162,7 @@ def series_and_frames():
     return tseries, bpoframes
 
 
-_keys = ["p_base", "p_peak", "p_offpeak"]
+_keys = ["base", "peak", "offpeak"]
 
 
 def test_pbaseppeakpoffpeak(series_and_frames, long_freq):
@@ -175,9 +175,9 @@ def test_pbaseppeakpoffpeak(series_and_frames, long_freq):
     values_ref = bpoframes[long_freq].loc[ts_left, :]
 
     for key, f in [
-        ("p_peak", convert.p_peak),
-        ("p_base", convert.p_base),
-        ("p_offpeak", convert.p_offpeak),
+        ("p_peak", convert.peak),
+        ("p_base", convert.base),
+        ("p_offpeak", convert.offpeak),
     ]:
         othervalues = [values_ref[k] for k in _keys if k != key]
         value_test = f(*othervalues, ts_left, ts_right)

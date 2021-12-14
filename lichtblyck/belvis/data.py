@@ -10,22 +10,33 @@ import datetime as dt
 import pandas as pd
 
 # For offtake volume, sourced volume, and sourced revenue: timeseries names.
-DEFAULTTSNAMES_PER_COMMODITY = {  # commodity, ts, name.
+DEFAULTTSNAMES_PER_COMMODITY = {  # commodity, ts, name or list of names.
     "power": {
-        "wo": "#LB Saldo aller Prognosegeschäfte +UB",
-        "ws": "#LB Saldo aller Termingeschäfte +UB",
-        "rs": "#LB CPM Wert HI-Geschaefte ohne Spot",
+        "wo": "#LB FRM Offtake - MW - incl subpf",
+        "ws": (
+            "#LB FRM Procurement/Forward - MW - incl subpf",
+            "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
+            "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
+        ),
+        "rs": (
+            "#LB FRM Procurement/Forward - EUR (contract) - incl subpf",
+            "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
+            "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
+        ),
     },
-    "gas": {
-        "wo": "",
-        "ws": "",
-        "rs": "",
-    },
+    "gas": {"wo": "", "ws": "", "rs": "",},
 }
-TSNAMES_PER_COMMODITY_AND_PF = {  # commodity, pfid, ts, name. All allowed portfolios must have a key here.
+TSNAMES_PER_COMMODITY_AND_PF = {  # commodity, pfid, ts, name or list of names. All allowed portfolios must have a key here.
     "power": {
-        "LUD": {},  # any
-        "PKG": {},
+        "LUD": {},
+        "LUD_NSp": {"wo": "#LB FRM Offtake - MW - excl subpf"},
+        "LUD_Stg": {"wo": "#LB FRM Offtake - MW - excl subpf"},
+        "LUD_WP": {"wo": "#LB FRM Offtake - MW - excl subpf"},
+        "LUD_NSp_SiM": {},
+        "LUD_Stg_SiM": {},
+        "LUD_WP_SiM": {},
+        "PKG": {"wo": "#LB FRM Offtake - MW - excl subpf"},
+        "PK_SiM": {},
         "PK_Neu": {},
         "WP": {},
         "NSp": {},
@@ -37,12 +48,16 @@ TSNAMES_PER_COMMODITY_AND_PF = {  # commodity, pfid, ts, name. All allowed portf
 # For unsourced prices: portfolio id and timeseries name.
 PFID_AND_TSNAME_FOR_PU = {
     "power": ("Deutschland", "Spot (Mix 15min) / QHPFC (aktuell)"),
-    "gas": (),
+    "gas": ("PEGAS_THE_H", "Aktuellste DFC THE LB_d"),
 }
 
 
-def _tsname(commodity, pfid, ts):
-    """Convenience function to find name of timeseries in Belvis portfolio."""
+def _print_status(msg: str):
+    print(f"{dt.datetime.now().isoformat()} {msg}")
+
+
+def _tsname(commodity: str, pfid: str, ts: str):
+    """Convenience function to find name of timeseries in Belvis portfolio. Case insensitive."""
     try:
         tsnames_per_pf = TSNAMES_PER_COMMODITY_AND_PF[commodity]
         defaulttsnames = DEFAULTTSNAMES_PER_COMMODITY[commodity]
@@ -51,11 +66,15 @@ def _tsname(commodity, pfid, ts):
     try:
         tsnames = tsnames_per_pf[pfid]
     except KeyError:
-        raise ValueError(f"`pfid` must be one of {', '.join(tsnames_per_pf.keys())}.")
+        raise ValueError(
+            f"`pfid` '{pfid}' not found. Must be one of {', '.join(tsnames_per_pf.keys())}."
+        )
     try:
         defaulttsname = defaulttsnames[ts]
     except KeyError:
-        raise ValueError(f"`ts` must be one of {', '.join(defaulttsnames.keys())}.")
+        raise ValueError(
+            f"`ts` '{ts}' not found. Must be one of {', '.join(defaulttsnames.keys())}."
+        )
     return tsnames.get(ts, defaulttsname)
 
 
@@ -69,6 +88,21 @@ def _pfid_and_tsname_for_pu(commodity: str) -> Tuple:
 @functools.lru_cache()
 def _ts_leftright(ts_left, ts_right):
     return stamps.ts_leftright(ts_left, ts_right)
+
+
+def _series(commodity, pfid, ts, ts_left, ts_right):
+    _print_status(
+        f"For commodity '{commodity}' and portfolio '{pfid}', getting the '{ts}'-data, for delivery from (incl) {ts_left} to (excl) {ts_right}."
+    )
+    tsnames = _tsname(commodity, pfid, ts)
+    if isinstance(tsnames, str):
+        tsnames = (tsnames,)  # turn into (1-element-) iterable
+    series = []
+    for tsname in tsnames:
+        _print_status(f'. {tsname}')
+        tsid = connector.find_tsid(commodity, pfid, tsname, strict=True)
+        series.append(connector.series(commodity, tsid, ts_left, ts_right))
+    return frames.set_ts_index(sum(series), bound="right")
 
 
 def offtakevolume(
@@ -97,10 +131,7 @@ def offtakevolume(
     # Fix timestamps (if necessary).
     ts_left, ts_right = _ts_leftright(ts_left, ts_right)
     # Get timeseries.
-    tsname = _tsname(commodity, pfid, "wo")
-    tsid = connector.find_tsid(commodity, pfid, tsname, strict=True)
-    s = connector.series(commodity, tsid, ts_left, ts_right)
-    s = frames.set_ts_index(s, bound='right')
+    s = _series(commodity, pfid, "wo", ts_left, ts_right)
     return PfLine({"w": s})
 
 
@@ -130,12 +161,10 @@ def sourced(
     # Fix timestamps (if necessary).
     ts_left, ts_right = _ts_leftright(ts_left, ts_right)
     # Get timeseries.
-    data = {}
-    for n, ts in {"w": "ws", "r": "rs"}.items():
-        tsname = _tsname(commodity, pfid, ts)
-        tsid = connector.find_tsid(commodity, pfid, tsname, strict=True)
-        s = connector.series(commodity, tsid, ts_left, ts_right)
-        data[n] = frames.set_ts_index(s, bound='right')
+    data = {
+        n: _series(commodity, pfid, ts, ts_left, ts_right)
+        for n, ts in {"w": "ws", "r": "rs"}.items()
+    }
     return PfLine(data)
 
 
@@ -166,7 +195,7 @@ def unsourcedprice(
     pfid, tsname = _pfid_and_tsname_for_pu(commodity)
     tsid = connector.find_tsid(commodity, pfid, tsname, strict=True)
     s = connector.series(commodity, tsid, ts_left, ts_right)
-    s = frames.set_ts_index(s, bound='right')
+    s = frames.set_ts_index(s, bound="right")
     return PfLine({"p": s})
 
 
@@ -215,5 +244,6 @@ def pfstate(
 # factory.register_pfstate_source("from_belvis", pfstate)
 PfState.from_belvis = pfstate
 PfLine.from_belvis_offtakevolume = offtakevolume
-PfLine.from_belvis_sourced =  sourced
-PfLine.from_belvis_forwardpricecurve =  unsourcedprice
+PfLine.from_belvis_sourced = sourced
+PfLine.from_belvis_forwardpricecurve = unsourcedprice
+

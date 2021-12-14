@@ -87,14 +87,14 @@ def test_singlepf_correctvalues(tz, freq):
     if tz is None:
         for columns in ["q", "w", "qr"]:
             with pytest.raises(ValueError):
-                df = get_dataframe(get_index(tz, freq), columns)
+                df = get_dataframe(get_index(freq, tz), columns)
                 SinglePf(df, name="test").duration
         return
 
     # Specify one. That's good, if it's (w or q).
 
     for column in ["q", "w"]:
-        df = get_dataframe(get_index(tz, freq), column)
+        df = get_dataframe(get_index(freq, tz), column)
         sp = SinglePf(df, name="test")
         assert_w_q_compatible(sp)
         assert_raises_attributeerror(sp, no="wpqr")
@@ -105,13 +105,13 @@ def test_singlepf_correctvalues(tz, freq):
 
     for column in ["p", "r"]:
         with pytest.raises(ValueError):  # information about power is missing.
-            df = get_dataframe(get_index(tz, freq), column)
+            df = get_dataframe(get_index(freq, tz), column)
             SinglePf(df, name="test").duration
 
     # Specify two. That's good, if it's not (w and q).
 
     for columns in ["pr", "qr", "pq", "wp", "wr"]:
-        df = get_dataframe(get_index(tz, freq), columns)
+        df = get_dataframe(get_index(freq, tz), columns)
         sp = SinglePf(df, name="test")
         assert_w_q_compatible(sp)
         assert_p_q_r_compatible(sp)
@@ -120,14 +120,14 @@ def test_singlepf_correctvalues(tz, freq):
         assert sp.index.tz is not None
 
     with pytest.raises(ValueError):
-        df = get_dataframe(get_index(tz, freq), "wq")
+        df = get_dataframe(get_index(freq, tz), "wq")
         SinglePf(df, name="test").duration
 
     # Specify three or four. Always incompatible.
 
     for columns in ["pqr", "wpr", "qwp", "qwr", "pqrw"]:
         with pytest.raises(ValueError):
-            df = get_dataframe(get_index(tz, freq), columns)
+            df = get_dataframe(get_index(freq, tz), columns)
             SinglePf(df, name="test").duration
 
 
@@ -167,7 +167,7 @@ def test_init_3(levels):  # init multipf with multipf
 @pytest.mark.parametrize("newfreq", np.random.choice(OK_FREQ, 3, False))
 @pytest.mark.parametrize("columns", np.random.choice(OK_COL_COMBOS, 3, False))
 def test_change_freq(freq, newfreq, columns):
-    df = get_dataframe(get_index("Europe/Berlin", freq), columns)
+    df = get_dataframe(get_index(freq, "Europe/Berlin"), columns)
     spf1 = SinglePf(df, name="test")
     spf2 = spf1.changefreq(newfreq)
     # Compare the dataframes.

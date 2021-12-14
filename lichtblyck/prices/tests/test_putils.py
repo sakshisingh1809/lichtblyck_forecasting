@@ -69,7 +69,7 @@ def test_duration_bpo(left, right, tz, add_left, add_middle, add_right):
     duration_base = add_left[0] + add_middle[0] + add_right[0]
     duration_peak = add_left[1] + add_middle[1] + add_right[1]
     ts_left, ts_right = pd.Timestamp(left, tz=tz), pd.Timestamp(right, tz=tz)
-    durations = utils.duration_bpo(ts_left, ts_right)
+    durations = utils._duration_bpo_hours(ts_left, ts_right)
     assert durations == (duration_base, duration_peak, duration_base - duration_peak)
 
 

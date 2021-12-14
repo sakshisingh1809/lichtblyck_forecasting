@@ -8,7 +8,9 @@ from ..tools.frames import set_ts_index
 from ..tools.nits import name2unit, ureg
 from .output_text import PfLineTextOutput
 from .output_plot import PfLinePlotOutput
+from .output_other import OtherOutput
 from .dunder_arithmatic import PfLineArithmatic
+from .hedge_functionality import PfLineHedge
 from .utils import changefreq_sum
 from typing import Callable, Union
 import pandas as pd
@@ -89,9 +91,15 @@ def _make_df(data) -> pd.DataFrame:
     return set_ts_index(pd.DataFrame({"q": q, "r": r}).dropna())  # kind == 'all'
 
 
-class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
-    """Class to hold a related energy timeseries. This can be volume timeseries q
-    [MWh] and w [MW], or a price timeseries p [Eur/MWh] or both.
+class PfLine(
+    PfLineTextOutput,
+    PfLinePlotOutput,
+    OtherOutput,
+    PfLineArithmatic,
+    PfLineHedge,
+):
+    """Class to hold a related energy timeseries. This can be volume timeseries with q
+    [MWh] and w [MW], a price timeseries with p [Eur/MWh] or both.
 
     Parameters
     ----------
@@ -198,7 +206,7 @@ class PfLine(PfLineTextOutput, PfLinePlotOutput, PfLineArithmatic):
 
     @property
     def available(self) -> str:  # which time series have values
-        return {"p": "p", "q": "qw", "all": "wqpr"}[self.kind]
+        return {"p": "p", "q": "wq", "all": "wqpr"}[self.kind]
 
     # Methods/Properties that return new class instance.
 

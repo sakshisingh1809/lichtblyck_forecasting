@@ -3,7 +3,7 @@
 Module with tools to modify and standardize dataframes.
 """
 
-from .stamps import FREQUENCIES, freq_up_or_down
+from .stamps import FREQUENCIES, freq_up_or_down, trim_index
 from pandas.core.frame import NDFrame
 from typing import Iterable, Callable, Union
 import pandas as pd
@@ -23,11 +23,11 @@ def set_ts_index(
     Parameters
     ----------
     fr : NDFrame
-        Input series or dataframe.
+        Pandas series or dataframe.
     column : str, optional
         Column to create the timestamp from. Used only if `fr` is DataFrame; ignored 
         otherwise. Use existing index if none specified.
-    bound : {'left' (default), 'right'}
+    bound : str, {'left' (default), 'right'}
         If 'left' ('right'), specifies that input timestamps are left-(right-)bound.
     tz : str, optional (default: "Europe/Berlin")
         Timezone of the input frame; used only if input contains timezone-agnostic
@@ -195,3 +195,22 @@ def wavg(
     if weights is None:  # return non-weighted average if no weights are provided
         return fr.mean()
     return fr.mul(weights, axis=0).sum(skipna=False) / sum(weights)
+
+
+def trim_frame(fr: NDFrame, freq: str) -> NDFrame:
+    """Trim index of frame to only keep full periods of certain frequency.
+
+    Parameters
+    ----------
+    fr : NDFrame
+        The (untrimmed) pandas series or dataframe.
+    freq : str
+        Frequency to trim to. E.g. 'MS' to only keep full months.
+
+    Returns
+    -------
+    NDFrame
+        Subset of `fr`, with same frequency.
+    """
+    i = trim_index(fr.index, freq)
+    return fr.loc[i]

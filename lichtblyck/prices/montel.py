@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 Module to read montel price data from disk.
 """
 
 from . import utils
-from .convert import p_offpeak
+from .convert import offpeak
 from ..tools.frames import set_ts_index
 from typing import Dict
 from pathlib import Path
@@ -252,7 +251,7 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
     # df = df.reset_index().merge(h, how="left").set_index(df.index.names)
     # ...and use to calculate offpeak prices.
     df["p_offpeak"] = df.apply(
-        lambda row: p_offpeak(
+        lambda row: offpeak(
             row["p_base"], row["p_peak"], row["ts_left"], row["ts_right"]
         ),
         axis=1,

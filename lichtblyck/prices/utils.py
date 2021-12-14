@@ -2,50 +2,97 @@
 Utilities for calculating / manipulating price data.
 """
 
-from ..tools.stamps import floor_ts
-from typing import Tuple, Iterable
+from ..tools.stamps import FREQUENCIES, floor_ts, duration, ts_right
+from ..tools.types import Stamp
+from ..tools.nits import Q_
+from typing import Tuple, Iterable, Union
 import pandas as pd
-import numpy as np
 
 
-def is_peak_hour(ts) -> bool:
-    """Return True if timestamp 'ts' is a peak hour. More precisely: if 'ts'
-    lies in one of the (left-closed) time intervals that define the peak hour
-    periods."""
-    if isinstance(ts, Iterable):
-        return np.vectorize(is_peak_hour)(ts)
-    ts = pd.Timestamp(ts)
-    return ts.hour >= 8 and ts.hour < 20 and ts.isoweekday() < 6
+def is_peak_hour(
+    ts_left: Union[pd.Timestamp, pd.DatetimeIndex]
+) -> Union[bool, pd.Series]:
+    """Return True/False if timestamp, or each timestamp in index, is a peak hour. More
+    precisely: if `ts_left` lies in one of the (left-closed) time intervals that define 
+    the peak hour periods."""
+    if isinstance(ts_left, pd.Timestamp):
+        return ts_left.hour >= 8 and ts_left.hour < 20 and ts_left.isoweekday() < 6
+    elif isinstance(ts_left, pd.DatetimeIndex):
+        values = [is_peak_hour(ts) for ts in ts_left]
+        return pd.Series(values, ts_left).rename("is_peak_hour")
+    else:
+        raise TypeError(
+            f"`ts_left` must be Timestamp or DatetimeIndex; got {type(ts_left)}."
+        )
 
 
-def duration_bpo(ts_left, ts_right) -> Tuple[float]:
+def duration_peak(
+    ts_left: Union[pd.Timestamp, pd.DatetimeIndex]
+) -> Union[Q_, pd.Series]:
     """
-    Return number of base, peak and offpeak hours in interval [ts_left, ts_right).
-    Timestamps must coincide with quarterhour start.
+    Return total duration of peak periods in a timestamp, or of each timestamp in index.
+
+    See also
+    --------
+    .tools.stamps.duration
     """
-    ts_left, ts_right = pd.Timestamp(ts_left), pd.Timestamp(ts_right)
-    for ts in [ts_left, ts_right]:
-        if ts.second != 0 or ts.minute % 15 != 0:
-            raise ValueError("Timestamps must cooincide with quarterhour start.")
-    # Duration of base.
-    duration_base = (ts_right - ts_left).total_seconds() / 3600
-    # Duration of peak.
-    duration_peak = 0
-    # to speed things up, do quarterhours only for non-full days.
-    ts_left_day, ts_right_day = ts_left.ceil("d"), ts_right.floor("d")  # full days
-    for ts in pd.date_range(ts_left, ts_left_day, freq="15T", closed="left"):
-        if is_peak_hour(ts):
-            duration_peak += 0.25
-    for ts in pd.date_range(ts_left_day, ts_right_day, freq="D", closed="left"):
-        if ts.isoweekday() < 6:
-            duration_peak += 12
-    for ts in pd.date_range(ts_right_day, ts_right, freq="15T", closed="left"):
-        if is_peak_hour(ts):
-            duration_peak += 0.25
-    return duration_base, duration_peak, duration_base - duration_peak
+    if ts_left.freq not in FREQUENCIES:
+        raise ValueError(f"`.freq` must be one of {', '.join(FREQUENCIES)}.")
+
+    if isinstance(ts_left, pd.Timestamp):
+        if ts_left.freq in ["15T", "H"]:
+            return duration(ts_left) * is_peak_hour(ts_left)
+        elif ts_left.freq == "D":
+            return Q_(0 if ts_left.isoweekday() >= 6 else 12, "h")
+        else:
+            days = pd.date_range(ts_left, ts_right(ts_left), freq="D", closed="left")
+            return Q_(sum(days.map(lambda day: day.isoweekday() <= 6) * 12), "h")
+    elif isinstance(ts_left, pd.DatetimeIndex):
+        if ts_left.freq in ["15T", "H"]:
+            return duration(ts_left) * is_peak_hour(ts_left)
+        elif ts_left.freq == "D":
+            dur = ts_left.map(lambda ts: ts.isoweekday() < 6) * 12
+            return pd.Series(dur, ts_left, dtype="pint[h]")  # works even during dst
+        else:
+            # dur = ts_left.map(duration_peak)  # crashes due to behaviour of .map method
+            dur = (duration_peak(ts) for ts in ts_left)  # has unit
+            return pd.Series(dur, ts_left, dtype="pint[h]")
+    else:
+        raise TypeError(
+            f"`ts_left` must be Timestamp or DatetimeIndex; got {type(ts_left)}."
+        )
 
 
-def ts_leftright(ts_trade, period_type: str = "m", period_start: int = 1):
+def duration_offpeak(
+    ts_left: Union[pd.Timestamp, pd.DatetimeIndex]
+) -> Union[Q_, pd.Series]:
+    """
+    Return total duration of offpeak periods in a timestamp, or in each timestamp in index.
+
+    See also
+    --------
+    .tools.stamps.duration
+    """
+    return duration(ts_left) - duration_peak(ts_left)
+
+
+def duration_bpo(
+    ts_left: Union[pd.Timestamp, pd.DatetimeIndex]
+) -> Union[pd.Series, pd.DataFrame]:
+    """
+    Return number of base, peak and offpeak hours in a timestamp, or in each timestamp in index.
+    """
+    b = duration(ts_left)  # quantity or pint-series
+    p = duration_peak(ts_left)  # quantity or pint-series
+    if isinstance(ts_left, pd.Timestamp):
+        return pd.Series({"base": b, "peak": p, "offpeak": b - p}, dtype="pint[h]")
+    else:
+        return pd.DataFrame({"base": b, "peak": p, "offpeak": b - p}, dtype="pint[h]")
+
+
+def ts_leftright(
+    ts_trade: Stamp, period_type: str = "m", period_start: int = 1
+) -> Tuple[Stamp]:
     """
     Find start and end of delivery period.
 

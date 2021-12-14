@@ -4,11 +4,13 @@ certain moment in time (e.g., at the current moment, without any historic data).
 """
 
 from __future__ import annotations
+
 from .pfline import PfLine
 from .output_text import PfStateTextOutput
 from .output_plot import PfStatePlotOutput
+from .output_other import OtherOutput
 from .dunder_arithmatic import PfStateArithmatic
-from ..prices import convert, hedge
+from .hedge_functionality import PfStateHedge
 from typing import Optional, Iterable, Union
 import pandas as pd
 import warnings
@@ -67,8 +69,8 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
     return offtakevolume, unsourcedprice, sourced
 
 
-class PfState(PfStateTextOutput, PfStatePlotOutput, PfStateArithmatic):
-    """Class to hold timeseries information of an energy portfolio, at a specific moment.
+class PfState(PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmatic, PfStateHedge):
+    """Class to hold timeseries information of an energy portfolio, at a specific moment. 
 
     Parameters
     ----------
@@ -183,6 +185,20 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, PfStateArithmatic):
     def pnl_cost(self):
         return self.sourced + self.unsourced
 
+    def df(self) -> pd.DataFrame:
+        """DataFrame for this PfState.
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        dfs = {
+            "offtake": self.offtake.df(),
+            "sourced": self.sourced.df(),
+            "unsourced": self.unsourced.df(),
+        }
+        return pd.concat(dfs, axis=1)
+
     # Methods that return new class instance.
 
     def set_offtakevolume(self, offtakevolume: PfLine) -> PfState:
@@ -203,31 +219,6 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, PfStateArithmatic):
     def add_sourced(self, add_sourced: PfLine) -> PfState:
         return self.set_sourced(self.sourced + add_sourced)
 
-    def hedge_at_unsourcedprice(
-        self, freq: str = "MS", how: str = "vol", bpo: bool = False
-    ) -> PfState:
-        """Hedge and source the unsourced volume, at unsourced prices in the portfolio,
-        so that the portfolio is fully hedged.
-
-        Parameters
-        ----------
-        freq : str, optional. By default "MS".
-            Grouping frequency. One of {'D', 'MS', 'QS', 'AS'} for hedging at day,
-            month, quarter, or year level. ('D' not allowed for bpo==True.)
-        how : {'vol' (default), 'val'}
-            Hedge-constraint. 'vol' for volumetric hedge, 'val' for value hedge.
-        bpo : bool, optional. By default False.
-            Set to True to split hedge into peak and offpeak values. (Only sensible
-            for power portfolio with .freq=='H' or shorter, and a value for `freq` of
-            'MS' or longer.)
-
-        Returns
-        -------
-        PfState
-            Which is fully hedge at time scales of `freq` or longer.
-        """
-        pass  # TODO
-
     def changefreq(self, freq: str = "MS") -> PfState:
         """Resample the Portfolio to a new frequency.
 
@@ -244,7 +235,7 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, PfStateArithmatic):
         """
         # pu resampling is most important, so that prices are correctly weighted.
         offtakevolume = self.offtake.changefreq(freq).volume
-        unsourcedprice = self.unsourced.changefreq(freq).price  # important for wavg.
+        unsourcedprice = self.unsourced.changefreq(freq).price  # ensures weighted avg
         sourced = self.sourced.changefreq(freq)
         return PfState(offtakevolume, unsourcedprice, sourced)
 
