@@ -258,3 +258,4 @@ class PfState(
         return all(
             [self[part] == other[part] for part in ["offtake", "unsourced", "sourced"]]
         )
+

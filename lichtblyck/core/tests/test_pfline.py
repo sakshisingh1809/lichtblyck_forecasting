@@ -16,7 +16,7 @@
 # . . pflines having same or different frequency
 # . . pflines covering same or different time periods
 
-from lichtblyck.core.pfline import _make_df
+from lichtblyck.core.pfline import PfLine, _make_df
 from lichtblyck.core import dev
 from lichtblyck.tools.frames import set_ts_index
 import pandas as pd
@@ -262,3 +262,78 @@ def test_pfline_unequaltimeperiods(freq, choice):
 # . . pflines having same or different kind
 # . . pflines having same or different frequency
 # . . pflines covering same or different time periods
+
+# . initialisation with dictionary, with dataframe, with named tuple.
+# . initialisation with pfline returns identical pfline.
+@pytest.mark.parametrize("tz", ["Europe/Berlin", None])
+@pytest.mark.parametrize("freq", ["MS", "D"])
+@pytest.mark.parametrize(
+    "columns", np.random.choice(["w", "q", "pr", "qr", "pq", "wp", "wr"]),
+)
+def test_pfline_init(tz, freq, columns):
+
+    i = dev.get_index(tz, freq)
+    pfline = dev.get_pfline(i, columns)
+    expected_pfline = PfLine(pfline)
+
+    pd.testing.assert_frame_equal(pfline.df(), expected_pfline.df(), check_names=False)
+
+
+# . .kind property always correctly set.
+@pytest.mark.parametrize("str", ["q", "p", None])
+def test_kind(str):
+    pass
+
+
+# . timeseries can be accessed with .q, .p, .r, .w, ['q'], ['p'], etc.
+def test_pfline_consistency():
+    pass
+
+
+# . check correct working of attributes .df().
+@pytest.mark.parametrize("tz", ["Europe/Berlin", None])
+@pytest.mark.parametrize("freq", ["MS", "D"])
+@pytest.mark.parametrize(
+    "columns", np.random.choice(["w", "q", "pr", "qr", "pq", "wp", "wr"]),
+)
+def test_df(tz, freq, columns):
+    i = dev.get_index(tz, freq)
+    vals = np.random.rand(len(i), 2)
+    result = pd.DataFrame(vals, i, columns)
+    expected_df = PfLine(result).df()
+
+    pd.testing.assert_frame_equal(result, expected_df)
+
+
+# . check correct working of attributes .changefreq().
+@pytest.mark.parametrize("freq", np.random.choice("MS", 3, False))
+@pytest.mark.parametrize("newfreq", np.random.choice("QS", 3, False))
+@pytest.mark.parametrize(
+    "columns", np.random.choice(["pr", "qr", "pq", "wp", "wr"]),
+)
+def test_changefreq(freq, newfreq, columns):
+    df = dev.get_dataframe(dev.get_index("Europe/Berlin", freq), columns)
+    pfl1 = PfLine(df)
+    pfl2 = pfl1.changefreq(newfreq)
+
+    # Compare the dataframes.
+    df1, df2 = pfl1.df(columns), pfl2.df("columns")
+    if df2.empty:
+        return
+
+    # To compare, only keep time intervals that are in both objects.
+    df1 = df1[(df1.index >= df2.index[0]) & (df1.ts_right <= df2.ts_right[-1])]
+
+    if df1.empty:
+        return
+
+    assert np.isclose(df1.columns[0].sum(), df2.columns[0].sum())
+    assert np.isclose(df1.columns[1].sum(), df2.columns[1].sum())
+
+
+# . check correct working of dunder methods. E.g. assert correct addition:
+# . . pflines having same or different kind
+# . . pflines having same or different frequency
+# . . pflines covering same or different time periods
+def test_dunder():
+    pass
