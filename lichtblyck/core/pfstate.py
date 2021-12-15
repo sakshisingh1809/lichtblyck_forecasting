@@ -36,7 +36,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
 
     # Unsourced prices.
     if isinstance(unsourcedprice, pd.Series):
-        if unsourcedprice.name in "qwr":
+        if unsourcedprice.name and unsourcedprice.name  in "qwr":
             ValueError("Name implies this is not a price timeseries.")
         elif unsourcedprice.name != "p":
             warnings.warn("Will assume prices, even though series name is not 'p'.")
@@ -69,7 +69,9 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
     return offtakevolume, unsourcedprice, sourced
 
 
-class PfState(PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmatic, PfStateHedge):
+class PfState(
+    PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmatic, PfStateHedge
+):
     """Class to hold timeseries information of an energy portfolio, at a specific moment. 
 
     Parameters
@@ -192,12 +194,11 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmat
         -------
         pd.DataFrame
         """
-        dfs = {
-            "offtake": self.offtake.df(),
-            "sourced": self.sourced.df(),
-            "unsourced": self.unsourced.df(),
+        dfdict = {
+            part: self[part].df()
+            for part in ("offtake", "pnl_cost", "sourced", "unsourced")
         }
-        return pd.concat(dfs, axis=1)
+        return pd.concat(dfdict, axis=1)
 
     # Methods that return new class instance.
 
@@ -242,7 +243,8 @@ class PfState(PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmat
     # Dunder methods.
 
     def __getitem__(self, name):
-        return getattr(self, name)
+        if hasattr(self, name):
+            return getattr(self, name)
 
     # def __len__(self):
     #     return len(self.index)

@@ -176,10 +176,12 @@ def wavg(
 
     Parameters
     ----------
-    fr : Union[pd.DataFrame, pd.Series]
+    fr : Union[pd.Series, pd.DataFrame]
         The input values.
-    weights : Union[Iterable, pd.Series], optional
-        The weights. If provided as a Series, the weights and values are aligned along its index. If no weights are provided, the normal (unweighted) average is returned instead.
+    weights : Union[Iterable, pd.Series, pd.DataFrame], optional
+        The weights. If provided as a Series, the weights and values are aligned along 
+        its index. If no weights are provided, the normal (unweighted) average is returned 
+        instead.
     axis : int, optional
         Calculate each column's average over all rows (if axis==0, default) or
         each row's average over all columns (if axis==1). Ignored for Series.
@@ -190,11 +192,31 @@ def wavg(
         The weighted average. A single float if `fr` is a Series; a Series if
         `fr` is a Dataframe.
     """
-    if axis == 1:  # correct allignment
-        fr = fr.T
-    if weights is None:  # return non-weighted average if no weights are provided
-        return fr.mean()
-    return fr.mul(weights, axis=0).sum(skipna=False) / sum(weights)
+    # Orient so that we can always sum over rows.
+    if axis == 1:
+        if isinstance(fr, pd.DataFrame):
+            fr = fr.T
+        if isinstance(weights, pd.DataFrame):
+            weights = weights.T
+
+    if weights is None:
+        # Return normal average.
+        return fr.mean(axis=0)
+
+    # Turn weights into Series if it's an iterable.
+    if not isinstance(weights, pd.DataFrame) and not isinstance(weights, pd.Series):
+        weights = pd.Series(weights, fr.index)
+
+    summed = fr.mul(weights, axis=0).sum(skipna=False)  # float or float-Series
+    totalweight = weights.sum()  # float or float-Series
+    result = summed / totalweight
+    
+    # Correction: if total weight is 0, and all original values are the same, keep the original value.
+    correctable = np.isclose(totalweight, 0) & (fr.nunique() == 1) # bool or bool-Series
+    if isinstance(fr, pd.Series):
+        return result if not correctable else fr.iloc[0]
+    result[correctable] = fr.iloc[0, :][correctable]
+    return result
 
 
 def trim_frame(fr: NDFrame, freq: str) -> NDFrame:

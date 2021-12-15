@@ -22,4 +22,4 @@ class OtherOutput: # for both PfLine and PfState
 
     @functools.wraps(pd.DataFrame.to_excel)
     def to_excel(self: PfLine, *args, **kwargs) -> None:
-        self.df().pint.dequantify().to_excel(*args, *kwargs)
+        self.df().pint.dequantify().tz_localize(None).to_excel(*args, *kwargs)

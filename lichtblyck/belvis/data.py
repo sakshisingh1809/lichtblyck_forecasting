@@ -58,20 +58,17 @@ def _print_status(msg: str):
 
 def _tsname(commodity: str, pfid: str, ts: str):
     """Convenience function to find name of timeseries in Belvis portfolio. Case insensitive."""
-    try:
-        tsnames_per_pf = TSNAMES_PER_COMMODITY_AND_PF[commodity]
-        defaulttsnames = DEFAULTTSNAMES_PER_COMMODITY[commodity]
-    except KeyError:
+    tsnames_per_pf = TSNAMES_PER_COMMODITY_AND_PF.get(commodity)
+    defaulttsnames = DEFAULTTSNAMES_PER_COMMODITY.get(commodity)
+    if tsnames_per_pf is None or defaulttsnames is None:
         raise ValueError("`commodity` must be one of {'power', 'gas'}.")
-    try:
-        tsnames = tsnames_per_pf[pfid]
-    except KeyError:
+    tsnames = tsnames_per_pf.get(pfid)
+    if tsnames is None:
         raise ValueError(
             f"`pfid` '{pfid}' not found. Must be one of {', '.join(tsnames_per_pf.keys())}."
         )
-    try:
-        defaulttsname = defaulttsnames[ts]
-    except KeyError:
+    defaulttsname = defaulttsnames.get(ts)
+    if defaulttsname is None:
         raise ValueError(
             f"`ts` '{ts}' not found. Must be one of {', '.join(defaulttsnames.keys())}."
         )
@@ -118,7 +115,7 @@ def offtakevolume(
     commodity : str
         Commodity. One of {'power', 'gas'}.
     pfid : str
-        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
+        Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
         Start of delivery period.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
@@ -148,7 +145,7 @@ def sourced(
     commodity : str
         Commodity. One of {'power', 'gas'}.
     pfid : str
-        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
+        Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
         Start of delivery period.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
@@ -212,7 +209,7 @@ def pfstate(
     commodity : str, 
         Commodity. One of {'power', 'gas'}
     pfid : str
-        Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
+        Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
         Start of the delivery period. If none provided, use start of coming year.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional

@@ -143,52 +143,161 @@ def test_fill_gaps(values, index, maxgap, gapvalues, tol):
     pd.testing.assert_frame_equal(df_new, df, rtol=tol)
 
 
-def test_wavg():
-    values1 = [1, 2, 3, -1.5]
-    values2 = [1, -2, 3, -1.5]
-    weights = [1, 1, 1, 2]
+@pytest.mark.parametrize("weightsas", ["none", "list", "series"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_wavg_valuesasseries1(weightsas, axis):
+    values = pd.Series([100, 200, 300, -150])
+    weights = [10, 10, 10, 20]
+    if weightsas == "none":
+        weights = None
+        result = 112.5
+    if weightsas == "list":
+        result = 60
+    if weightsas == "series":
+        weights = pd.Series(weights, index=[3, 2, 1, 0])  # align by index
+        result = 110
+    assert np.isclose(wavg(values, weights, axis), result)
 
-    # Series
-    assert np.isclose(wavg(pd.Series(values1), weights), 0.6)  # align by position
-    assert np.isclose(
-        wavg(pd.Series(values1), pd.Series(weights, [3, 2, 1, 0])), 1.1
-    )  # align by index
-    # DataFrame
+
+@pytest.mark.parametrize("weightsas", ["list", "series"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_wavg_valuesasseries2(weightsas, axis):
+    values = pd.Series([100, 200, 300, -150])
+    weights = [10, 0, 10, 20]
+    if weightsas == "list":
+        result = 25
+    if weightsas == "series":
+        weights = pd.Series(weights, index=[3, 2, 1, 0])  # align by index
+        result = 62.5
+    assert np.isclose(wavg(values, weights, axis), result)
+
+
+@pytest.mark.parametrize("weightsas", ["list", "series"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_wavg_valuesasseries_na(weightsas, axis):
+    values = pd.Series([100, 200, 300, -150])
+    weights = [0, 0, 0, 0]
+    if weightsas == "series":
+        weights = pd.Series(weights, index=[3, 2, 1, 0])  # align by index
+    assert np.isnan(wavg(values, weights, axis))
+
+
+@pytest.mark.parametrize("weightsas", ["list", "series"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_wavg_valuesasseries_0weights(weightsas, axis):
+    values = pd.Series([100, 100, 100, 100])
+    weights = [0, 0, 0, 0]
+    if weightsas == "series":
+        weights = pd.Series(weights, index=[3, 2, 1, 0])  # align by index
+    assert wavg(values, weights, axis) == 100
+
+
+@pytest.mark.parametrize("weightsas", ["none", "list", "series", "dataframe"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_wavg_valuesasdataframe1(weightsas, axis):
+    values = pd.DataFrame({"a": [100, 200, 300, -150], "b": [100, -200, 300, -150]})
+    if weightsas == "none":
+        weights = None
+        if axis == 0:
+            result = pd.Series({"a": 112.5, "b": 12.5})
+        else:
+            result = pd.Series([100, 0, 300, -150])
+    if weightsas == "list":
+        if axis == 0:
+            weights = [10, 10, 10, 20]
+            result = pd.Series({"a": 60, "b": -20})
+        else:
+            weights = [10, 30]
+            result = pd.Series([100, -100, 300, -150])
+    if weightsas == "series":
+        if axis == 0:
+            weights = pd.Series([10, 10, 10, 20], index=[3, 2, 1, 0])
+            result = pd.Series({"a": 110, "b": 30})
+        else:
+            weights = pd.Series({"b": 30, "a": 10})
+            result = pd.Series([100, -100, 300, -150])
+    if weightsas == "dataframe":
+        weights = pd.DataFrame({"a": [10, 10, 10, 20], "b": [10, 10, 30, 0]})
+        if axis == 0:
+            result = pd.Series({"a": 60, "b": 160})
+        else:
+            result = pd.Series([100, 0, 300, -150])
     pd.testing.assert_series_equal(
-        wavg(pd.DataFrame({"a": values1, "b": values1}), weights),
-        pd.Series({"a": 0.6, "b": 0.6}),
+        wavg(values, weights, axis), result, check_dtype=False
     )
+
+
+@pytest.mark.parametrize("weightsas", ["list", "series", "dataframe"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_wavg_valuesasdataframe2(weightsas, axis):
+    values = pd.DataFrame({"a": [100, 200, 200, -150], "b": [100, -200, 300, -150]})
+    if weightsas == "list":
+        if axis == 0:
+            weights = [10, 10, 0, 20]
+            result = pd.Series({"a": 0, "b": -100})
+        else:
+            weights = [10, 0]
+            result = pd.Series([100, 200, 200, -150])
+    if weightsas == "series":
+        if axis == 0:
+            weights = pd.Series([10, 10, 0, 20], index=[3, 2, 1, 0])
+            result = pd.Series({"a": 62.5, "b": 87.5})
+        else:
+            weights = pd.Series({"b": 0, "a": 10})
+            result = pd.Series([100, 200, 200, -150])
+    if weightsas == "dataframe":
+        weights = pd.DataFrame({"a": [10, 10, 0, 20], "b": [10, 10, 30, 0]})
+        if axis == 0:
+            result = pd.Series({"a": 0, "b": 160})
+        else:
+            result = pd.Series([100, 0, 300, -150])
     pd.testing.assert_series_equal(
-        wavg(pd.DataFrame({"a": values1, "b": values2}), weights),
-        pd.Series({"a": 0.6, "b": -0.2}),
+        wavg(values, weights, axis), result, check_dtype=False
     )
+
+
+@pytest.mark.parametrize("weightsas", ["list", "series", "dataframe"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_wavg_valuesasdataframe_na(weightsas, axis):
+    values = pd.DataFrame({"a": [130, 200, 200, -160], "b": [100, -200, 300, -150]})
+    if axis == 0:
+        weights = [0, 0, 0, 0]
+        result = pd.Series({"a": np.nan, "b": np.nan})
+    else:
+        weights = [0, 0]
+        result = pd.Series([np.nan, np.nan, np.nan, np.nan])
+
+    if weightsas == "series":
+        if axis == 0:
+            weights = pd.Series(weights, index=[3, 2, 1, 0])
+        else:
+            weights = pd.Series(weights, index=["a", "b"])
+    if weightsas == "dataframe":
+        weights = pd.DataFrame({"a": [0, 0, 0, 0], "b": [0, 0, 0, 0]})
     pd.testing.assert_series_equal(
-        wavg(
-            pd.DataFrame({"a": values1, "b": values2}), pd.Series(weights, [3, 2, 1, 0])
-        ),
-        pd.Series({"a": 1.1, "b": 0.3}),
-    )  # align by index
-    pd.testing.assert_series_equal(
-        wavg(
-            pd.DataFrame({"a": values1, "b": values1, "c": values1, "d": values2}),
-            weights,
-            axis=0,
-        ),
-        pd.Series({"a": 0.6, "b": 0.6, "c": 0.6, "d": -0.2}),
+        wavg(values, weights, axis), result, check_dtype=False
     )
+
+
+@pytest.mark.parametrize("weightsas", ["list", "series", "dataframe"])
+@pytest.mark.parametrize("axis", [0, 1])
+def test_wavg_valuesasdataframe_0weights(weightsas, axis):
+    values = pd.DataFrame({"a": [100, 200, 200, -150], "b": [100, -200, 300, -150]})
+    if axis == 0:
+        weights = [0, 0, 0, 0]
+        result = pd.Series({"a": np.nan, "b": np.nan})
+    else:
+        weights = [0, 0]
+        result = pd.Series([100, np.nan, np.nan, -150])
+
+    if weightsas == "series":
+        if axis == 0:
+            weights = pd.Series(weights, index=[3, 2, 1, 0])
+        else:
+            weights = pd.Series(weights, index=["a", "b"])
+    if weightsas == "dataframe":
+        weights = pd.DataFrame({"a": [0, 0, 0, 0], "b": [0, 0, 0, 0]})
     pd.testing.assert_series_equal(
-        wavg(
-            pd.DataFrame({"a": values1, "b": values1, "c": values1, "d": values2}),
-            weights,
-            axis=1,
-        ),
-        pd.Series([1, 0.4, 3, -1.5]),
-    )  # row-averages
-    pd.testing.assert_series_equal(
-        wavg(
-            pd.DataFrame({"a": values1, "b": values1, "c": values1, "d": values2}),
-            pd.Series(weights, ["d", "c", "b", "a"]),
-            axis=1,
-        ),
-        pd.Series([1, 1.2, 3, -1.5]),
-    )  # align by index and row-averages
+        wavg(values, weights, axis), result, check_dtype=False
+    )
+

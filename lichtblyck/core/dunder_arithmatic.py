@@ -6,6 +6,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Union
 import pandas as pd
 from ..tools.nits import ureg, Q_, unit2name
+from ..tools.frames import wavg
 
 if TYPE_CHECKING:  # needed to avoid circular imports
     from .pfstate import PfState
@@ -172,8 +173,10 @@ class PfLineArithmatic:
         return other + -self  # defer to mul and neg
 
     def __mul__(self: PfLine, other) -> PfLine:
-        if self.kind == 'all':
-            raise NotImplementedError("Cannot multiply PfLine containing volume and price information.")
+        if self.kind == "all":
+            raise NotImplementedError(
+                "Cannot multiply PfLine containing volume and price information."
+            )
         other = self._prep_other(other)  # other is now a PfLine or Series.
 
         # Other is a PfLine.
@@ -253,10 +256,20 @@ class PfStateArithmatic:
         raise TypeError(f"Cannot handle inputs of this type ({type(other)}).")
 
     def __add__(self: PfState, other):
+        if not other:
+            return self
         if not isinstance(other, self.__class__):
             raise NotImplementedError("This addition is not defined.")
         offtakevolume = self.offtake.volume + other.offtake.volume
-        unsourcedprice = (self.unsourced + other.unsourced).price  # weighted average
+
+        values = pd.DataFrame(
+            {"s": self.unsourcedprice.p, "o": other.unsourcedprice.p}
+        ).astype(float)
+        weights = pd.DataFrame({"s": self.unsourced.q, "o": other.unsourced.q}).astype(
+            float
+        )
+        unsourcedprice = wavg(values, weights, axis=1).rename("p")
+
         sourced = self.sourced + other.sourced
         return self.__class__(offtakevolume, unsourcedprice, sourced)
 

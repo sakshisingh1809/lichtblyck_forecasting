@@ -79,10 +79,10 @@ def _make_df(data) -> pd.DataFrame:
     if r is None:  # must calculate from p
         r = p * q
         i = r.isna()  # edge case p==nan. If q==0, assume r=0. If q!=0, raise error
-        if i.any() and (abs(q[i]) < 0.001).all():
+        if i.any():
+            if (abs(q.pint.m[i]) > 0.001).any():
+                raise ValueError("Found timestamps with `p`==na, `q`!=0. Unknown `r`.")
             r[i] = 0
-        elif i.any():
-            raise ValueError("Found timestamps with `p`==na, `q`!=0. Unknown `r`.")
     elif p is not None and not np.allclose(r, p * q):
         # Edge case: remove lines where p==nan and q==0 before judging consistency.
         i = p.isna()
@@ -92,11 +92,7 @@ def _make_df(data) -> pd.DataFrame:
 
 
 class PfLine(
-    PfLineTextOutput,
-    PfLinePlotOutput,
-    OtherOutput,
-    PfLineArithmatic,
-    PfLineHedge,
+    PfLineTextOutput, PfLinePlotOutput, OtherOutput, PfLineArithmatic, PfLineHedge,
 ):
     """Class to hold a related energy timeseries. This can be volume timeseries with q
     [MWh] and w [MW], a price timeseries with p [Eur/MWh] or both.
