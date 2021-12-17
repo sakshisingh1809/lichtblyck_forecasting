@@ -2,6 +2,7 @@
 Code to quickly get objects for testing.
 """
 
+from typing import Dict
 from ..tools.nits import ureg, PA_, name2unit
 from .pfline import PfLine
 from .pfstate import PfState
@@ -28,7 +29,9 @@ def get_series(i=None, name="w", min=10, max=20) -> pd.Series:
     if i is None:
         i = get_index()
     u = name2unit(name)
-    return pd.Series(min + np.random.rand(len(i)) * (max - min), i, name=name).astype(f'pint[{u}]')
+    return pd.Series(min + np.random.rand(len(i)) * (max - min), i, name=name).astype(
+        f"pint[{u}]"
+    )
 
 
 def get_dataframe(
@@ -49,7 +52,7 @@ def get_dataframe(
 # Portfolio line.
 
 
-def get_pfline(i=None, kind: str = "all"):
+def get_pfline(i=None, kind: str = "all") -> PfLine:
     """Get portfolio line, i.e. without children."""
     columns = {"q": "q", "p": "p", "all": "qr"}[kind]
     return PfLine(get_dataframe(i, columns))
@@ -58,10 +61,17 @@ def get_pfline(i=None, kind: str = "all"):
 # Portfolio state.
 
 
-def get_pfstate(i=None):
+def get_pfstate(i=None) -> PfState:
+    """Get portfolio state."""
     if i is None:
         i = get_index()
     offtakevolume = get_pfline(i, "q") * -2
     unsourcedprice = get_pfline(i, "p") * 2
     sourced = get_pfline(i, "all")
     return PfState(offtakevolume, unsourcedprice, sourced)
+
+
+def get_pfstates(num=3, i=None) -> Dict[str, PfState]:
+    """Get dictionary of portfolio states."""
+    sample = ["Ludwig", "P2Heat", "B2B", "B2C Legacy", "Spot procurement", "B2B New"]
+    return {name: get_pfstate(i if i else get_index()) for name in sample[:num]}
