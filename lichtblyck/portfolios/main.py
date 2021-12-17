@@ -80,7 +80,7 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
             for pfid in pf_dic["offtake"]["certain"]
         )
         now = pd.Timestamp.now().tz_localize("Europe/Berlin").floor("D")
-        cutoff = now + pd.Timedelta(days=40)
+        cutoff = now + pd.Timedelta(days=4)
         df1 = offtakevolume_100.df()[offtakevolume_100.index < cutoff]
         df2 = offtakevolume_certain.df()[offtakevolume_certain.index >= cutoff]
         offtakevolume = PfLine(pd.concat([df1, df2]).w)

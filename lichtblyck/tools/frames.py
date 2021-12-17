@@ -167,8 +167,8 @@ def fill_gaps(fr: NDFrame, maxgap: int = 2) -> NDFrame:
 
 
 def wavg(
-    fr: Union[pd.DataFrame, pd.Series],
-    weights: Union[Iterable, pd.Series] = None,
+    fr: Union[pd.Series, pd.DataFrame],
+    weights: Union[Iterable, pd.Series, pd.DataFrame] = None,
     axis: int = 0,
 ) -> Union[pd.Series, float]:
     """
