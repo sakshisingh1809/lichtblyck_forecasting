@@ -221,15 +221,14 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     ymin = (
         np.array(list(map(lambda b: b.y0, bboxes.flat))).reshape(axes.shape).min(axis=1)
     )
-    ys = np.c_[ymax[1:], ymin[:-1]].mean(axis=1)
-
+    ys = np.c_[ymax[2:-1:2], ymin[1:-2:2]].mean(axis=1)
+    ys = [ymax[0], *ys]
     # Draw a horizontal lines at those coordinates
     for y in ys:
         line = plt.Line2D([0, 1], [y, y], transform=fig.transFigure, color="black")
         fig.add_artist(line)
 
-
-def plot_pfstates_extra(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
+    """
     fig = plt.figure()
     fig.set_size_inches(20, 10)
 
@@ -261,3 +260,4 @@ def plot_pfstates_extra(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure
         ax3.axes.get_xaxis().set_visible(False)
         plt.yticks(color="w")
         pfs.plot_to_ax(ax3, "price")
+    """
