@@ -4,6 +4,7 @@ Dataframe-like class to hold general energy-related timeseries; either volume ([
 """
 
 from __future__ import annotations
+import functools
 from ..tools.frames import set_ts_index
 from ..tools.nits import name2unit, ureg
 from .output_text import PfLineTextOutput
@@ -92,7 +93,11 @@ def _make_df(data) -> pd.DataFrame:
 
 
 class PfLine(
-    PfLineTextOutput, PfLinePlotOutput, OtherOutput, PfLineArithmatic, PfLineHedge,
+    PfLineTextOutput,
+    PfLinePlotOutput,
+    OtherOutput,
+    PfLineArithmatic,
+    PfLineHedge,
 ):
     """Class to hold a related energy timeseries. This can be volume timeseries with q
     [MWh] and w [MW], a price timeseries with p [Eur/MWh] or both.
@@ -103,18 +108,6 @@ class PfLine(
         Generally: object with one or more attributes or items `w`, `q`, `r`, `p`; all
         timeseries. Most commonly a DataFrame but may also be a dictionary or other
         PfLine object.
-
-    Attributes
-    ----------
-    w, q, p, r : pd.Series
-        Power [MW], quantity [MWh], price [Eur/MWh], revenue [Eur] timeseries, when
-        available. Can also be accessed by key (e.g., with ['w']).
-    kind : str
-        Kind of information/timeseries included in instance. One of {'q', 'p', 'all'}.
-    available : str
-        Columns available in instance. One of {'wq', 'p', 'wqpr'}.
-    index : pandas.DateTimeIndex
-        Left timestamp of row.
 
     Notes
     -----
@@ -134,10 +127,12 @@ class PfLine(
 
     @property
     def index(self) -> pd.DatetimeIndex:
+        """Left timestamp of time period corresponding to each data row."""
         return self._df.index
 
     @property
     def w(self) -> pd.Series:
+        """Power timeseries [MW]."""
         if "q" in self._df:
             return pd.Series(self._df["q"] / self._df.index.duration, name="w").pint.to(
                 "MW"
@@ -146,12 +141,14 @@ class PfLine(
 
     @property
     def q(self) -> pd.Series:
+        """Energy timeseries [MWh]."""
         if "q" in self._df:
             return self._df["q"]
         return pd.Series(np.nan, self.index, name="q", dtype="pint[MWh]")
 
     @property
     def p(self) -> pd.Series:
+        """Price timeseries [Eur/MWh]."""
         if "p" in self._df:
             return self._df["p"]
         if "q" in self._df and "r" in self._df:
@@ -160,6 +157,7 @@ class PfLine(
 
     @property
     def r(self) -> pd.Series:
+        """Revenue timeseries [Eur]."""
         if "r" in self._df:
             return self._df["r"]
         if "q" in self._df and "p" in self._df:
@@ -184,11 +182,10 @@ class PfLine(
 
     @property
     def kind(self) -> str:
-        """Kind of data that is stored in the object. Possible values and implications:
-            'q': volume data only. Properties .q [MWh] and .w [MW] are available.
-            'p': price data only. Property .p [Eur/MWh] is available.
-            'all': price and volume data. Properties .q [MWh], .w [MW], .p [Eur/MWh],
-                .r [Eur] are available.
+        """Kind of data that is stored in the instance. Possible values:
+        'q': volume data only; properties .q [MWh] and .w [MW] are available.
+        'p': price data only; property .p [Eur/MWh] is available.
+        'all': price and volume data; properties .q [MWh], .w [MW], .p [Eur/MWh], .r [Eur] are available.
         """
         if "q" in self._df:
             return "all" if ("r" in self._df or "p" in self._df) else "q"
@@ -202,17 +199,20 @@ class PfLine(
 
     @property
     def available(self) -> str:  # which time series have values
+        """Attributes/columns that are available. One of {'wq', 'p', 'wqpr'}."""
         return {"p": "p", "q": "wq", "all": "wqpr"}[self.kind]
 
     # Methods/Properties that return new class instance.
 
-    volume: PfLine = property(lambda self: PfLine({"q": self.q}))  # possibly nan-Series
-    price: PfLine = property(lambda self: PfLine({"p": self.p}))  # possibly nan-Series
+    @property
+    def volume(self) -> PfLine:
+        """Return (only) the volume information, as a new class instance."""
+        return PfLine({"q": self.q})
 
-    set_q: Callable[..., PfLine] = lambda self, val: self._set_col_val("q", val)
-    set_w: Callable[..., PfLine] = lambda self, val: self._set_col_val("w", val)
-    set_r: Callable[..., PfLine] = lambda self, val: self._set_col_val("r", val)
-    set_p: Callable[..., PfLine] = lambda self, val: self._set_col_val("p", val)
+    @property
+    def price(self) -> PfLine:
+        """Return (only) the price information, as a new class instance."""
+        return PfLine({"p": self.p})
 
     def _set_col_val(
         self, col: str, val: Union[pd.Series, PfLine, float, int, ureg.Quantity]
@@ -237,6 +237,15 @@ class PfLine(
         elif col in ["p", "r"] and self.kind in ["q", "all"]:
             data["q"] = self["q"]
         return PfLine(data)
+
+    set_w = functools.partial(_set_col_val, col="w")
+    set_q = functools.partial(_set_col_val, col="q")
+    set_p = functools.partial(_set_col_val, col="p")
+    set_r = functools.partial(_set_col_val, col="r")
+    set_w.__doc__ = "Set or update power timeseries [MW]; returns modified PfLine."
+    set_q.__doc__ = "Set or update energy timeseries [MWh]; returns modified PfLine."
+    set_p.__doc__ = "Set or update price timeseries [Eur/MWh]; returns modified PfLine."
+    set_r.__doc__ = "Set or update revenue timeseries [Eur]; returns modified PfLine."
 
     def changefreq(self, freq: str = "MS") -> PfLine:
         """Resample the PfLine to a new frequency.

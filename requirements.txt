@@ -8,3 +8,5 @@ sqlalchemy
 openpyxl
 pint
 pint-pandas
+tqdm
+jwt

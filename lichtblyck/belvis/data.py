@@ -112,8 +112,7 @@ def offtakevolume(
 
     Parameters
     ----------
-    commodity : str
-        Commodity. One of {'power', 'gas'}.
+    commodity : {'power', 'gas'}
     pfid : str
         Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
@@ -142,7 +141,7 @@ def sourced(
 
     Parameters
     ----------
-    commodity : str
+    commodity : {'power', 'gas'}
         Commodity. One of {'power', 'gas'}.
     pfid : str
         Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
@@ -175,7 +174,7 @@ def unsourcedprice(
 
     Parameters
     ----------
-    commodity : str
+    commodity : {'power', 'gas'}
         Commodity for which to get the market prices. One of {'power', 'gas'}.
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
         Start of delivery period.
@@ -206,7 +205,7 @@ def pfstate(
 
     Parameters
     ----------
-    commodity : str, 
+    commodity : {'power', 'gas'}, 
         Commodity. One of {'power', 'gas'}
     pfid : str
         Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').

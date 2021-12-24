@@ -77,20 +77,20 @@ def duration(ts_left: Union[pd.Timestamp, pd.DatetimeIndex]) -> Union[Q_, pd.Ser
 def floor_ts(
     ts: Union[pd.Timestamp, pd.DatetimeIndex], future: int = 0, freq=None
 ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
-    """Floor timestamp to start of month, quarter, or year that contains it. I.e., find
-    (largest) start of period that is smaller than or equal to the timestamp.
+    """Floor timestamp to period boundary.
+
+    i.e., find (latest) period start that is on or before the timestamp.
 
     Parameters
     ----------
     ts : Timestamp or DatetimeIndex.
         Timestamp(s) to floor.
     future : int, optional
-        0 (default) to get latest period start that is `ts` or earlier. 1 (-1) to get 
+        0 (default) to get latest period start that is `ts` or earlier. 1 (-1) to get
         start of period after (before) that. 2 (-2) .. etc.
-    freq : frequency, optional
-        What to floor it to. One of {'D', 'MS', 'QS', 'AS'} for start of the day, month, 
-        quarter, or year it's contained in. If none specified, use .freq attribute of 
-        timestamp.
+    freq : {'D' (day), 'MS' (month), 'QS' (quarter), 'AS' (year)}, optional
+        What to floor it to, e.g. 'QS' to get start of quarter it's contained in. If
+        none specified, use .freq attribute of timestamp.
 
     Returns
     -------
@@ -99,7 +99,7 @@ def floor_ts(
 
     Notes
     -----
-    Except if `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor(ts, 1).
+    If `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor_ts(ts, 0) == ts.
     """
     if freq is None:
         freq = ts.freq
@@ -123,26 +123,26 @@ def floor_ts(
     elif freq == "AS":
         return ts + pd.offsets.YearBegin(1) + pd.offsets.YearBegin(future - 1)
     else:
-        raise ValueError(f"Argument `freq` must be one of {FREQUENCIES}.")
+        raise ValueError(f"Argument `freq` must be one of {','.join(FREQUENCIES)}.")
 
 
 def ceil_ts(
     ts: Union[pd.Timestamp, pd.DatetimeIndex], future: int = 0, freq=None
 ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
-    """Find (smallest) start of month, quarter, or year that is larger than or equal to
-    the timestamp.
+    """Ceil timestamp to period boundary.
+
+    i.e., find (earliest) period start that is on or after the timestamp.
 
     Parameters
     ----------
     ts : Timestamp or DatetimeIndex.
         Timestamp(s) to ceil.
     future : int, optional
-        0 (default) to get earliest period start that is `ts` or later. 1 (-1) to get 
+        0 (default) to get earliest period start that is `ts` or later. 1 (-1) to get
         start of period after (before) that. 2 (-2) .. etc.
-    freq : frequency, optional
-        What to ceil it to. One of {'D', 'MS', 'QS', 'AS'} for start of the day, month, 
-        quarter, or year it's contained in. If none specified, use .freq attribute of 
-        timestamp.
+    freq : {'D' (day), 'MS' (month), 'QS' (quarter), 'AS' (year)}, optional
+        What to ceil it to, e.g. 'QS' to get start of quarter it's contained in. If
+        none specified, use .freq attribute of timestamp.
 
     Returns
     -------
@@ -151,7 +151,7 @@ def ceil_ts(
 
     Notes
     -----
-    If `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor(ts, 0) == ts.
+    If `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor_ts(ts, 0) == ts.
     """
     offset = (
         1 if ts != floor_ts(ts, 0, freq) else 0
@@ -188,9 +188,9 @@ def ts_leftright(left=None, right=None) -> Tuple:
     right : timestamp, optional
         If no value for ts_left is given, the beginning of the year of ts_right is given.
         If no value for ts_right is given, the end of the year of ts_left is given.
-        If no values is given for either, the entire next year is given. 
+        If no values is given for either, the entire next year is given.
         If a value is given for each, they are swapped if their order is incorrect.
-        If no time zone is provided for either timestamp, the Europe/Berlin timezone is 
+        If no time zone is provided for either timestamp, the Europe/Berlin timezone is
         assumed.
 
     Returns
@@ -242,8 +242,8 @@ def freq_up_or_down(freq_source, freq_target) -> int:
     Returns
     -------
     1 (-1, 0) if source frequency must be upsampled (downsampled, no change) to obtain
-        target frequency. 
-        Upsampling meaning, the number of values increases - one value in the source 
+        target frequency.
+        Upsampling meaning, the number of values increases - one value in the source
         corresponds to multiple values in the target.
 
     Notes
@@ -294,4 +294,3 @@ def freq_longest(*freqs):
     Returns longest frequency in list.
     """
     return _freq_longestshortest(False, *freqs)
-

@@ -1,6 +1,4 @@
-"""
-Utilities for calculating / manipulating price data.
-"""
+"""Utilities for calculating / manipulating price data."""
 
 from ..tools.stamps import FREQUENCIES, floor_ts, duration, ts_right
 from ..tools.types import Stamp
@@ -13,7 +11,7 @@ def is_peak_hour(
     ts_left: Union[pd.Timestamp, pd.DatetimeIndex]
 ) -> Union[bool, pd.Series]:
     """Return True/False if timestamp, or each timestamp in index, is a peak hour. More
-    precisely: if `ts_left` lies in one of the (left-closed) time intervals that define 
+    precisely: if `ts_left` lies in one of the (left-closed) time intervals that define
     the peak hour periods."""
     if isinstance(ts_left, pd.Timestamp):
         return ts_left.hour >= 8 and ts_left.hour < 20 and ts_left.isoweekday() < 6
@@ -100,8 +98,7 @@ def ts_leftright(
     ----------
     ts_trade : datetime
         Trading timestamp
-    period_type : str
-        One of {'d' (day), 'm' (month, default), 'q' (quarter), 's' (season), 'a' (year)}
+    period_type : {'d' (day), 'm' (month, default), 'q' (quarter), 's' (season), 'a' (year)}
     period_start : int
         1 = next/coming (full) period, 2 = period after that, etc.
 
@@ -128,4 +125,3 @@ def ts_leftright(
     else:
         raise ValueError("Invalid value for parameter `period_type`.")
     return ts_left, ts_right
-

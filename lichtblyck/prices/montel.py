@@ -16,26 +16,24 @@ _MONTELFILEPATH = Path(__file__).parent / "sourcedata" / "prices_montel.xlsm"
 
 
 def _excel_gas(
-    period_type: str = "M", period_start: int = 1, market_code: str = "ncg"
+    period_type: str = "m", period_start: int = 1, market_code: str = "ncg"
 ) -> Dict:
     """
     Get the location of gas data in the montel excel file.
 
     Parameters
     ----------
-    period_type : str
-        Duration of the product. One of {'d' (day), 'm' (month, default), 
-        'q' (quarter), 's' (season), 'a' (year)}
+    period_type : {'d' (day), 'm' (month, default), 'q' (quarter), 's' (season), 'a' (year)}
+        Duration of the product.
     period_start : int
         1 = next/coming (full) period (default), 2 = period after that, etc.
         Ignored for period_type == 'd'.
-    market_code : str
-        One of {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}.
+    market_code : {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}
 
     Example
     -------
     period_type, period_start, market_code == ('q', 1, 'gpl') to get prices for
-    band delivery in the next quarter in the gpl market area.
+    front-quarter product in the gpl market area.
     """
     period_type = period_type.lower()[0]
     kwargs = {"io": _MONTELFILEPATH, "header": 0}
@@ -94,14 +92,13 @@ def _excel_power(
 
     Parameters
     ----------
-    period_type : str
-        Duration of the product. One of {'h' (hourly, from day-ahead auction), 'm' 
-        (month, default), 'q' (quarter), 'a' (year)}
+    period_type : {'h' (hourly, from day-ahead auction), 'm' (month, default), 'q' (quarter), 'a' (year)}
+        Duration of the product.
     period_start : int
         1 = next/coming (full) period (default), 2 = period after that, etc.
         Ignored for period_type == 'h'.
-    product_code : str
-        One of {'base' (default), 'peak'}. Ignored for period_type == 'h'.
+    product_code : {'base' (default), 'peak'}
+        Ignored for period_type == 'h'.
 
     Example
     -------
@@ -149,7 +146,7 @@ def _excel_power(
 def power_spot() -> pd.Series:
     """
     Power spot price timeseries with hourly prices.
-    
+
     Parameters
     ----------
     None
@@ -189,8 +186,7 @@ def gas_spot(market_code: str = "ncg") -> pd.Series:
 
     Parameters
     ----------
-    market_code : str
-        One of {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}.
+    market_code : {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}
 
     Returns
     -------
@@ -210,11 +206,10 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
 
     Parameters
     ----------
-    period_type : str
-        Duration of the product. One of {'m' (month, default), 'q' (quarter),
-        'a' (year)}
+    period_type : {'m' (month, default), 'q' (quarter), 'a' (year)}
+        Duration of the product.
     period_start : int
-        1 = next/coming (full) period (ie., "frontyear", "frontmonth" etc) (default), 
+        1 = next/coming (full) period (ie., "frontyear", "frontmonth" etc) (default),
         2 = period after that, etc.
 
     Returns
@@ -231,11 +226,15 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
     for df in (b, p):
         df.dropna(inplace=True)
         df.columns = ["ts_left_trade", "p"]
-    b = set_ts_index(b, "ts_left_trade",  continuous=False)
-    p = set_ts_index(p, "ts_left_trade",  continuous=False)
+    b = set_ts_index(b, "ts_left_trade", continuous=False)
+    p = set_ts_index(p, "ts_left_trade", continuous=False)
     # ...put into one object...
     df = p.merge(
-        b, how="inner", left_index=True, right_index=True, suffixes=("_peak", "_base"),
+        b,
+        how="inner",
+        left_index=True,
+        right_index=True,
+        suffixes=("_peak", "_base"),
     )
     # ...add some additional information...
     @functools.lru_cache
@@ -279,16 +278,15 @@ def power_futures(period_type: str = "m") -> pd.DataFrame:
 
     Parameters
     ----------
-    period_type : str
-        Duration of the product. One of {'m' (month, default), 'q' (quarter),
-        'a' (year)}
+    period_type : {'m' (month, default), 'q' (quarter), 'a' (year)}
+        Duration of the product.
 
     Returns
     -------
     pd.DataFrame
         with power futures prices. Multiindex with levels 0 (start of delivery period)
-        and 1 (trading day). Columns: p_base, p_peak, p_offpeak (prices), ts_right 
-        (end of delivery period), anticipation (timedelta between trade and delivery 
+        and 1 (trading day). Columns: p_base, p_peak, p_offpeak (prices), ts_right
+        (end of delivery period), anticipation (timedelta between trade and delivery
         start), basehours, peakhours, offpeakhours in delivery period.
     """
     # Get all trading data and put in big dataframe.
@@ -314,14 +312,12 @@ def _gas_futures(
 
     Parameters
     ----------
-    period_type : str
-        Duration of the product. One of {'m' (month, default), 'q' (quarter), 's'
-        (season), 'a' (year)}
+    period_type : {'m' (month, default), 'q' (quarter), 's' (season), 'a' (year)}
+        Duration of the product.
     period_start : int
-        1 = next/coming (full) period (ie., "frontyear", "frontmonth" etc) (default), 
+        1 = next/coming (full) period (ie., "frontyear", "frontmonth" etc) (default)
         2 = period after that, etc.
-    market_code : str
-        One of {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}.
+    market_code : {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}
 
     Returns
     -------
@@ -356,18 +352,16 @@ def gas_futures(period_type: str = "m", market_code: str = "ncg") -> pd.DataFram
 
     Parameters
     ----------
-    period_type : str
-        Duration of the product. One of {'m' (month, default), 'q' (quarter), 's'
-        (season), 'a' (year)}
-    market_code : str
-        One of {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}.
+    period_type : {'m' (month, default), 'q' (quarter), 's' (season), 'a' (year)}
+        Duration of the product.
+    market_code : {'ncg' (netconnect-germany, default), 'gpl' (gaspool)}
 
     Returns
     -------
     pd.DataFrame
         with gas futures prices. Multiindex with levels 0 (start of delivery period) and
-        1 (trading day). Columns: p (price), ts_right (end of delivery period), 
-        anticipation (timedelta between trade and delivery start), hours in delivery 
+        1 (trading day). Columns: p (price), ts_right (end of delivery period),
+        anticipation (timedelta between trade and delivery start), hours in delivery
         period.
     """
     # Get all trading data and put in big dataframe.
@@ -383,6 +377,7 @@ def gas_futures(period_type: str = "m", market_code: str = "ncg") -> pd.DataFram
     fut = fut.drop(columns=["ts_left_trade", "ts_left"]).sort_index()
     fut.index.levels[0].freq = pd.infer_freq(fut.index.levels[0])
     return fut
+
 
 # From Belvis
 # SPOTPRICEFILE = 'lichtblyck/prices/sourcedata/spot.tsv'

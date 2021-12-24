@@ -211,7 +211,7 @@ def _source(commodity):
     try:
         return _sources[commodity]
     except KeyError:
-        raise ValueError(f"`commodity` must be one of {', '.join(_COMMOTEN.keys())}.")
+        raise ValueError(f"`commodity` must be one of {_COMMOTEN.keys()}.")
 
 
 def auth_with_password(usr: str, pwd: str):
@@ -253,8 +253,7 @@ def info(commodity: str, id: int) -> Dict:
 
     Parameters
     ----------
-    commodity : str
-        Commodity. One of {'power', 'gas'}.
+    commodity : {'power', 'gas'}
     id : int
         Timeseries id.
 
@@ -271,8 +270,7 @@ def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str
 
     Parameters
     ----------
-    commodity : str
-        Commodity. One of {'power', 'gas'}.
+    commodity : {'power', 'gas'}
     name : str
         Name of portfolio.
     strict : bool, optional (default: False)
@@ -322,8 +320,7 @@ def find_tsids(
 
     Parameters
     ----------
-    commodity : str
-        Commodity. One of {'power', 'gas'}.
+    commodity : {'power', 'gas'}
     pfid : str, optional (default: search in all portfolios. Only possible if use_cache)
         Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
     name : str, optional (default: return all timeseries).
@@ -396,8 +393,7 @@ def find_tsid(
 
     Parameters
     ----------
-    commodity : str
-        Commodity. One of {'power', 'gas'}.
+    commodity : {'power', 'gas'}
     pfid : str
         Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     name : str
@@ -461,8 +457,7 @@ def series(
 
     Parameters
     ----------
-    commodity : str
-        Commodity. One of {'power', 'gas'}.
+    commodity : {'power', 'gas'}
     id : int
         Timeseries id.
     ts_left : Union[pd.Timestamp, dt.datetime]

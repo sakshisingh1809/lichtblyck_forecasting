@@ -87,13 +87,13 @@ def base(
 
 
 def complete_bpoframe(partial_bpoframe: pd.DataFrame, prefix: str = "") -> pd.DataFrame:
-    """ 
+    """
     Add missing information to bpoframe (Dataframe with base, peak, offpeak values).
 
     Parameters
     ----------
-    partial_bpoframe : DataFrame 
-        Dataframe with at least 2 columns with names in {'base', 'peak', 'offpeak'}. 
+    partial_bpoframe : DataFrame
+        Dataframe with at least 2 columns with names in {'base', 'peak', 'offpeak'}.
         Datetimeindex with frequency in {'MS', 'QS', 'AS'}.
     prefix : str, optional (default: '')
         If specified, add this to the column names to search for in the provided dataframe
@@ -110,8 +110,8 @@ def complete_bpoframe(partial_bpoframe: pd.DataFrame, prefix: str = "") -> pd.Da
     Can only be used for values that are 'averagable' over a time period, like power [MW]
     and price [Eur/MWh]. Not for e.g. energy [MWh], revenue [Eur], and duration [h].
 
-    In: 
-    
+    In:
+
                                 peak        offpeak
     ts_left
     2020-01-01 00:00:00+01:00   42.530036   30.614701
@@ -175,13 +175,13 @@ def tseries2singlebpo(s: pd.Series, prefix: str = "") -> pd.Series:
     Can only be used for values that are 'averagable' over a time period, like power [MW]
     and price [Eur/MWh]. Not for e.g. energy [MWh], revenue [Eur], and duration [h].
 
-    In: 
-    
+    In:
+
     ts_left
     2020-01-01 00:00:00+01:00    41.88
     2020-01-01 01:00:00+01:00    38.60
     2020-01-01 02:00:00+01:00    36.55
-                                 ...  
+                                 ...
     2020-12-31 21:00:00+01:00    52.44
     2020-12-31 22:00:00+01:00    51.86
     2020-12-31 23:00:00+01:00    52.26
@@ -215,16 +215,15 @@ def tseries2singlebpo(s: pd.Series, prefix: str = "") -> pd.Series:
 
 def tseries2bpoframe(s: pd.Series, freq: str = "MS", prefix: str = "") -> pd.DataFrame:
     """
-    Aggregate timeseries with varying values to a dataframe with base, peak and offpeak 
+    Aggregate timeseries with varying values to a dataframe with base, peak and offpeak
     timeseries, grouped by provided time interval.
 
     Parameters
     ----------
     s : Series
         Timeseries with hourly or quarterhourly frequency.
-    freq : str
-        Target frequency. One of {'MS' (default) 'QS', 'AS'} for month, quarter, or year 
-        values.
+    freq : {'MS' (month, default) 'QS' (quarter), 'AS' (year)}
+        Target frequency.
     prefix : str, optional (default: '')
         If specified, add this to the column names of the returned dataframe.
 
@@ -239,13 +238,13 @@ def tseries2bpoframe(s: pd.Series, freq: str = "MS", prefix: str = "") -> pd.Dat
     Can only be used for values that are 'averagable' over a time period, like power [MW]
     and price [Eur/MWh]. Not for e.g. energy [MWh], revenue [Eur], and duration [h].
 
-    In: 
-    
+    In:
+
     ts_left
     2020-01-01 00:00:00+01:00    41.88
     2020-01-01 01:00:00+01:00    38.60
     2020-01-01 02:00:00+01:00    36.55
-                                 ...  
+                                 ...
     2020-12-31 21:00:00+01:00    52.44
     2020-12-31 22:00:00+01:00    51.86
     2020-12-31 23:00:00+01:00    52.26
@@ -289,12 +288,11 @@ def bpoframe2tseries(
 
     Parameters
     ----------
-    bpoframe : DataFrame 
-        Dataframe with values. Columns must include at least 2 of {'peak', 'offpeak', 
+    bpoframe : DataFrame
+        Dataframe with values. Columns must include at least 2 of {'peak', 'offpeak',
         'base'}. Datetimeindex with frequency in {'MS', 'QS', 'AS'}.
-    freq : str
-        Target frequency. One of {'H' (default) '15T'} for hourly or quarterhourly
-        index. 
+    freq : {'H' (hour, default) '15T' (quarterhour)}
+        Target frequency.
     prefix : str, optional (default: '')
         If specified, add this to the column names to search for in the provided dataframe.
 
@@ -308,8 +306,8 @@ def bpoframe2tseries(
     Can only be used for values that are 'averagable' over a time period, like power [MW]
     and price [Eur/MWh]. Not for e.g. energy [MWh], revenue [Eur], and duration [h].
 
-    In: 
-    
+    In:
+
                                 peak        offpeak
     ts_left
     2020-01-01 00:00:00+01:00   42.530036   30.614701
@@ -325,7 +323,7 @@ def bpoframe2tseries(
     2020-01-01 00:00:00+01:00    30.614701
     2020-01-01 01:00:00+01:00    30.614701
     2020-01-01 02:00:00+01:00    30.614701
-                                 ...  
+                                 ...
     2020-12-31 21:00:00+01:00    35.055449
     2020-12-31 22:00:00+01:00    35.055449
     2020-12-31 23:00:00+01:00    35.055449
@@ -351,28 +349,27 @@ def tseries2tseries(s: pd.Series, freq: str = "MS") -> pd.Series:
     ----------
     s : Series
         Timeseries with hourly or quarterhourly frequency.
-    freq : str
-        Target frequency for which peak and offpeak values will be uniform. One of 
-        {'MS' (default) 'QS', 'AS'} for uniformity within each month, quarter, or year.
+    freq : {'MS' (month, default) 'QS' (quarter), 'AS' (year)}
+        Target frequency within which peak and offpeak values will be uniform.
 
     Returns
     -------
     Series
         Timeseries where each peak hour within the target frequency has the same
         value. Idem for offpeak hours. Index: as original series.
-    
+
     Notes
     -----
     Can only be used for values that are 'averagable' over a time period, like power [MW]
     and price [Eur/MWh]. Not for e.g. energy [MWh], revenue [Eur], and duration [h].
-    
+
     In:
 
     ts_left
     2020-01-01 00:00:00+01:00    41.88
     2020-01-01 01:00:00+01:00    38.60
     2020-01-01 02:00:00+01:00    36.55
-                                 ...  
+                                 ...
     2020-12-31 21:00:00+01:00    52.44
     2020-12-31 22:00:00+01:00    51.86
     2020-12-31 23:00:00+01:00    52.26
@@ -384,7 +381,7 @@ def tseries2tseries(s: pd.Series, freq: str = "MS") -> pd.Series:
     2020-01-01 00:00:00+01:00    30.614701
     2020-01-01 01:00:00+01:00    30.614701
     2020-01-01 02:00:00+01:00    30.614701
-                                ...    
+                                ...
     2020-12-31 21:00:00+01:00    35.055449
     2020-12-31 22:00:00+01:00    35.055449
     2020-12-31 23:00:00+01:00    35.055449
@@ -416,12 +413,11 @@ def bpoframe2bpoframe(
 
     Parameters
     ----------
-    bpoframe : DataFrame 
-        Columns must include at least 2 of {'peak', 'offpeak', 'base'}. Datetimeindex 
+    bpoframe : DataFrame
+        Columns must include at least 2 of {'peak', 'offpeak', 'base'}. Datetimeindex
         with frequency in {'MS', 'QS', 'AS'}.
-    freq : str
-        Target frequency. One of {'MS', 'QS', 'AS' (default)} for month, quarter, or
-        year values. 
+    freq : {'MS' (month), 'QS' (quarter), 'AS' (year, default)}
+        Target frequency.
     prefix : str, optional (default: '')
         If specified, add this to the column names to search for in the provided dataframe
         (and to the column names in the returned dataframes).
@@ -437,7 +433,7 @@ def bpoframe2bpoframe(
     Can only be used for values that are 'averagable' over a time period, like power [MW]
     and price [Eur/MWh]. Not for e.g. energy [MWh], revenue [Eur], and duration [h].
 
-    In: 
+    In:
 
                                 base        peak        offpeak
     ts_left
@@ -463,4 +459,3 @@ def bpoframe2bpoframe(
         warn("This conversion includes upsampling, e.g. from yearly to monthly values.")
 
     return tseries2bpoframe(bpoframe2tseries(bpoframe, "H", prefix), freq, prefix)
-

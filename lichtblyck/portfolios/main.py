@@ -43,8 +43,7 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
 
     Parameters
     ----------
-    commodity : str
-        Commodity. One of {'power', 'gas'}.
+    commodity : {'power', 'gas'}
     pfname : str
         Portfolio name. See .PFNAMES for allowed values.
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
@@ -60,7 +59,7 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
     if commodity not in ("power", "gas"):
         raise ValueError("`commodity` must be 'power' or 'gas'.")
     if pfname not in PFNAMES[commodity]:
-        raise ValueError(f"`pfname` must be one of {', '.join(PFNAMES[commodity])}.")
+        raise ValueError(f"`pfname` must be one of {PFNAMES[commodity]}.")
 
     if commodity == "power":
 
