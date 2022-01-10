@@ -178,12 +178,12 @@ stepL = stepL.dropna()
 def factor(p_m: pd.DataFrame, freq="QS") -> pd.Series:
     """Calculate the factors to go from quarter or year prices to month prices.
 
-    tempriskameters
+    Parameters
     ----------
         p_m : pd.DataFrame
             bpoframe (pd.Dataframe with peak and offpeak columns) with monthly prices.
-        freq : str
-            frequency at which to calculate the factors; one of {'QS', 'AS'}
+        freq : {'QS' (quarters, default), 'AS' (years)}
+            Frequency at which to calculate the factors. 
     
     Returns
     -------

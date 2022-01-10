@@ -27,11 +27,10 @@ class PfLineHedge:
             Portfolio line with prices to be used in the hedge.
         how : str, optional (Default: 'val')
             Hedge-constraint. 'vol' for volumetric hedge, 'val' for value hedge.
-        freq : str, optional (Default: 'MS')
-            Frequency of hedging products. E.g. 'QS' to hedge with quarter products. One 
-            of {'D', 'MS', 'QS', 'AS'}.
+        freq : {'D' (days), 'MS' (months, default), 'QS' (quarters), 'AS' (years)}
+            Frequency of hedging products. E.g. 'QS' to hedge with quarter products.
         po : bool, optional
-            Type of hedging products. Set to True to split hedge into peak and offpeak. 
+            Type of hedging products. Set to True to split hedge into peak and offpeak.
             (Default: split if volume timeseries has hourly values or shorter.)
 
         Returns
@@ -69,8 +68,8 @@ class PfLineHedge:
 
         Parameters
         ----------
-        freq : str, optional (Default: "MS")
-            Frequency of resulting dataframe. One of {'MS', 'QS', 'AS'}.
+        freq : {'MS' (months, default), 'QS' (quarters), 'AS' (years)}
+            Frequency of resulting dataframe.
 
         Returns
         -------
@@ -115,9 +114,10 @@ class PfLineHedge:
         i = pd.MultiIndex.from_product([prods, ("duration", *self.available)])
         return df[i]
 
+
 class PfStateHedge:
     def hedge_of_unsourced(
-        self:PfState, how: str = "val", freq: str = "MS", po: bool = None
+        self: PfState, how: str = "val", freq: str = "MS", po: bool = None
     ) -> PfLine:
         """Hedge the unsourced volume, at unsourced prices in the portfolio.
 
@@ -133,14 +133,14 @@ class PfStateHedge:
         return self.unsourced.volume.hedge_width(self.unsourcedprice, how, freq, po)
 
     def source_unsourced(
-        self:PfState, how: str = "val", freq: str = "MS", po: bool = None
+        self: PfState, how: str = "val", freq: str = "MS", po: bool = None
     ) -> PfState:
         """Simulate PfState if unsourced volume is hedged and sourced at market prices.
-        
+
         See also
         --------
         .hedge_of_unsourced()
-        
+
         Returns
         -------
         PfState

@@ -1,4 +1,4 @@
-lichtblyck.core.output\_plot
+﻿lichtblyck.core.output\_plot
 ============================
 
 .. automodule:: lichtblyck.core.output_plot
@@ -14,7 +14,6 @@ lichtblyck.core.output\_plot
    .. autosummary::
    
       plot_pfstates
-      plot_pfstates_extra
    
    
 

@@ -76,9 +76,8 @@ def hedge(
         Price timeseries with same frequency.
     how : str, optional (Default: 'val')
         Hedge-constraint. 'vol' for volumetric hedge, 'val' for value hedge.
-    freq : str, optional (Default: 'MS')
-        Frequency of hedging products. E.g. 'QS' to hedge with quarter products. One 
-        of {'D', 'MS', 'QS', 'AS'}.
+    freq : {'D' (days), 'MS' (months, default), 'QS' (quarters), 'AS' (years)}
+        Frequency of hedging products. E.g. 'QS' to hedge with quarter products.
     po : bool, optional
         Type of hedging products. Set to True to split hedge into peak and offpeak. 
         (Default: split if volume timeseries has hourly values or shorter and hedging

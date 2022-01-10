@@ -15,16 +15,20 @@ DEFAULTTSNAMES_PER_COMMODITY = {  # commodity, ts, name or list of names.
         "wo": "#LB FRM Offtake - MW - incl subpf",
         "ws": (
             "#LB FRM Procurement/Forward - MW - incl subpf",
-            "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
-            "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
+            # "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
+            # "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
         ),
         "rs": (
             "#LB FRM Procurement/Forward - EUR (contract) - incl subpf",
-            "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
-            "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
+        # "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
+            # "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
         ),
     },
-    "gas": {"wo": "", "ws": "", "rs": "",},
+    "gas": {
+        "wo": "",
+        "ws": "",
+        "rs": "",
+    },
 }
 TSNAMES_PER_COMMODITY_AND_PF = {  # commodity, pfid, ts, name or list of names. All allowed portfolios must have a key here.
     "power": {
@@ -96,7 +100,7 @@ def _series(commodity, pfid, ts, ts_left, ts_right):
         tsnames = (tsnames,)  # turn into (1-element-) iterable
     series = []
     for tsname in tsnames:
-        _print_status(f'. {tsname}')
+        _print_status(f". {tsname}")
         tsid = connector.find_tsid(commodity, pfid, tsname, strict=True)
         series.append(connector.series(commodity, tsid, ts_left, ts_right))
     return frames.set_ts_index(sum(series), bound="right")
@@ -142,7 +146,6 @@ def sourced(
     Parameters
     ----------
     commodity : {'power', 'gas'}
-        Commodity. One of {'power', 'gas'}.
     pfid : str
         Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
@@ -175,7 +178,6 @@ def unsourcedprice(
     Parameters
     ----------
     commodity : {'power', 'gas'}
-        Commodity for which to get the market prices. One of {'power', 'gas'}.
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
         Start of delivery period.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
@@ -205,8 +207,7 @@ def pfstate(
 
     Parameters
     ----------
-    commodity : {'power', 'gas'}, 
-        Commodity. One of {'power', 'gas'}
+    commodity : {'power', 'gas'}
     pfid : str
         Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
@@ -242,4 +243,3 @@ PfState.from_belvis = pfstate
 PfLine.from_belvis_offtakevolume = offtakevolume
 PfLine.from_belvis_sourced = sourced
 PfLine.from_belvis_forwardpricecurve = unsourcedprice
-
