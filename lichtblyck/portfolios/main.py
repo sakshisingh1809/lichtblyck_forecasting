@@ -4,10 +4,17 @@ from ..core.pfstate import PfState
 from ..core.pfline import PfLine
 from .. import belvis  # to add functionality to pfline and pfstate
 import pandas as pd
-import datetime as dt
 
+# Mapping of belvis portfolios onto 'useful' portfolios.
+#
+# Some corrections/calculations are needed, and because power and gas are not implemented
+# equally, the mapping dictionaries for power and gas have distinct structures.
 
-POWER_ORIGINAL = {  # pf-name: {'offtake': {'100%': (), 'certain', ()} 'sourced': ()}
+# . For original power portfolios (as found in Belvis):
+#   POWER_ORIGINAL:
+#       pf-name: {'offtake': {'100%': Iterable, 'certain', Iterable} 'sourced': Iterable}
+#   The iterable elements are portfolio abbreviations in Belvis and must be present in lichtblyck.belvis.data
+POWER_ORIGINAL = {
     "PKG": {"offtake": {"100%": ("PKG",), "certain": ("PK_SiM",)}, "sourced": ("PKG",)},
     "NSP": {"offtake": {"100%": ("NSp",), "certain": ("NSp",)}, "sourced": ("NSp",)},
     "WP": {"offtake": {"100%": ("WP",), "certain": ("WP",)}, "sourced": ("WP",)},
@@ -24,17 +31,30 @@ POWER_ORIGINAL = {  # pf-name: {'offtake': {'100%': (), 'certain', ()} 'sourced'
         "sourced": ("LUD_WP",),
     },
 }
-POWER_COMBINED = {  # pf-name: (pf-names in POWER_ORIGINAL)
+
+# . For synthetic power portfolios (not found in Belvis):
+#   POWER_SYNTHETIC:
+#       pf-name: Iterable
+#   The iterable elements are pf-names in POWER_ORIGINAL
+POWER_SYNTHETIC = {  # pf-name: (pf-names in POWER_ORIGINAL)
     "B2C_P2H": ("NSP", "WP", "LUD_NSP", "LUD_WP"),
     "B2C_HH": ("PKG", "LUD_STG"),
 }
 
+# . For original gas portfolios (as found in Belvis):
+#   GAS_ORIGINAL:
+#       pf-name: {}
+GAS_ORIGINAL = {"SBK1": "SBK1_G", "SBK6": "SBK6_G"}
 
-GAS = {}
+# . For synthetic gas portfolios (not found in Belvis):
+#   GAS_SYNTHETIC:
+#       pf-name: Iterable
+#   The iterable elements are pf-names in GAS_ORIGINAL
+GAS_SYNTHETIC = {"B2C_Legacy": ("SBK1", "SBK6")}
 
 PFNAMES = {
-    "power": [*POWER_ORIGINAL.keys(), *POWER_COMBINED.keys()],
-    "gas": [*GAS.keys()],
+    "power": [*POWER_ORIGINAL.keys(), *POWER_SYNTHETIC.keys()],
+    "gas": [*GAS_ORIGINAL.keys(), *GAS_SYNTHETIC.keys()],
 }
 
 
@@ -62,33 +82,48 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
         raise ValueError(f"`pfname` must be one of {PFNAMES[commodity]}.")
 
     if commodity == "power":
+        return pfstate_power(pfname, ts_left, ts_right)
+    else:
+        return pfstate_gas(pfname, ts_left, ts_right)
 
-        # Portfolio is sum of several portfolios.
-        if (pfnames := POWER_COMBINED.get(pfname)) :
-            return sum(pfstate(commodity, pfn, ts_left, ts_right) for pfn in pfnames)
 
-        # Portfolio is original portfolio.
-        pf_dic = POWER_ORIGINAL[pfname]
-        # Offtake: combine two curves.
-        offtakevolume_100 = sum(
-            belvis.data.offtakevolume(commodity, pfid, ts_left, ts_right)
-            for pfid in pf_dic["offtake"]["100%"]
-        )
-        offtakevolume_certain = sum(
-            belvis.data.offtakevolume(commodity, pfid, ts_left, ts_right)
-            for pfid in pf_dic["offtake"]["certain"]
-        )
-        now = pd.Timestamp.now().tz_localize("Europe/Berlin").floor("D")
-        cutoff = now + pd.Timedelta(days=4)
-        df1 = offtakevolume_100.df()[offtakevolume_100.index < cutoff]
-        df2 = offtakevolume_certain.df()[offtakevolume_certain.index >= cutoff]
-        offtakevolume = PfLine(pd.concat([df1, df2]).w)
-        # Sourced.
-        sourced = sum(
-            belvis.data.sourced(commodity, pfid, ts_left, ts_right)
-            for pfid in pf_dic["sourced"]
-        )
-        # Unsourcedprice.
-        unsourcedprice = belvis.data.unsourcedprice(commodity, ts_left, ts_right)
-        # Combine.
-        return PfState(offtakevolume, unsourcedprice, sourced)
+def pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
+    commodity = "power"
+
+    # Portfolio is sum of several portfolios.
+    if pfnames := POWER_SYNTHETIC.get(pfname):
+        return sum(pfstate_power(pfn, ts_left, ts_right) for pfn in pfnames)
+
+    # Portfolio is original portfolio.
+    pf_dic = POWER_ORIGINAL[pfname]
+    # Offtake: combine two curves.
+    offtakevolume_100 = sum(
+        belvis.data.offtakevolume(commodity, pfid, ts_left, ts_right)
+        for pfid in pf_dic["offtake"]["100%"]
+    )
+    offtakevolume_certain = sum(
+        belvis.data.offtakevolume(commodity, pfid, ts_left, ts_right)
+        for pfid in pf_dic["offtake"]["certain"]
+    )
+    now = pd.Timestamp.now().tz_localize("Europe/Berlin").floor("D")
+    cutoff = now + pd.Timedelta(days=4)
+    df1 = offtakevolume_100.df()[offtakevolume_100.index < cutoff]
+    df2 = offtakevolume_certain.df()[offtakevolume_certain.index >= cutoff]
+    offtakevolume = PfLine(pd.concat([df1, df2]).w)
+    # Sourced.
+    sourced = sum(
+        belvis.data.sourced(commodity, pfid, ts_left, ts_right)
+        for pfid in pf_dic["sourced"]
+    )
+    # Unsourcedprice.
+    unsourcedprice = belvis.data.unsourcedprice(commodity, ts_left, ts_right)
+    # Combine.
+    return PfState(offtakevolume, unsourcedprice, sourced)
+
+
+def pfstate_gas(pfname: str, ts_left, ts_right) -> PfState:
+    commodity = "gas"
+
+    # Portfolio is sum of several portfolios.
+    if pfnames := GAS_SYNTHETIC.get(pfname):
+        return sum(pfstate_gas(pfn, ts_left, ts_right) for pfn in pfnames)

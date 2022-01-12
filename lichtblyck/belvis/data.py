@@ -20,7 +20,7 @@ DEFAULTTSNAMES_PER_COMMODITY = {  # commodity, ts, name or list of names.
         ),
         "rs": (
             "#LB FRM Procurement/Forward - EUR (contract) - incl subpf",
-        # "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
+            # "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
             # "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
         ),
     },
@@ -47,7 +47,11 @@ TSNAMES_PER_COMMODITY_AND_PF = {  # commodity, pfid, ts, name or list of names. 
         "GK": {},
         "SBSG": {},
     },
-    "gas": {"SKK9_G": {"wo": "#LB PFMG Absatz SBK9 Gesamt"}, "SK": {}},
+    "gas": {
+        "SBK1_G": {"wo": "#LB PFMG Absatz SBK1 Gesamt"},
+        "SBK6_G": {"wo": "#LB PFMG Absatz SBK6 Gesamt"},
+        "SBK9_G": {"wo": "#LB PFMG Absatz SBK9 Gesamt"},
+    },
 }
 # For unsourced prices: portfolio id and timeseries name.
 PFID_AND_TSNAME_FOR_PU = {
