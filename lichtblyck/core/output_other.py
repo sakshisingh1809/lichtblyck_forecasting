@@ -10,14 +10,12 @@ import functools
 
 if TYPE_CHECKING:  # needed to avoid circular imports
     from .pfstate import PfState
-    from .pfline import PfLine
+    from .pfline.pfline____archive import PfLine
 
 
-
-class OtherOutput: # for both PfLine and PfState
-
+class OtherOutput:  # for both PfLine and PfState
     @functools.wraps(pd.DataFrame.to_clipboard)
-    def to_clipboard(self:PfLine, *args, **kwargs) -> None:
+    def to_clipboard(self: PfLine, *args, **kwargs) -> None:
         self.df().pint.dequantify().to_clipboard(*args, **kwargs)
 
     @functools.wraps(pd.DataFrame.to_excel)

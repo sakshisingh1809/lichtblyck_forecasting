@@ -1,7 +1,7 @@
 """Module that uses connection to Belvis to generate PfLine and PfState objects."""
 
 from ..tools import stamps, frames
-from ..core.pfline import PfLine
+from ..core.pfline.single import SinglePfLine
 from ..core.pfstate import PfState
 from . import connector
 from typing import Union, Tuple
@@ -20,7 +20,7 @@ DEFAULTTSNAMES_PER_COMMODITY = {  # commodity, ts, name or list of names.
         ),
         "rs": (
             "#LB FRM Procurement/Forward - EUR (contract) - incl subpf",
-        # "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
+            # "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
             # "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
         ),
     },

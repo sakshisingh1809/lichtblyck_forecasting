@@ -4,7 +4,7 @@ Code to quickly get objects for testing.
 
 from typing import Dict
 from ..tools.nits import ureg, PA_, name2unit
-from .pfline import PfLine
+from .pfline.pfline____archive import PfLine
 from .pfstate import PfState
 import pandas as pd
 import numpy as np
@@ -40,7 +40,7 @@ def get_dataframe(
     min={"w": 100, "q": 1000, "p": 40, "r": 40_000},
     max={"w": 150, "q": 1500, "p": 80, "r": 120_000},
 ) -> pd.DataFrame:
-    """Get DataFrame with index `i` and columns `columns`. Columns (e.g. `q` and `w`) 
+    """Get DataFrame with index `i` and columns `columns`. Columns (e.g. `q` and `w`)
     are not made consistent."""
     if i is None:
         i = get_index()

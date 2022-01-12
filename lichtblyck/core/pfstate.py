@@ -5,7 +5,9 @@ certain moment in time (e.g., at the current moment, without any historic data).
 
 from __future__ import annotations
 
-from .pfline import PfLine
+
+from .pfstate_prep import make_pflines
+from .pfline.pfline____archive import PfLine
 from .output_text import PfStateTextOutput
 from .output_plot import PfStatePlotOutput
 from .output_other import OtherOutput
@@ -16,63 +18,10 @@ import pandas as pd
 import warnings
 
 
-def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
-    """Take offtake, unsourced, sourced information. Do some data massaging and return
-    3 PfLines: for offtake volume, unsourced price, and sourced price and volume."""
-
-    # Make sure unsourced and offtake are specified.
-    if offtakevolume is None or unsourcedprice is None:
-        raise ValueError("Must specify offtake volume and unsourced prices.")
-
-    # Offtake volume.
-    if isinstance(offtakevolume, pd.Series) or isinstance(offtakevolume, pd.DataFrame):
-        offtakevolume = PfLine(offtakevolume)  # using column names or series names
-    if isinstance(offtakevolume, PfLine):
-        if offtakevolume.kind == "p":
-            raise ValueError("Must specify offtake volume.")
-        elif offtakevolume.kind == "all":
-            warnings.warn("Offtake also contains price infomation; this is discarded.")
-            offtakevolume = offtakevolume.volume
-
-    # Unsourced prices.
-    if isinstance(unsourcedprice, pd.Series):
-        if unsourcedprice.name and unsourcedprice.name  in "qwr":
-            ValueError("Name implies this is not a price timeseries.")
-        elif unsourcedprice.name != "p":
-            warnings.warn("Will assume prices, even though series name is not 'p'.")
-            unsourcedprice.name = "p"
-        unsourcedprice = PfLine(unsourcedprice)
-    elif isinstance(unsourcedprice, pd.DataFrame):
-        unsourcedprice = PfLine(unsourcedprice)  # using column names or series names
-
-    if isinstance(unsourcedprice, PfLine):
-        if unsourcedprice.kind == "q":
-            raise ValueError("Must specify unsourced prices.")
-        elif unsourcedprice.kind == "all":
-            warnings.warn(
-                "Unsourced also contains volume infomation; this is discarded."
-            )
-            unsourcedprice = unsourcedprice.price
-
-    # Sourced volume and prices.
-    if sourced is None:
-        i = offtakevolume.index.union(unsourcedprice.index)  # largest possible index
-        sourced = PfLine(pd.DataFrame({"q": 0, "r": 0}, i))
-
-    # Do checks on indices. Lengths may differ, but frequency should be equal.
-    indices = [
-        obj.index for obj in (offtakevolume, unsourcedprice, sourced) if obj is not None
-    ]
-    if len(set([i.freq for i in indices])) != 1:
-        raise ValueError("PfLines have unequal frequency; resample first.")
-
-    return offtakevolume, unsourcedprice, sourced
-
-
 class PfState(
     PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmatic, PfStateHedge
 ):
-    """Class to hold timeseries information of an energy portfolio, at a specific moment. 
+    """Class to hold timeseries information of an energy portfolio, at a specific moment.
 
     Parameters
     ----------
@@ -104,15 +53,15 @@ class PfState(
     pnl_costs : PfLine ('all')
         The expected costs needed to source the offtake volume; the sum of the sourced
         and unsourced positions.
-        
+
     # index : pandas.DateTimeIndex
     #     Left timestamp of row.
 
     Notes
     -----
-    Sign conventions: 
+    Sign conventions:
     . Volumes (`q`, `w`): >0 if volume flows into the portfolio.
-    . Revenues (`r`): >0 if money flows out of the portfolio (i.e., costs).  
+    . Revenues (`r`): >0 if money flows out of the portfolio (i.e., costs).
     . Prices (`p`): normally positive.
     """
 
@@ -141,7 +90,7 @@ class PfState(
             `rs` [Eur]
             `ps` [Eur/MWh]
             If no volume has been sourced, all 4 sourced timeseries may be None.
-        
+
         Returns
         -------
         PfState
@@ -159,7 +108,7 @@ class PfState(
         sourced: Optional[PfLine],
     ):
         # The only internal data of this class is stored as PfLines.
-        self._offtakevolume, self._unsourcedprice, self._sourced = _make_pflines(
+        self._offtakevolume, self._unsourcedprice, self._sourced = make_pflines(
             offtakevolume, unsourcedprice, sourced
         )
 
@@ -228,7 +177,7 @@ class PfState(
         freq : str, optional
             The frequency at which to resample. 'AS' for year, 'QS' for quarter, 'MS'
             (default) for month, 'D for day', 'H' for hour, '15T' for quarterhour.
-        
+
         Returns
         -------
         PfState
@@ -258,4 +207,3 @@ class PfState(
         return all(
             [self[part] == other[part] for part in ["offtake", "unsourced", "sourced"]]
         )
-

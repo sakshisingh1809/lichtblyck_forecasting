@@ -10,7 +10,8 @@ from . import prices
 
 from .core import dev
 from .core import basics  # extend functionalty of pandas
-from .core.pfline import PfLine
+from .core.pfline.single import SinglePfLine
+from .core.pfline.multi import MultiPfLine
 from .core.pfstate import PfState
 from .core.output_plot import plot_pfstates
 

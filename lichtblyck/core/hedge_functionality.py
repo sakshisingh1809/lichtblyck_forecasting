@@ -12,7 +12,7 @@ import pandas as pd
 
 if TYPE_CHECKING:  # needed to avoid circular imports
     from .pfstate import PfState
-    from .pfline import PfLine
+    from .pfline.pfline____archive import PfLine
 
 
 class PfLineHedge:

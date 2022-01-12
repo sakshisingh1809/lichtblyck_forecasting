@@ -1,7 +1,7 @@
 """Module to set up the portfolios as they are used and reported."""
 
 from ..core.pfstate import PfState
-from ..core.pfline import PfLine
+from ..core.pfline.pfline____archive import PfLine
 from .. import belvis  # to add functionality to pfline and pfstate
 import pandas as pd
 import datetime as dt
@@ -64,7 +64,7 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
     if commodity == "power":
 
         # Portfolio is sum of several portfolios.
-        if (pfnames := POWER_COMBINED.get(pfname)) :
+        if pfnames := POWER_COMBINED.get(pfname):
             return sum(pfstate(commodity, pfn, ts_left, ts_right) for pfn in pfnames)
 
         # Portfolio is original portfolio.

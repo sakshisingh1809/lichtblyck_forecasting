@@ -16,7 +16,7 @@
 # . . pflines having same or different frequency
 # . . pflines covering same or different time periods
 
-from lichtblyck.core.pfline import PfLine, _make_df
+from lichtblyck.core.pfline.pfline____archive import PfLine, _make_df
 from lichtblyck.core import dev
 from lichtblyck.tools.frames import set_ts_index
 import pandas as pd
@@ -268,7 +268,8 @@ def test_pfline_unequaltimeperiods(freq, choice):
 @pytest.mark.parametrize("tz", ["Europe/Berlin", None])
 @pytest.mark.parametrize("freq", ["MS", "D"])
 @pytest.mark.parametrize(
-    "columns", np.random.choice(["w", "q", "pr", "qr", "pq", "wp", "wr"]),
+    "columns",
+    np.random.choice(["w", "q", "pr", "qr", "pq", "wp", "wr"]),
 )
 def test_pfline_init(tz, freq, columns):
 
@@ -294,7 +295,8 @@ def test_pfline_consistency():
 @pytest.mark.parametrize("tz", ["Europe/Berlin", None])
 @pytest.mark.parametrize("freq", ["MS", "D"])
 @pytest.mark.parametrize(
-    "columns", np.random.choice(["w", "q", "pr", "qr", "pq", "wp", "wr"]),
+    "columns",
+    np.random.choice(["w", "q", "pr", "qr", "pq", "wp", "wr"]),
 )
 def test_df(tz, freq, columns):
     i = dev.get_index(tz, freq)
@@ -309,7 +311,8 @@ def test_df(tz, freq, columns):
 @pytest.mark.parametrize("freq", np.random.choice("MS", 3, False))
 @pytest.mark.parametrize("newfreq", np.random.choice("QS", 3, False))
 @pytest.mark.parametrize(
-    "columns", np.random.choice(["pr", "qr", "pq", "wp", "wr"]),
+    "columns",
+    np.random.choice(["pr", "qr", "pq", "wp", "wr"]),
 )
 def test_changefreq(freq, newfreq, columns):
     df = dev.get_dataframe(dev.get_index("Europe/Berlin", freq), columns)

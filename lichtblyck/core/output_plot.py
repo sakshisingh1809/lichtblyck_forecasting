@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 if TYPE_CHECKING:  # needed to avoid circular imports
     from .pfstate import PfState
-    from .pfline import PfLine
+    from .pfline.abc import PfLine
 
 DEFAULTPLOTTYPES = {"r": "bar", "q": "bar", "p": "step", "w": "line"}
 
@@ -55,7 +55,12 @@ class PfLinePlotOutput:
         """
         cols = [col for col in cols if col in self.available]
         fig, axes = plt.subplots(
-            len(cols), 1, True, False, squeeze=False, figsize=(10, len(cols) * 3)
+            len(cols),
+            1,
+            sharex=True,
+            sharey=False,
+            squeeze=False,
+            figsize=(10, len(cols) * 3),
         )
 
         for col, ax in zip(cols, axes.flatten()):

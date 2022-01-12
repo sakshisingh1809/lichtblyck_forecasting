@@ -10,7 +10,7 @@ from ..tools.frames import wavg
 
 if TYPE_CHECKING:  # needed to avoid circular imports
     from .pfstate import PfState
-    from .pfline import PfLine
+    from .pfline.pfline____archive import PfLine
 
 
 def is_dimensionless_value(value):
@@ -143,7 +143,7 @@ class PfLineArithmatic:
                     "Cannot add portfolio lines of unequal frequency."
                 )
             # Get addition and keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
-            dfs = [pfl.df(pfl._summable) for pfl in [self, other]]
+            dfs = [pfl.df(pfl.summable) for pfl in [self, other]]
             df = sum(dfs).dropna().resample(self.index.freq).asfreq()
             return self.__class__(df)
 
