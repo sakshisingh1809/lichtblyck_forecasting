@@ -144,6 +144,10 @@ class PfLine(ABC):
         """Attributes/columns that are available. One of {'wq', 'p', 'wqpr'}."""
         return {"p": "p", "q": "wq", "all": "wqpr"}[self.kind]
 
+    def flatten(self) -> SinglePfLine:
+        """Return flat instance, i.e., without children."""
+        return SinglePfLine(self)
+
     @property
     def volume(self) -> SinglePfLine:
         """Return (flattened) volume-only PfLine."""

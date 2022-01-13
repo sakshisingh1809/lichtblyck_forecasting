@@ -1,18 +1,21 @@
-"""Module to create multi-pflines. These behave exactly as single-pflines, with all the 
+"""
+Module to create multi-pflines. These behave exactly as single-pflines, with all the 
 same methods. But which include several Pflines as children that can be accessed by 
-their name."""
+their name.
+"""
 
-
-from typing import Dict, Iterable
+from __future__ import annotations
 from .abc import PfLine
+from .multi_helper import make_childrendict
+from typing import Dict, Iterable, Mapping, Union
 import pandas as pd
 
 
-def MultiPfLine(PfLineABC):
-    def __init__(self, children: Dict[str, PfLine]):
-        self._children = (
-            children  # TODO: check if all same kind, reduce index to common index, etc.
-        )
+class MultiPfLine(PfLine):
+    def __init__(self, data: Union[MultiPfLine, Mapping[str, PfLine]]):
+        self._children = make_childrendict(data)
+
+    # Implementation of ABC methods.
 
     @property
     def children(self) -> Dict[str, PfLine]:

@@ -1,9 +1,9 @@
-"""Verify input data and turn into object at core of PfLine instance."""
+"""Verify input data and turn into object needed in SinglePfLine instantiation."""
 
 from __future__ import annotations
-
 from .abc import PfLine
 from ...tools.frames import set_ts_index
+from ...tools import nits
 from typing import Dict, Optional
 import pandas as pd
 import numpy as np
@@ -32,8 +32,8 @@ def data_to_wqpr_series(data) -> pd.DataFrame:
     if not isinstance(data, PfLine):
         # Turn into dataframe...
         data = dict_to_dataframe(data) if isinstance(data, Dict) else pd.DataFrame(data)
-        # ... with certain specifics.
-        dat = set_ts_index(data)
+        # ... in certain standard form.
+        data = set_ts_index(data)
 
     # Get timeseries and add unit.
     def series_or_none(obj, col):  # remove series that are passed but only contain na
