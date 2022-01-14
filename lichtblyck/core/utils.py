@@ -59,8 +59,10 @@ def concat(dfs: Iterable, axis: int = 0, *args, **kwargs) -> pd.DataFrame:
 
 
 def _changefreq_general(fr: NDFrame, freq: str = "MS", is_summable: bool = True):
-    """Change frequency of a Series or DataFrame, depending on the type of data it 
+    """Change frequency of a Series or DataFrame, depending on the type of data it
     contains."""
+
+    # TODO: Make sure result has correct dtype (currently float -> object sometimes)
 
     # Some resampling labels are right-bound by default. Change to make left-bound.
     if freq in ["M", "A", "Q"]:
@@ -138,9 +140,9 @@ def changefreq_sum(fr: NDFrame, freq: str = "MS") -> NDFrame:
     Notes
     -----
     A 'time-summable' quantity is one that can be summed to get to an aggregate
-    value, like revenue [Eur] or energy [MWh]. Prices [Eur/MWh] and powers [MW] 
+    value, like revenue [Eur] or energy [MWh]. Prices [Eur/MWh] and powers [MW]
     are not time-summable.
-    
+
     Returns
     -------
     DataFrame or Series
@@ -167,7 +169,7 @@ def changefreq_avg(fr: NDFrame, freq: str = "MS") -> NDFrame:
 
     Notes
     -----
-    A 'time-averagable' quantity is one that can be averaged to an aggregate value, 
-    like power [MW]. When downsampling, the values are weighted with their duration.    
+    A 'time-averagable' quantity is one that can be averaged to an aggregate value,
+    like power [MW]. When downsampling, the values are weighted with their duration.
     """
     return _changefreq_general(fr, freq, False)
