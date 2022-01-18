@@ -18,7 +18,7 @@ if TYPE_CHECKING:  # needed to avoid circular imports
 DEFAULTPLOTTYPES = {"r": "bar", "q": "bar", "p": "step", "w": "line"}
 
 
-class PfLinePlotOutput:
+class PfLinePlot:
     def plot_to_ax(self: PfLine, ax: plt.Axes, col: str = None, **kwargs) -> None:
         """Plot a timeseries of the PfLine to a specific axes.
 
@@ -69,7 +69,7 @@ class PfLinePlotOutput:
         return fig
 
 
-class PfStatePlotOutput:
+class PfStatePlot:
     def plot_to_ax(
         self: PfState, ax: plt.Axes, line: str = "offtake", col: str = None, **kwargs
     ) -> None:

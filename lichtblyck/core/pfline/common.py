@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Union
 from . import single  # cannot be from .single import SinglePfLine -> circular imports
 from .base import PfLine
 from ..mixins import (
-    PfLinePlotOutput,
+    PfLineText,
+    PfLinePlot,
     PfLineArithmatic,
-    PfLineTextOutput,
     PfLineHedge,
     OtherOutput,
 )
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 
 
 class PfLineCommon(
-    PfLineTextOutput,
-    PfLinePlotOutput,
+    PfLineText,
+    PfLinePlot,
     PfLineArithmatic,
     PfLineHedge,
     OtherOutput,

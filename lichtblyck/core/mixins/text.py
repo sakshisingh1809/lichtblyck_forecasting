@@ -338,7 +338,7 @@ def df_of_strings(df) -> pd.DataFrame:
     return str_df
 
 
-class PfStateTextOutput:
+class PfStateText:
     def _as_str(
         self: PfState,
         time_axis: int = 0,

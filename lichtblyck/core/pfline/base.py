@@ -79,6 +79,10 @@ class NDFrameLike(ABC):
         a boolean array.)"""
         ...
 
+    @abstractmethod
+    def __eq__(self, other) -> bool:
+        ...
+
 
 class PfLine(NDFrameLike, Mapping):
     """Class to hold a related energy timeseries. This can be volume timeseries with q
@@ -105,25 +109,25 @@ class PfLine(NDFrameLike, Mapping):
     @property
     @abstractmethod
     def w(self) -> pd.Series:
-        """(Flattened) power timeseries [MW]."""
+        """(Flattened) power timeseries in [MW]."""
         ...
 
     @property
     @abstractmethod
     def q(self) -> pd.Series:
-        """(Flattened) energy timeseries [MWh]."""
+        """(Flattened) energy timeseries in [MWh]."""
         ...
 
     @property
     @abstractmethod
     def p(self) -> pd.Series:
-        """(Flattened) price timeseries [Eur/MWh]."""
+        """(Flattened) price timeseries in [Eur/MWh]."""
         ...
 
     @property
     @abstractmethod
     def r(self) -> pd.Series:
-        """(Flattened) revenue timeseries [Eur]."""
+        """(Flattened) revenue timeseries in [Eur]."""
         ...
 
     @property
@@ -132,9 +136,12 @@ class PfLine(NDFrameLike, Mapping):
         """Kind of data that is stored in the instance. Possible values:
         - 'q': volume data only; properties .q [MWh] and .w [MW] are available.
         - 'p': price data only; property .p [Eur/MWh] is available.
-        - 'all': price and volume data; properties .q [MWh], .w [MW], .p [Eur/MWh], .r [Eur] are available.
+        - 'all': price and volume data; properties .q [MWh], .w [MW], .p [Eur/MWh], .r
+          [Eur] are available.
         """
         ...
+
+    # Implemented directly at ABC.
 
     # Iterating over children.
 

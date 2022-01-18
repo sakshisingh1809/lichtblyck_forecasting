@@ -146,7 +146,7 @@ def pfl_as_string(pfl: PfLine, flatten: bool, num_of_ts: int, color: bool) -> st
     return txt if color else _remove_color(txt)
 
 
-class PfLineTextOutput:
+class PfLineText:
     __repr__ = lambda self: pfl_as_string(self, True, 20, False)
 
     def print(

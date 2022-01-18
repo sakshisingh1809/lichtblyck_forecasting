@@ -98,7 +98,7 @@ class SinglePfLine(PfLine, PfLineCommon):
 
 
 class _LocIndexer:
-    """Helper class to obtain subset of the PfLine index."""
+    """Helper class to obtain SinglePfLine instance, whose index is subset of original index."""
 
     def __init__(self, spfl):
         self.spfl = spfl

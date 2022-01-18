@@ -134,7 +134,7 @@ class MultiPfLine(PfLine, PfLineCommon):
 
 
 class _LocIndexer:
-    """Helper class to obtain subset of the PfLine index."""
+    """Helper class to obtain MultiPfLine instance, whose index is subset of original index."""
 
     def __init__(self, mpfl):
         self.mpfl = mpfl

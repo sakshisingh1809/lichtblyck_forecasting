@@ -6,14 +6,14 @@ certain moment in time (e.g., at the current moment, without any historic data).
 from __future__ import annotations
 
 
-from .pfstate_prep import make_pflines
-from .pfline import PfLine
-from .mixins import (
-    PfStateTextOutput,
-    PfStatePlotOutput,
-    OtherOutput,
+from .pfstate_helper import make_pflines
+from ..pfline import PfLine, NDFrameLike
+from ..mixins import (
+    PfStateText,
+    PfStatePlot,
     PfStateArithmatic,
     PfStateHedge,
+    OtherOutput,
 )
 from typing import Optional, Iterable, Union
 import pandas as pd
@@ -21,7 +21,12 @@ import warnings
 
 
 class PfState(
-    PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmatic, PfStateHedge
+    NDFrameLike,
+    PfStateText,
+    PfStatePlot,
+    PfStateArithmatic,
+    PfStateHedge,
+    OtherOutput,
 ):
     """Class to hold timeseries information of an energy portfolio, at a specific moment.
 
@@ -115,6 +120,10 @@ class PfState(
         )
 
     @property
+    def index(self) -> pd.DatetimeIndex:
+        return self._offtakevolume.index
+
+    @property
     def offtake(self) -> PfLine:
         return self._offtakevolume
 
@@ -204,8 +213,27 @@ class PfState(
     #     return len(self) != 0
 
     def __eq__(self, other):
-        if not isinstance(other, PfState):
+        if not isinstance(other, self.__class__):
             return False
         return all(
             [self[part] == other[part] for part in ["offtake", "unsourced", "sourced"]]
         )
+
+    @property
+    def loc(self) -> _LocIndexer:
+        return _LocIndexer(self)
+
+    # Additional methods, unique to this class.
+
+
+class _LocIndexer:
+    """Helper class to obtain PfState instance, whose index is subset of original index."""
+
+    def __init__(self, pfs):
+        self.pfs = pfs
+
+    def __getitem__(self, arg) -> PfState:
+        offtakevolume = self.offtake.loc[arg]
+        unsourcedprice = self.unsourcedprice.loc[arg]
+        sourced = self.sourced.loc[arg]
+        return PfState(offtakevolume, unsourcedprice, sourced)
