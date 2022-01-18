@@ -6,7 +6,7 @@ Dataframe-like class to hold general energy-related timeseries; either volume ([
 import functools
 from typing import Dict, Iterable, Union
 from __future__ import annotations
-from .abc import PfLine
+from .base import PfLine
 from ..dunder_arithmatic import PfLineArithmatic
 from ..hedge_functionality import PfLineHedge
 from ..output_other import OtherOutput

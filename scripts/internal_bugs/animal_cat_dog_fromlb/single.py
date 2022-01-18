@@ -4,17 +4,15 @@ Dataframe-like class to hold general energy-related timeseries; either volume ([
 """
 
 from __future__ import annotations
+from base import PFL
 
-from .base import PfLine
-from .common import PfLineCommon
-from .single_helper import make_dataframe
-from ..utils import changefreq_sum
+from lichtblyck.core.utils import changefreq_sum
 from typing import Dict, Iterable, Union
 import pandas as pd
 import numpy as np
 
 
-class SinglePfLine(PfLine, PfLineCommon):
+class SPFL(PFL):
     """Portfolio line without children. Has a single dataframe; .children is the empty
     dictionary.
 
@@ -26,8 +24,10 @@ class SinglePfLine(PfLine, PfLineCommon):
         PfLine object.
     """
 
-    def __init__(self, data: Union[PfLine, Dict, pd.DataFrame, pd.Series]):
-        self._df = make_dataframe(data)
+    def __init__(self, data: Union[PFL, Dict, pd.DataFrame, pd.Series]):
+        self._df = pd.DataFrame(
+            np.random.rand(4, 4), index=[2022, 2023, 2024, 2025], columns=list("qwrp")
+        )
 
     # Implementation of ABC methods.
 
@@ -41,30 +41,27 @@ class SinglePfLine(PfLine, PfLineCommon):
 
     @property
     def w(self) -> pd.Series:
-        if self.kind == "p":
+        if "q" not in self.available:
             return pd.Series(np.nan, self.index, name="w", dtype="pint[MW]")
-        else:
-            return pd.Series(self.q / self.index.duration, name="w").pint.to("MW")
+        return pd.Series(self.q / self.index.duration, name="w").pint.to("MW")
 
     @property
     def q(self) -> pd.Series:
-        if self.kind == "p":
+        if "q" not in self.available:
             return pd.Series(np.nan, self.index, name="q", dtype="pint[MWh]")
-        else:
-            return self._df["q"]
+        return self._df["q"]
 
     @property
     def p(self) -> pd.Series:
-        if self.kind == "q":
+        if "p" not in self.available:
             return pd.Series(np.nan, self.index, name="p", dtype="pint[Eur/MWh]")
-        elif self.kind == "all":
-            return pd.Series(self.r / self.q, name="p").pint.to("Eur/MWh")
-        else:  # self.kind == 'p'
+        if self.kind == "p":
             return self._df["p"]
+        return pd.Series(self.r / self.q, name="p").pint.to("Eur/MWh")
 
     @property
     def r(self) -> pd.Series:
-        if self.kind != "all":
+        if "r" not in self.available:
             return pd.Series(np.nan, self.index, name="r", dtype="pint[Eur]")
         return self._df["r"]
 
@@ -74,27 +71,19 @@ class SinglePfLine(PfLine, PfLineCommon):
             return "all" if ("r" in self._df or "p" in self._df) else "q"
         if "p" in self._df:
             return "p"
-        raise ValueError(f"Unexpected value for ._df: {self._df}.")
+        raise ValueError("Unexpected value for ._df.")
 
-    def df(self, cols: Iterable[str] = None, *args, **kwargs) -> pd.DataFrame:
-        # *args, **kwargs needed because base class has this signature.
+    def df(self, cols: Iterable[str] = None) -> pd.DataFrame:
         if cols is None:
             cols = self.available
         return pd.DataFrame({col: self[col] for col in cols})
 
-    def changefreq(self, freq: str = "MS") -> SinglePfLine:
-        return SinglePfLine(changefreq_sum(self.df(self.summable), freq))
+    def changefreq(self, freq: str = "MS") -> SPFL:
+        return SPFL(changefreq_sum(self.df(self.summable), freq))
 
     @property
     def loc(self) -> _LocIndexer:
         return _LocIndexer(self)
-
-    # Additional methods, unique to this class.
-
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return False
-        return self._df.equals(other._df)
 
 
 class _LocIndexer:
@@ -103,6 +92,6 @@ class _LocIndexer:
     def __init__(self, spfl):
         self.spfl = spfl
 
-    def __getitem__(self, arg) -> SinglePfLine:
+    def __getitem__(self, arg) -> SPFL:
         new_df = self.spfl.df().loc[arg]
-        return SinglePfLine(new_df)
+        return SPFL(new_df)

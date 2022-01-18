@@ -3,7 +3,7 @@ Module with mixins, to add 'text-functionality' to PfLine and PfState classes.
 """
 
 from __future__ import annotations
-from ..tools import nits
+from ...tools import nits
 from typing import List, Callable, Dict, Tuple, TYPE_CHECKING
 import pandas as pd
 import colorama
@@ -11,8 +11,8 @@ import functools
 import textwrap
 
 if TYPE_CHECKING:  # needed to avoid circular imports
-    from .pfstate import PfState
-    from .pfline.abc import PfLine
+    from ..pfstate import PfState
+    from ..pfline import PfLine
 
 
 # Unique colors for the various levels.
@@ -120,48 +120,98 @@ def _width(
     return width
 
 
-def _formatval(pfl, col, width, ts):
-    decimals = 2 if col in "pw" else 0
+# def _formatval(df, col, width, ts):
+#     decimals = 2 if col in "pw" else 0
+#     try:
+#         val = df[col][ts]
+#     except KeyError:
+#         val = ".."
+#     if isinstance(val, str):
+#         return f" {val:>{width-1}}"
+#     if isinstance(val, nits.Q_):
+#         val = val.magnitude
+#     return f" {val:>{width-1},.{decimals}f}".replace(",", " ")
+
+
+# def _datablockfn_time_axis1(
+#     cols: str, indexwidth: int, colwidths: List[int], tailwidth: int, stamps: List
+# ) -> Callable:
+#     """Returns function to create all lines with data for pfline (for all attributes)."""
+
+#     def dataline(pfl: PfLine, col) -> str:
+#         line = " " + _makelen(col, indexwidth - 1, False, False)  # index (column)
+#         for ts, colwidth in zip(stamps, colwidths):
+#             line += _formatval(pfl, col, colwidth, ts)  # datavalues
+#         line += " " + _makelen(
+#             f"[{nits.name2unit(col)}]", tailwidth, False, True
+#         )  # unit
+#         return line
+
+#     def datablockfn(pfl: PfLine):
+#         return [dataline(pfl, col) for col in cols]
+
+#     return datablockfn
+
+
+def _formatval(s, width, ts):
+    """Format a value from unit-aware series with single-string name."""
+    decimals = 2 if s.name in "pw" else 0
     try:
-        val = pfl[col][ts]
+        val = s.pint.magnitude.loc[ts]
     except KeyError:
-        val = ".."
-    if isinstance(val, str):
-        return f" {val:>{width-1}}"
-    if isinstance(val, nits.Q_):
-        val = val.magnitude
+        return "..".rjust(width)
     return f" {val:>{width-1},.{decimals}f}".replace(",", " ")
 
 
-def _datablockfn_time_as_cols(
-    cols: str, indexwidth: int, colwidths: List[int], tailwidth: int, stamps: List
+def _datablockfn_time_axis1(
+    cols: str, indexwidth: int, colwidths: List[int], stamps: List
 ) -> Callable:
     """Returns function to create all lines with data for pfline (for all attributes)."""
 
     def dataline(pfl: PfLine, col) -> str:
-        line = " " + _makelen(col, indexwidth - 1, False, False)  # index (column)
+        s = pfl[col]
+        # row head = quantity and unit
+        line = " " + _makelen(s.name, 2, False, False)
+        line += " " + _makelen(f"[{s.pint.units}]", indexwidth - 3, True, True)
+        # data values
         for ts, colwidth in zip(stamps, colwidths):
-            line += _formatval(pfl, col, colwidth, ts)  # datavalues
-        line += " " + _makelen(
-            f"[{nits.name2unit(col)}]", tailwidth, False, True
-        )  # unit
+            line += _formatval(s, colwidth, ts)
         return line
 
     def datablockfn(pfl: PfLine):
-        return [dataline(pfl, col) for col in cols]
+        return [dataline(pfl[col]) for col in cols if col in pfl.available]
 
     return datablockfn
 
 
-def _datablockfn_time_as_rows(
+# def _datablockfn_time_axis0(
+#     cols: str, indexwidth: int, colwidths: List[int], stamps: List
+# ) -> Callable:
+#     """Returns function to create all lines with data for pfline (at all timestamps)."""
+
+#     def dataline(pfl: PfLine, ts) -> str:
+#         line = " " + _makelen(str(ts), indexwidth - 1, False, False)  # index (ts)
+#         for col, colwidth in zip(cols, colwidths):
+#             line += _formatval(pfl, col, colwidth, ts)  # datavalues
+#         return line
+
+#     def datablockfn(pfl: PfLine):
+#         return [dataline(pfl, ts) for ts in stamps]
+
+#     return datablockfn
+
+
+def _datablockfn_time_axis0(
     cols: str, indexwidth: int, colwidths: List[int], stamps: List
 ) -> Callable:
     """Returns function to create all lines with data for pfline (at all timestamps)."""
 
     def dataline(pfl: PfLine, ts) -> str:
-        line = " " + _makelen(str(ts), indexwidth - 1, False, False)  # index (ts)
+        # row head = timestamp
+        line = " " + _makelen(str(ts), indexwidth - 1, False, False)
+        # data values
         for col, colwidth in zip(cols, colwidths):
-            line += _formatval(pfl, col, colwidth, ts)  # datavalues
+            line += _formatval(pfl[col], colwidth, ts)
         return line
 
     def datablockfn(pfl: PfLine):
@@ -216,7 +266,7 @@ def _time_as_rows(pfs: PfState, cols="wqpr", num_of_ts=5, colorful: bool = True)
     pfs_footer = _unitsline(pfs_header)
 
     # Body.
-    pfl_datafn = _datablockfn_time_as_rows(cols, width["index"], width["cols"], stamps)
+    pfl_datafn = _datablockfn_time_axis0(cols, width["index"], width["cols"], stamps)
     pfl_bodyfn = _bodyblockfn(pfl_datafn, width["tree"])
     pfs_body = _bodyblock(pfl_bodyfn, pfs, parts)
 
@@ -244,7 +294,7 @@ def _time_as_cols(pfs: PfState, cols="qp", colorful: bool = True) -> str:
         pfs_headers = [h + _makelen(f" {txt}", w) for txt, h in zip(txts, pfs_headers)]
 
     # Body.
-    pfl_datafn = _datablockfn_time_as_cols(
+    pfl_datafn = _datablockfn_time_axis1(
         cols, width["index"], width["cols"], width["tail"], stamps
     )
     pfl_bodyfn = _bodyblockfn(pfl_datafn, width["tree"])
@@ -255,29 +305,37 @@ def _time_as_cols(pfs: PfState, cols="qp", colorful: bool = True) -> str:
     return text if colorful else _remove_styles(text)
 
 
-class PfLineTextOutput:
-    FORMAT = {"w": "{:7,.2f}", "q": "{:11,.0f}", "p": "{:11,.2f}", "r": "{:13,.0f}"}
+_DECIMALS = {"w": 2, "q": 0, "p": 2, "r": 0}
+_FORMAT = {"w": "{:7,.2f}", "q": "{:11,.0f}", "p": "{:11,.2f}", "r": "{:13,.0f}"}
 
-    def __repr__(self: PfLine):
-        what = {"p": "price", "q": "volume", "all": "price and volume"}[self.kind]
-        header = f"Lichtblick PfLine object containing {what} information."
-        # Split dataframe into magnitude and unit, and format magnitude.
-        stringseries = {}
-        units = {}
-        for name, s in self.df().items():
-            units[name] = s.pint.units
-            formatting = self.FORMAT.get(name, "{}").format
-            stringseries[name] = s.pint.magnitude.apply(formatting).str.replace(
-                ",", " "
-            )
-        body = repr(pd.DataFrame(stringseries))
 
-        unitsline = _unitsline2(body.split("\n")[0], units)
-        loc = body.find("\n\n") + 1
-        if not loc:
-            return f"{header}\n{body}\n{unitsline}"
-        else:
-            return f"{header}\n{body[:loc]}{unitsline}{body[loc:]}"
+def _formattingfunction(col):
+    fstring = _FORMAT.get(col, "{}")
+    return lambda v: fstring.format(v).replace(",", " ")
+
+
+def top_level_datablock(pfl: PfLine) -> str:
+    """Create a consistent (stackable) string representation of the portfolioline data."""
+    df = pfl.flatten().df("wqpr").pint.dequantify()
+    df.columns.set_levels([f"[{u}]" for u in df.columns.levels[-1]], level=-1)
+    ffuncs = {col: _formattingfunction(col[0]) for col in df.columns}
+    datalines = df.to_string(
+        formatters=ffuncs, max_rows=20, index_names=False, header=False
+    )
+
+
+def df_of_strings(df) -> pd.DataFrame:
+    # Split dataframe into magnitude and unit, and format magnitude.
+    if isinstance(df.columns, pd.MultiIndex):
+        raise ValueError("Dataframe must have single column index; has MultiIndex.")
+    str_series = {}
+    for name, s in df.items():
+        unit = f"[{s.pint.units}]"
+        formatting = _formattingfunction(name)
+        str_series[(name, unit)] = s.pint.magnitude.apply(formatting)
+    str_df = pd.DataFrame(str_series)
+    str_df.index = str_df.index.map(str)
+    return str_df
 
 
 class PfStateTextOutput:

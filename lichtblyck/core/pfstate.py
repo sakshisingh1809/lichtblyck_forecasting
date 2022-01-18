@@ -7,12 +7,14 @@ from __future__ import annotations
 
 
 from .pfstate_prep import make_pflines
-from .pfline.pfline____archive import PfLine
-from .output_text import PfStateTextOutput
-from .output_plot import PfStatePlotOutput
-from .output_other import OtherOutput
-from .dunder_arithmatic import PfStateArithmatic
-from .hedge_functionality import PfStateHedge
+from .pfline import PfLine
+from .mixins import (
+    PfStateTextOutput,
+    PfStatePlotOutput,
+    OtherOutput,
+    PfStateArithmatic,
+    PfStateHedge,
+)
 from typing import Optional, Iterable, Union
 import pandas as pd
 import warnings

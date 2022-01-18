@@ -4,7 +4,7 @@ Code to quickly get objects for testing.
 
 from typing import Dict
 from ..tools.nits import ureg, PA_, name2unit
-from .pfline.pfline____archive import PfLine
+from .pfline import PfLine, SinglePfLine, MultiPfLine
 from .pfstate import PfState
 import pandas as pd
 import numpy as np
@@ -52,10 +52,45 @@ def get_dataframe(
 # Portfolio line.
 
 
-def get_pfline(i=None, kind: str = "all") -> PfLine:
-    """Get portfolio line, i.e. without children."""
+def get_singlepfline(i=None, kind: str = "all") -> SinglePfLine:
+    """Get single portfolio line, i.e. without children."""
     columns = {"q": "q", "p": "p", "all": "qr"}[kind]
-    return PfLine(get_dataframe(i, columns))
+    return SinglePfLine(get_dataframe(i, columns))
+
+
+def get_multipfline(i=None, kind: str = "all") -> MultiPfLine:
+    """Get multi portfolio line. With 1 level of 2 children."""
+    if i is None:
+        i = get_index()
+    return MultiPfLine({"A": get_singlepfline(i, kind), "B": get_singlepfline(i, kind)})
+
+
+def get_pfline(
+    i=None,
+    kind: str = "all",
+    max_nlevels: int = 3,
+    childcount: int = 2,
+    prefix: str = "",
+) -> PfLine:
+    """Get portfolio line, without children or with children in random number of levels."""
+    # Gather information.
+    if i is None:
+        i = get_index()
+    nlevels = np.random.randint(0, max_nlevels)
+    # Create single PfLine
+    if nlevels == 0:
+        return get_singlepfline(i, kind)
+    # Gather information.
+    if childcount == 2 and kind == "all" and np.random.rand() < 0.33:
+        kinds = ["p", "q"]
+    else:
+        kinds = [kind] * childcount
+    # Create multi PfLine.
+    children = {}
+    for c, knd in enumerate(kinds):
+        name = f"part {prefix}{c}."
+        children[name] = get_pfline(i, knd, max_nlevels - 1, prefix=f"{prefix}{c}.")
+    return MultiPfLine(children)
 
 
 # Portfolio state.
@@ -65,9 +100,9 @@ def get_pfstate(i=None) -> PfState:
     """Get portfolio state."""
     if i is None:
         i = get_index()
-    offtakevolume = get_pfline(i, "q") * -2
-    unsourcedprice = get_pfline(i, "p") * 2
-    sourced = get_pfline(i, "all")
+    offtakevolume = get_singlepfline(i, "q") * -2
+    unsourcedprice = get_singlepfline(i, "p") * 2
+    sourced = get_singlepfline(i, "all")
     return PfState(offtakevolume, unsourcedprice, sourced)
 
 

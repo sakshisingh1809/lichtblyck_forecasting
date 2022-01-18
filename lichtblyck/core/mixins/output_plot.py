@@ -4,16 +4,16 @@ Module with mixins, to add 'plot-functionality' to PfLine and PfState classes.
 
 from __future__ import annotations
 
-import matplotlib
-from ..visualize import visualize as vis
-from ..tools import nits
+from ...visualize import visualize as vis
+from ...tools import nits
 from typing import Dict, TYPE_CHECKING
 import numpy as np
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 
 if TYPE_CHECKING:  # needed to avoid circular imports
-    from .pfstate import PfState
-    from .pfline.abc import PfLine
+    from ..pfstate import PfState
+    from ..pfline import PfLine
 
 DEFAULTPLOTTYPES = {"r": "bar", "q": "bar", "p": "step", "w": "line"}
 
@@ -215,9 +215,9 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     # Get the bounding boxes of the axes including text decorations
     r = fig.canvas.get_renderer()
     get_bbox = lambda ax: ax.get_tightbbox(r).transformed(fig.transFigure.inverted())
-    bboxes = np.array(
-        list(map(get_bbox, axes.flat)), matplotlib.transforms.Bbox
-    ).reshape(axes.shape)
+    bboxes = np.array(list(map(get_bbox, axes.flat)), mpl.transforms.Bbox).reshape(
+        axes.shape
+    )
 
     # Get the minimum and maximum extent, get the coordinate half-way between those
     ymax = (

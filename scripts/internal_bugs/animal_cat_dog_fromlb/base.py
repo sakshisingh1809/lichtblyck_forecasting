@@ -5,22 +5,25 @@ Dataframe-like class to hold general energy-related timeseries; either volume ([
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 import functools
 
-from ...tools.nits import name2unit, ureg
-from ..utils import changefreq_sum
-from ..output_text import PfLineTextOutput
-from ..output_plot import PfLinePlotOutput
-from ..output_other import OtherOutput
-from ..dunder_arithmatic import PfLineArithmatic
-from ..hedge_functionality import PfLineHedge
-from ..utils import changefreq_sum
+# from lichtblyck.tools import nits
+# from lichtblyck.core import utils
+
+# from ..output_text import PfLineTextOutput
+# from ..output_plot import PfLinePlotOutput
+# from ..output_other import OtherOutput
+# from ..dunder_arithmatic import PfLineArithmatic
+# from ..hedge_functionality import PfLineHedge
+import single
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, Union
 import pandas as pd
 import numpy as np
 
 if TYPE_CHECKING:
-    from .pfline____archive import SinglePfLine
+    from .single import SPFL
+
 
 # Developer notes: we would like to be able to handle 2 cases with volume AND financial
 # information. We would like to...
@@ -37,7 +40,7 @@ if TYPE_CHECKING:
 # must be handled by storing market prices seperately from volume data.
 
 
-class PfLine(ABC):
+class PFL(ABC, Mapping):  # , PfLineTextOutput, PfLineArithmatic):
     """Class to hold a related energy timeseries. This can be volume timeseries with q
     [MWh] and w [MW], a price timeseries with p [Eur/MWh] or both.
 
@@ -55,7 +58,7 @@ class PfLine(ABC):
 
     @property
     @abstractmethod
-    def children(self) -> Dict[str, PfLine]:
+    def children(self) -> Dict[str, PFL]:
         """Children of this instance, if any."""
         ...
 
@@ -115,7 +118,7 @@ class PfLine(ABC):
         ...
 
     @abstractmethod
-    def changefreq(self, freq: str = "MS") -> PfLine:
+    def changefreq(self, freq: str = "MS") -> PFL:
         """Resample the instance to a new frequency.
 
         Parameters
@@ -131,6 +134,12 @@ class PfLine(ABC):
         """
         ...
 
+    @property
+    @abstractmethod
+    def loc(self):
+        """Access a group of rows by label(s) or a boolean array."""
+        ...
+
     # Methods implemented by the ABC itself.
 
     @property
@@ -144,29 +153,29 @@ class PfLine(ABC):
         """Attributes/columns that are available. One of {'wq', 'p', 'wqpr'}."""
         return {"p": "p", "q": "wq", "all": "wqpr"}[self.kind]
 
-    def flatten(self) -> SinglePfLine:
+    def flatten(self) -> SPFL:
         """Return flat instance, i.e., without children."""
-        return SinglePfLine(self)
+        return single.SPFL(self)
 
     @property
-    def volume(self) -> SinglePfLine:
+    def volume(self) -> SPFL:
         """Return (flattened) volume-only PfLine."""
-        return SinglePfLine(self.df("q"))
+        return single.SPFL(self.df("q"))
 
     @property
-    def price(self) -> SinglePfLine:
+    def price(self) -> SPFL:
         """Return (flattened) price-only PfLine."""
-        return SinglePfLine(self.df("p"))
+        return single.SPFL(self.df("p"))
 
     def _set_col_val(
-        self, col: str, val: Union[pd.Series, float, int, ureg.Quantity]
-    ) -> SinglePfLine:
+        self, col: str, val: Union[pd.Series, float, int, nits.ureg.Quantity]
+    ) -> single.SPFL:
         """Set or update a timeseries and return the modified instance."""
 
         # Get pd.Series of other, in correct unit.
         if isinstance(val, float) or isinstance(val, int):
             val = pd.Series(val, self.index)
-        elif isinstance(val, ureg.Quantity):
+        elif isinstance(val, nits.ureg.Quantity):
             val = pd.Series(val.magnitude, self.index).astype(f"pint[{val.u}]")
 
         if self.kind == "all" and col == "r":
@@ -174,48 +183,61 @@ class PfLine(ABC):
                 "Cannot set `r`; first select `.volume` or `.price` before applying `.set_r()`."
             )
         # Create pd.DataFrame.
-        data = {col: val.astype(f"pint[{name2unit(col)}]")}
+        data = {col: val.astype(f"pint[{nitns.name2unit(col)}]")}
         if col in ["w", "q", "r"] and self.kind in ["p", "all"]:
             data["p"] = self["p"]
         elif col in ["p", "r"] and self.kind in ["q", "all"]:
             data["q"] = self["q"]
         df = pd.DataFrame(data)
-        return SinglePfLine(df)
+        return single.SPFL(df)
 
-    def set_w(self, w: Union[pd.Series, float, int, ureg.Quantity]) -> SinglePfLine:
+    def set_w(self, w: Union[pd.Series, float, int, ureg.Quantity]) -> single.SPFL:
         """Set or update power timeseries [MW]; returns modified (and flattened) instance."""
         return self._set_col_val("w", w)
 
-    def set_q(self, q: Union[pd.Series, float, int, ureg.Quantity]) -> SinglePfLine:
+    def set_q(self, q: Union[pd.Series, float, int, ureg.Quantity]) -> SPFL:
         """Set or update energy timeseries [MWh]; returns modified (and flattened) instance."""
         return self._set_col_val("q", q)
 
-    def set_p(self, p: Union[pd.Series, float, int, ureg.Quantity]) -> SinglePfLine:
+    def set_p(self, p: Union[pd.Series, float, int, ureg.Quantity]) -> SPFL:
         """Set or update price timeseries [Eur/MWh]; returns modified (and flattened) instance."""
         return self._set_col_val("p", p)
 
-    def set_r(self, r: Union[pd.Series, float, int, ureg.Quantity]) -> SinglePfLine:
+    def set_r(self, r: Union[pd.Series, float, int, ureg.Quantity]) -> SPFL:
         """Set or update revenue timeseries [MW]; returns modified (and flattened) instance."""
         return self._set_col_val("r", r)
 
-    def set_volume(self, other: PfLine) -> SinglePfLine:
+    def set_volume(self, other: PFL) -> SPFL:
         """Set or update volume information; returns modified (and flattened) instance."""
-        if not isinstance(other, PfLine) or other.kind != "q":
+        if not isinstance(other, PFL) or other.kind != "q":
             raise ValueError(
                 "Can only set volume from a PfLine instance with kind=='q'. Use .volume to obtain from given instance."
             )
         return self.set_q(other.q)
 
-    def set_price(self, other: PfLine) -> SinglePfLine:
+    def set_price(self, other: PFL) -> SPFL:
         """Set or update price information; returns modified (and flattened) instance."""
-        if not isinstance(other, PfLine) or other.kind != "p":
+        if not isinstance(other, PFL) or other.kind != "p":
             raise ValueError(
                 "Can only set price from a PfLine instance with kind=='p'. Use .price to obtain from given instance."
             )
         return self.set_p(other.p)
 
+    # Iterating over children.
+
+    def items(self):
+        return self.children.items()
+
+    def __iter__(self):
+        return iter(self.children.keys())
+
+    def __len__(self):
+        return len(self.children)
+
     def __getitem__(self, name):
         return getattr(self, name)
+
+    # Dunder methods.
 
     def __getattr__(self, name):
         if name in self.children:

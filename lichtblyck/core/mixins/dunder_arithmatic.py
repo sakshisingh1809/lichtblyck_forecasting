@@ -5,12 +5,12 @@ Module with mixins, to add arithmatic functionality to PfLine and PfState classe
 from __future__ import annotations
 from typing import TYPE_CHECKING, Union
 import pandas as pd
-from ..tools.nits import ureg, Q_, unit2name
-from ..tools.frames import wavg
+from ...tools.nits import ureg, Q_, unit2name
+from ...tools.frames import wavg
 
 if TYPE_CHECKING:  # needed to avoid circular imports
-    from .pfstate import PfState
-    from .pfline.pfline____archive import PfLine
+    from ..pfstate import PfState
+    from ..pfline import PfLine
 
 
 def is_dimensionless_value(value):

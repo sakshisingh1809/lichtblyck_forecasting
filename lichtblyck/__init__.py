@@ -13,7 +13,7 @@ from .core import basics  # extend functionalty of pandas
 from .core.pfline.single import SinglePfLine
 from .core.pfline.multi import MultiPfLine
 from .core.pfstate import PfState
-from .core.output_plot import plot_pfstates
+from .core.mixins.output_plot import plot_pfstates
 
 from . import portfolios
 

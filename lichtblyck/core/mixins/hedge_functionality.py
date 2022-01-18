@@ -3,16 +3,16 @@
 
 from __future__ import annotations
 
-from ..prices.hedge import hedge
-from ..prices import convert, hedge
-from ..prices.utils import duration_bpo
+from ...prices.hedge import hedge
+from ...prices import convert, hedge
+from ...prices.utils import duration_bpo
 from typing import List, Callable, Dict, Tuple, TYPE_CHECKING
 import pandas as pd
 
 
 if TYPE_CHECKING:  # needed to avoid circular imports
-    from .pfstate import PfState
-    from .pfline.pfline____archive import PfLine
+    from ..pfstate import PfState
+    from ..pfline import PfLine
 
 
 class PfLineHedge:

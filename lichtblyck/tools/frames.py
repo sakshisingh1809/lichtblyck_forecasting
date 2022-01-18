@@ -25,7 +25,7 @@ def set_ts_index(
     fr : NDFrame
         Pandas series or dataframe.
     column : str, optional
-        Column to create the timestamp from. Used only if `fr` is DataFrame; ignored 
+        Column to create the timestamp from. Used only if `fr` is DataFrame; ignored
         otherwise. Use existing index if none specified.
     bound : str, {'left' (default), 'right'}
         If 'left' ('right'), specifies that input timestamps are left-(right-)bound.
@@ -125,7 +125,7 @@ def set_ts_index(
 
 def fill_gaps(fr: NDFrame, maxgap: int = 2) -> NDFrame:
     """Fill gaps in series by linear interpolation.
-    
+
     Parameters
     ----------
     fr : NDFrame
@@ -179,8 +179,8 @@ def wavg(
     fr : Union[pd.Series, pd.DataFrame]
         The input values.
     weights : Union[Iterable, pd.Series, pd.DataFrame], optional
-        The weights. If provided as a Series, the weights and values are aligned along 
-        its index. If no weights are provided, the normal (unweighted) average is returned 
+        The weights. If provided as a Series, the weights and values are aligned along
+        its index. If no weights are provided, the normal (unweighted) average is returned
         instead.
     axis : int, optional
         Calculate each column's average over all rows (if axis==0, default) or
@@ -210,9 +210,11 @@ def wavg(
     summed = fr.mul(weights, axis=0).sum(skipna=False)  # float or float-Series
     totalweight = weights.sum()  # float or float-Series
     result = summed / totalweight
-    
+
     # Correction: if total weight is 0, and all original values are the same, keep the original value.
-    correctable = np.isclose(totalweight, 0) & (fr.nunique() == 1) # bool or bool-Series
+    correctable = np.isclose(totalweight, 0) & (
+        fr.nunique() == 1
+    )  # bool or bool-Series
     if isinstance(fr, pd.Series):
         return result if not correctable else fr.iloc[0]
     result[correctable] = fr.iloc[0, :][correctable]
@@ -236,3 +238,18 @@ def trim_frame(fr: NDFrame, freq: str) -> NDFrame:
     """
     i = trim_index(fr.index, freq)
     return fr.loc[i]
+
+
+def series_allclose(s1, s2):
+    """Compare if all values in series are equal/close. Works with series that have units."""
+    without_units = [not (hasattr(s, "pint")) for s in [s1, s2]]
+    if all(without_units):
+        return np.allclose(s1, s2)
+    elif any(without_units):
+        return False
+    elif s1.pint.dimensionality != s2.pint.dimensionality:
+        return False
+    # Both have units, and both have same dimensionality (e.g. 'length'). Check values.
+    s1_vals = s1.pint.m
+    s2_vals = s2.astype(f"pint[{s1.pint.u}]").pint.m
+    return np.allclose(s1_vals, s2_vals)

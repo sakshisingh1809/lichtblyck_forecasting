@@ -1,7 +1,7 @@
 """Module to set up the portfolios as they are used and reported."""
 
 from ..core.pfstate import PfState
-from ..core.pfline.pfline____archive import PfLine
+from ..core.pfline.single import SinglePfLine
 from .. import belvis  # to add functionality to pfline and pfstate
 import pandas as pd
 import datetime as dt
@@ -82,7 +82,7 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
         cutoff = now + pd.Timedelta(days=4)
         df1 = offtakevolume_100.df()[offtakevolume_100.index < cutoff]
         df2 = offtakevolume_certain.df()[offtakevolume_certain.index >= cutoff]
-        offtakevolume = PfLine(pd.concat([df1, df2]).w)
+        offtakevolume = SinglePfLine(pd.concat([df1, df2]).w)
         # Sourced.
         sourced = sum(
             belvis.data.sourced(commodity, pfid, ts_left, ts_right)

@@ -1,8 +1,8 @@
 """Verify input data and turn into object needed in MultiPfLine instantiation."""
 
 from __future__ import annotations
-from .abc import PfLine
-from .multi import MultiPfLine
+from .base import PfLine
+from . import multi
 from .create import create_pfline
 from typing import Counter, Mapping, Dict
 
@@ -10,7 +10,7 @@ from typing import Counter, Mapping, Dict
 def data_to_childrendict(data) -> Dict[str, PfLine]:
     """Check data, and turn into a dictionary."""
 
-    if isinstance(data, MultiPfLine):
+    if isinstance(data, multi.MultiPfLine):
         return data.children
     if not isinstance(data, Mapping):
         raise TypeError(
@@ -56,19 +56,25 @@ def assert_pfline_kindcompatibility(children: Dict) -> None:
 def intersect_indices(children: Dict[str, PfLine]) -> Dict[str, PfLine]:
     """Keep only the overlapping part of each PfLine's index."""
 
+    if len(children) < 2:
+        return  # No index errors if only 1 child.
+
     indices = [child.index for child in children.values()]
-    
+
     # Check frequency.
 
-    if len(indices) > 1 and len(set([i.freq for i in indices])) != 1:
+    if len(set([i.freq for i in indices])) != 1:
         raise ValueError("PfLines have unequal frequency; resample first.")
 
     # Check/fix indices.
 
-    if len(children)
     idx = indices[0]
     for idx2 in indices[1:]:
         idx = idx.intersection(idx2)
+    if len(idx) == 0:
+        raise ValueError("PfLine indices describe non-overlapping periods.")
+
+    children = {name: child.loc[idx] for name, child in children.items()}
     return children
 
 

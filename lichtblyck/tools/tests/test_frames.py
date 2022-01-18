@@ -1,5 +1,5 @@
 from lichtblyck.core import dev
-from lichtblyck.tools.frames import set_ts_index, wavg, fill_gaps
+from lichtblyck.tools.frames import series_allclose, set_ts_index, wavg, fill_gaps
 from numpy import nan
 import lichtblyck as lb
 import numpy as np
@@ -301,3 +301,29 @@ def test_wavg_valuesasdataframe_0weights(weightsas, axis):
         wavg(values, weights, axis), result, check_dtype=False
     )
 
+
+vals1 = np.array([1, 2.0, -4.1234, 0])
+vals2 = np.array([1, 2.0, -4.1234, 0.5])
+
+
+@pytest.mark.parametrize(
+    ("s1", "s2", "result"),
+    [
+        (pd.Series(vals1), pd.Series(vals1), True),
+        (pd.Series(vals1), pd.Series(vals2), False),
+        (pd.Series(vals1), pd.Series(vals1, dtype="pint[MW]"), False),
+        (pd.Series(vals1).astype("pint[MW]"), pd.Series(vals1, dtype="pint[MW]"), True),
+        (
+            pd.Series(vals1 * 1000).astype("pint[kW]"),
+            pd.Series(vals1, dtype="pint[MW]"),
+            True,
+        ),
+        (
+            pd.Series(vals1 * 1000).astype("pint[MW]"),
+            pd.Series(vals1, dtype="pint[MW]"),
+            False,
+        ),
+    ],
+)
+def test_series_allclose(s1, s2, result):
+    assert series_allclose(s1, s2) == result
