@@ -5,7 +5,7 @@ from ..core.pfline import PfLine
 from .. import belvis  # to add functionality to pfline and pfstate
 import pandas as pd
 
-# Mapping of belvis portfolios onto 'useful' portfolios.
+# Mapping of belvis portfolios onto 'useful' portfolios with 'arbitrary' names.
 #
 # Some corrections/calculations are needed, and because power and gas are not implemented
 # equally, the mapping dictionaries for power and gas have distinct structures.
@@ -30,6 +30,18 @@ POWER_ORIGINAL = {
         "offtake": {"100%": ("LUD_WP",), "certain": ("LUD_WP_SiM",)},
         "sourced": ("LUD_WP",),
     },
+    "B2C_HH_NEW": {
+        "offtake": {"100%": ("PK_Neu_FLX",), "certain": ("PK_Neu_FLX_SiM",)},
+        "sourced": ("PK_Neu_FLX",),
+    },
+    "B2C_RH_NEW": {
+        "offtake": {"100%": ("PK_Neu_NSP",), "certain": ("PK_Neu_NSP_SiM",)},
+        "sourced": ("PK_Neu_NSP",),
+    },
+    "B2C_HP_NEW": {
+        "offtake": {"100%": ("PK_Neu_WP",), "certain": ("PK_Neu_WP_SiM",)},
+        "sourced": ("PK_Neu_WP",),
+    },
 }
 
 # . For synthetic power portfolios (not found in Belvis):
@@ -37,8 +49,9 @@ POWER_ORIGINAL = {
 #       pf-name: Iterable
 #   The iterable elements are pf-names in POWER_ORIGINAL
 POWER_SYNTHETIC = {  # pf-name: (pf-names in POWER_ORIGINAL)
-    "B2C_P2H": ("NSP", "WP", "LUD_NSP", "LUD_WP"),
-    "B2C_HH": ("PKG", "LUD_STG"),
+    "B2C_P2H_LEGACY": ("NSP", "WP", "LUD_NSP", "LUD_WP"),
+    "B2C_HH_LEGACY": ("PKG", "LUD_STG"),
+    "B2C_P2H_NEW": ("B2C_HP_NEW", "B2C_RH_NEW"),
 }
 
 # . For original gas portfolios (as found in Belvis):
@@ -77,9 +90,13 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
     """
 
     if commodity not in ("power", "gas"):
-        raise ValueError("`commodity` must be 'power' or 'gas'.")
+        raise ValueError(
+            f"Values of parameter ``commodity`` must be 'power' or 'gas'; got {commodity}."
+        )
     if pfname not in PFNAMES[commodity]:
-        raise ValueError(f"`pfname` must be one of {PFNAMES[commodity]}.")
+        raise ValueError(
+            f"Parameter ``pfname`` must be one of {PFNAMES[commodity]}; got {pfname}."
+        )
 
     if commodity == "power":
         return pfstate_power(pfname, ts_left, ts_right)

@@ -2,8 +2,9 @@
 Module for doing basic timestamp and frequency operations.
 """
 
-from typing import Iterable, Union, Tuple
+from typing import Iterable, Optional, Union, Tuple
 import datetime as dt
+import warnings
 import pandas as pd
 import numpy as np
 from .nits import Q_
@@ -15,14 +16,9 @@ from .nits import Q_
 FREQUENCIES = ["AS", "QS", "MS", "D", "H", "15T"]
 
 
-def ts_right(
-    ts_left: Union[pd.Timestamp, pd.DatetimeIndex]
-) -> Union[pd.Timestamp, pd.Series]:
-    """
-    Return right-bound timestamp of a timestamp, or of each timestamp in index.
-    """
-    if ts_left.tz is None:
-        raise ValueError("Index is missing timezone information.")
+def timedelta(freq: str) -> Union[pd.Timedelta, pd.DateOffset]:
+    """Returns object that can be added to a left-bound Timestamp or DatetimeIndex to
+    find the corresponding right-bound Timestamp or DatetimeIndex."""
 
     # Get right timestamp for each index value, based on the frequency.
     # . This one breaks for 'MS':
@@ -31,51 +27,122 @@ def ts_right(
     # (i.shift(1))
     # . This one gives wrong value at DST transitions:
     # i + i.freq
-    if ts_left.freq == "15T":
-        ts_right = ts_left + pd.Timedelta(hours=0.25)
-    elif ts_left.freq == "H":
-        ts_right = ts_left + pd.Timedelta(hours=1)
+
+    if freq == "15T":
+        return pd.Timedelta(hours=0.25)
+    elif freq == "H":
+        return pd.Timedelta(hours=1)
+    elif freq == "D":
+        return pd.DateOffset(days=1)
+    elif freq == "MS":
+        return pd.DateOffset(months=1)
+    elif freq == "QS":
+        return pd.DateOffset(months=3)
+    elif freq == "AS":
+        return pd.DateOffset(years=1)
     else:
-        if ts_left.freq == "D":
-            kwargs = {"days": 1}
-        elif ts_left.freq == "MS":
-            kwargs = {"months": 1}
-        elif ts_left.freq == "QS":
-            kwargs = {"months": 3}
-        elif ts_left.freq == "AS":
-            kwargs = {"years": 1}
-        else:
-            raise ValueError(f"Invalid frequency: {ts_left.freq}.")
-        ts_right = ts_left + pd.DateOffset(**kwargs)
-    # Return in correct format.
+        raise ValueError(
+            f"Parameter ``freq`` must be one of {', '.join(FREQUENCIES)}; got {freq}."
+        )
+
+
+def ts_right(
+    ts_left: Union[pd.Timestamp, pd.DatetimeIndex], freq: str = None
+) -> Union[pd.Timestamp, pd.Series]:
+    """Right-bound timestamp belonging to left-bound timestamp.
+
+    Parameters
+    ----------
+    ts_left : Union[pd.Timestamp, pd.DatetimeIndex]
+        Timestamp(s) for which to calculate the right-bound timestamp.
+    freq : {'15T' (quarter-hour), 'H' (hour), 'D' (day), 'MS' (month), 'QS' (quarter),
+        'AS' (year)}, optional
+        Frequency to use in determining the right-bound timestamp.
+        If none specified, use ``.freq`` attribute of ``ts_left``.
+
+    Returns
+    -------
+    Timestamp (if ts_left is Timestamp) or Series (if ts_left is DatetimeIndex).
+    """
+
+    if ts_left.tz is None:
+        raise ValueError("Parameter ``ts_left`` is missing timezone information.")
+
+    if isinstance(ts_left, pd.Timestamp) and freq is None:
+        warnings.warn(
+            "Using a Timestamp without passing the ``freq`` parameter will be deprecated in a future release."
+        )
+
+    if freq is None:
+        freq = ts_left.freq
+
+    ts_right = ts_left + timedelta(freq)
+
     if isinstance(ts_left, pd.Timestamp):
         return ts_right
-    else:
+    elif isinstance(ts_left, pd.DatetimeIndex):
         return pd.Series(ts_right, ts_left, name="ts_right")
 
+    raise TypeError(
+        f"Parameter ``ts_left`` must be ``pandas.Timestamp`` or ``pandas.DatetimeIndex`` instance; got {type(ts_left)}."
+    )
 
-def duration(ts_left: Union[pd.Timestamp, pd.DatetimeIndex]) -> Union[Q_, pd.Series]:
+
+def duration(
+    ts_left: Union[pd.Timestamp, pd.DatetimeIndex], freq: str = None
+) -> Union[Q_, pd.Series]:
+    """Duration of a timestamp.
+
+    Parameters
+    ----------
+    ts_left : Union[pd.Timestamp, pd.DatetimeIndex]
+        Timestamp(s) for which to calculate the duration.
+    freq : {'15T' (quarter-hour), 'H' (hour), 'D' (day), 'MS' (month), 'QS' (quarter),
+        'AS' (year)}, optional
+        Frequency to use in determining the duration.
+        If none specified, use ``.freq`` attribute of ``ts_left``.
+
+    Returns
+    -------
+    pint Quantity (if ts_left is Timestamp) or Series (if ts_left is DatetimeIndex).
     """
-    Return duration of a timestamp, or of each timestamp in index.
-    """
+
+    if ts_left.tz is None:
+        raise ValueError("Parameter ``ts_left`` is missing timezone information.")
+
+    if isinstance(ts_left, pd.Timestamp) and freq is None:
+        warnings.warn(
+            "Using a Timestamp without passing the ``freq`` parameter will be deprecated in a future release."
+        )
+
+    if freq is None:
+        freq = ts_left.freq
+
     if isinstance(ts_left, pd.Timestamp):
-        if ts_left.freq in ["15T", "H"]:
+        if freq in ["15T", "H"]:
+            return Q_(1 if freq == "H" else 0.25, "h")
+        else:
+            return Q_((ts_right(ts_left, freq) - ts_left).total_seconds() / 3600, "h")
+
+    elif isinstance(ts_left, pd.DatetimeIndex):
+        if freq in ["15T", "H"]:
             # Speed-up things for fixed-duration frequencies.
-            return Q_(1 if ts_left.freq == "H" else 0.25, "h")
+            hour = 1 if freq == "H" else 0.25
+            return pd.Series(hour, ts_left, dtype="pint[h]").rename("duration")
         else:
             # Individual calculations for non-fixed-duration frequencies.
-            return Q_((ts_right(ts_left) - ts_left).total_seconds() / 3600, "h")
-    else:
-        if ts_left.freq in ["15T", "H"]:
-            dur = 1 if ts_left.freq == "H" else 0.25
-            return pd.Series(dur, ts_left, dtype="pint[h]").rename("duration")
-        else:
-            dur = [td.total_seconds() / 3600 for td in ts_right(ts_left) - ts_left]
-            return pd.Series(dur, ts_left, dtype="pint[h]").rename("duration")
+            hours = [
+                td.total_seconds() / 3600 for td in ts_right(ts_left, freq) - ts_left
+            ]
+            return pd.Series(hours, ts_left, dtype="pint[h]").rename("duration")
+
+    raise TypeError(
+        f"Parameter ``ts_left`` must be ``pandas.Timestamp`` or ``pandas.DatetimeIndex`` instance; got {type(ts_left)}."
+    )
 
 
 def floor_ts(
-    ts: Union[pd.Timestamp, pd.DatetimeIndex], future: int = 0, freq=None
+    ts: Union[pd.Timestamp, pd.DatetimeIndex], freq=None, future: int = 0
 ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
     """Floor timestamp to period boundary.
 
@@ -85,12 +152,13 @@ def floor_ts(
     ----------
     ts : Timestamp or DatetimeIndex.
         Timestamp(s) to floor.
-    future : int, optional
-        0 (default) to get latest period start that is `ts` or earlier. 1 (-1) to get
-        start of period after (before) that. 2 (-2) .. etc.
-    freq : {'D' (day), 'MS' (month), 'QS' (quarter), 'AS' (year)}, optional
+    freq : {'15T' (quarter-hour), 'H' (hour), 'D' (day), 'MS' (month), 'QS' (quarter),
+        'AS' (year)}, optional
         What to floor it to, e.g. 'QS' to get start of quarter it's contained in. If
         none specified, use .freq attribute of timestamp.
+    future : int, optional (default: 0)
+        0 to get latest period start that is `ts` or earlier. 1 (-1) to get
+        start of period after (before) that. 2 (-2) .. etc.
 
     Returns
     -------
@@ -101,6 +169,12 @@ def floor_ts(
     -----
     If `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor_ts(ts, 0) == ts.
     """
+
+    if isinstance(ts, pd.Timestamp) and freq is None:
+        warnings.warn(
+            "Using a Timestamp without passing the ``freq`` parameter will be deprecated in a future release."
+        )
+
     if freq is None:
         freq = ts.freq
 
@@ -123,11 +197,13 @@ def floor_ts(
     elif freq == "AS":
         return ts + pd.offsets.YearBegin(1) + pd.offsets.YearBegin(future - 1)
     else:
-        raise ValueError(f"Argument `freq` must be one of {','.join(FREQUENCIES)}.")
+        raise ValueError(
+            f"Parameter ``freq`` must be one of {', '.join(FREQUENCIES)}; got {freq}."
+        )
 
 
 def ceil_ts(
-    ts: Union[pd.Timestamp, pd.DatetimeIndex], future: int = 0, freq=None
+    ts: Union[pd.Timestamp, pd.DatetimeIndex], freq=None, future: int = 0
 ) -> Union[pd.Timestamp, pd.DatetimeIndex]:
     """Ceil timestamp to period boundary.
 
@@ -137,12 +213,13 @@ def ceil_ts(
     ----------
     ts : Timestamp or DatetimeIndex.
         Timestamp(s) to ceil.
+    freq : {'15T' (quarter-hour), 'H' (hour), 'D' (day), 'MS' (month), 'QS' (quarter),
+        'AS' (year)}, optional
+        What to ceil it to, e.g. 'QS' to get start of quarter it's contained in. If
+        none specified, use .freq attribute of timestamp.
     future : int, optional
         0 (default) to get earliest period start that is `ts` or later. 1 (-1) to get
         start of period after (before) that. 2 (-2) .. etc.
-    freq : {'D' (day), 'MS' (month), 'QS' (quarter), 'AS' (year)}, optional
-        What to ceil it to, e.g. 'QS' to get start of quarter it's contained in. If
-        none specified, use .freq attribute of timestamp.
 
     Returns
     -------
@@ -151,12 +228,11 @@ def ceil_ts(
 
     Notes
     -----
-    If `ts` is exactly at the start of the period, ceil_ts(ts, 0) == floor_ts(ts, 0) == ts.
+    If `ts` is exactly at the start of the period, ceil_ts(ts) == floor_ts(ts) == ts.
     """
-    offset = (
-        1 if ts != floor_ts(ts, 0, freq) else 0
-    )  # if ts at start of period, ceil==floor
-    return floor_ts(ts, future + offset, freq)
+    # if ts at start of period, ceil==floor
+    offset = 1 if ts != floor_ts(ts, freq, 0) else 0
+    return floor_ts(ts, freq, future + offset)
 
 
 def trim_index(i: pd.DatetimeIndex, freq: str) -> pd.DatetimeIndex:
@@ -174,8 +250,8 @@ def trim_index(i: pd.DatetimeIndex, freq: str) -> pd.DatetimeIndex:
     pd.DatetimeIndex
         Subset of `i`, with same frequency.
     """
-    start = ceil_ts(i[0], 0, freq)
-    end = floor_ts(ts_right(i[-1]), 0, freq)
+    start = ceil_ts(i[0], freq, 0)
+    end = floor_ts(ts_right(i[-1]), freq, 0)
     return i[(i >= start) & (i < end)]
 
 
@@ -202,15 +278,15 @@ def ts_leftright(left=None, right=None) -> Tuple:
 
     if right is pd.NaT:
         if left is pd.NaT:
-            return ts_leftright(floor_ts(pd.Timestamp.now(), 1, "AS"))
+            return ts_leftright(floor_ts(pd.Timestamp.now(), "AS", 1))
         if left.tz is None:
             return ts_leftright(left.tz_localize("Europe/Berlin"))
-        return ts_leftright(left, floor_ts(left, 1, "AS"))
+        return ts_leftright(left, floor_ts(left, "AS", 1))
 
     # if we land here, we at least know ts_right.
     if left is pd.NaT:
-        back = -1 if right == floor_ts(right, 0, "AS") else 0
-        return ts_leftright(floor_ts(right, back, "AS"), right)
+        back = -1 if right == floor_ts(right, "AS", 0) else 0
+        return ts_leftright(floor_ts(right, "AS", back), right)
 
     # if we land here, we know ts_left and ts_right.
     if right.tz is None:

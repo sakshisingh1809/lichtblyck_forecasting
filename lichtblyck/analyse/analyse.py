@@ -36,7 +36,7 @@ def expected_shortfall(
 def multiplication_factor(vola: float, time: float, quantile: float) -> float:
     """Factor with which to multiply the current price (or any other fluctuating value)
     to get a scenario price.
-    
+
     Parameters
     ----------
     vola : float
@@ -51,7 +51,7 @@ def multiplication_factor(vola: float, time: float, quantile: float) -> float:
     float
         Ratio between future price and current price.
     """
-    sigma = vola * math.sqrt(time) # as fraction
-    mu = - 0.5 * sigma ** 2 # as fraction
+    sigma = vola * math.sqrt(time)  # as fraction
+    mu = -0.5 * sigma ** 2  # as fraction
     exponent = norm(mu, sigma).ppf(quantile)
     return math.exp(exponent)

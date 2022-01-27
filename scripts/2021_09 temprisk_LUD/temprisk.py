@@ -5,7 +5,7 @@ Simulations:
 . Starting point (O):
 .. Offtake volume with norm temperature.
 .. Offtake revenue from (sourced volume+prices) + (open volume+market prices).
-.. Full hedge is done.
+.. Full hedge is done on month level.
 
 . Long-term changes (L):
 .. Using current volatility and random walk to get change in year prices (peak/offpeak).
@@ -106,6 +106,7 @@ Abbreviations:
 
 #%% IMPORTS
 
+from tqdm import tqdm
 from lichtblyck.core.pfstate import PfState
 from typing import Callable
 import lichtblyck as lb
@@ -269,7 +270,7 @@ sourced = lb.PfLine({"w": data["rh_ws"], "r": data["rh_rs"]}) + lb.PfLine(
 
 # Offtake prices and revenue.
 step0 = lb.PfState(offtakevolume, pu, sourced).changefreq("H")
-current = pd.DataFrame({("O", "po"): step0.pnl_cost.p})
+current = pd.DataFrame({("O", "po"): step0.pnl_cost.p.pint.m})
 current[("O", "pu")] = pu
 
 
@@ -282,7 +283,7 @@ def simulate_L_fn(vola: float, marketprice: pd.Series, now: pd.Timestamp) -> Cal
     Parameters
     ----------
     vola : float
-        Volatility in %/a
+        Volatility in fraction/a
     marketprice : pd.Series
         Current marketprices [Eur/MWh]
     now : pd.Timestamp
@@ -305,9 +306,10 @@ def simulate_L_fn(vola: float, marketprice: pd.Series, now: pd.Timestamp) -> Cal
         prices = pd.Series(index=i, dtype=float)
         # . Base.
         for month in i:
-            ts_stepL = lb.floor_ts(month, -1, "MS")  # 1 month before start of delivery
+            ts_stepL = lb.floor_ts(month, "MS", -1)  # 1 month before start of delivery
             time = (ts_stepL - ts).total_seconds() / 3600 / 24 / 365.24
-            price *= lb.simulate.randomwalkfactor(vola, time)
+            factor = 1 if time < 0 else lb.simulate.randomwalkfactor(vola, time)
+            price *= factor
             prices[month] = price
             ts = ts_stepL
         # . QHPFC = Base * a2m factor
@@ -317,7 +319,7 @@ def simulate_L_fn(vola: float, marketprice: pd.Series, now: pd.Timestamp) -> Cal
 
 
 sim_L = simulate_L_fn(
-    vola=0.01,  # per calendar year
+    vola=1,  # per calendar year
     marketprice=current.O.pu,
     now=pd.Timestamp.today().tz_localize("Europe/Berlin"),
 )
@@ -390,7 +392,7 @@ for daytype, daytypedf in pu_L_m2h.groupby(weeksatsun_function):  # weekday, sat
             ax.legend()
 
 # Expected prices.
-hist[("L", "pu_m")] = lb.prices.convert.bpoframe2tseries(pu_L_m, "H")
+hist[("L", "pu_m")] = lb.prices.convert.bpoframe2tseries(pu_L_m, "H", "p_")
 hist[("L", "pu_m2h")] = pu_L_m2h
 hist[("L", "pu")] = hist.L.pu_m + hist.L.pu_m2h
 hist = hist.dropna()
@@ -445,7 +447,7 @@ cols_avg = [
 monthly_sims = []
 yearly_sims = []
 
-for n in range(10000):
+for n in tqdm(range(10000)):
     # First, pick a historic year
     hourly = np.random.choice(years).copy().iloc[:8760]
 
@@ -458,9 +460,9 @@ for n in range(10000):
     hourly[("L", "pu")] = hourly.L.pu_m + hourly.L.pu_m2h  # recalculate hourly prices L
     hourly[("S", "pu")] = hourly.L.pu + hourly.S.delta_pu  # ..and hourly prices S
     hourly = hourly.drop([("S", "pu_m"), ("S", "pu_m2h")], axis=1)
-    hourly[("O", "qhedge")] = lb.hedge(
-        hourly.O.qo, hourly.O.pu, "MS", po=True
-    )  # hedge
+    hourly[("O", "qhedge")] = lb.hedge(hourly.O.qo, hourly.O.pu, "val", "MS", po=True)[
+        1
+    ]  # hedge, keep power only
     hourly[("O", "ro")] = hourly.O.qo * hourly.O.po
     hourly[("S", "qspot")] = hourly.S.qo - hourly.O.qhedge
 
@@ -471,7 +473,7 @@ for n in range(10000):
     hourly[("temprisk", "r_Lt")] = hourly.delta_q.qo * hourly.delta_p.chg01
     hourly[("temprisk", "r_St")] = hourly.delta_q.qo * hourly.delta_p.chg12
 
-    hourly = hourly.sort_index(1)
+    hourly = hourly.sort_index(1).astype(float)
 
     # keep only relevant information: the temprisk premiums.
     for freq, records in [("MS", monthly_sims), ("AS", yearly_sims)]:
@@ -675,7 +677,11 @@ ax.title.set_text(
 ax.xaxis.label.set_text("MWh")
 ax.yaxis.label.set_text("Eur/MWh")
 ax.scatter(
-    df.delta_q.qo, df.delta_p.chg01, c="orange", s=10, alpha=0.5,
+    df.delta_q.qo,
+    df.delta_p.chg01,
+    c="orange",
+    s=10,
+    alpha=0.5,
 )
 ax.legend()
 #  Eur.
@@ -729,7 +735,11 @@ ax.title.set_text("Change in offtake vs short-term change in price")
 ax.xaxis.label.set_text("MWh")
 ax.yaxis.label.set_text("Eur/MWh")
 ax.scatter(
-    df.delta_q.qo, df.delta_p.chg12, c="green", s=10, alpha=0.5,
+    df.delta_q.qo,
+    df.delta_p.chg12,
+    c="green",
+    s=10,
+    alpha=0.5,
 )
 ax.legend()
 #  Eur.

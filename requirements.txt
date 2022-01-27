@@ -10,3 +10,4 @@ pint
 pint-pandas
 tqdm
 jwt
+xlsxwriter

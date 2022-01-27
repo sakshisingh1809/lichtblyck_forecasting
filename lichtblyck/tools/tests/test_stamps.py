@@ -45,7 +45,7 @@ def test_floorts(ts, fut, freq, expected, tz, iter):
 
     if not iter:
         # Test single value.
-        assert stamps.floor_ts(ts, fut, freq) == expected
+        assert stamps.floor_ts(ts, freq, fut) == expected
     else:
         # Test index.
         periods = np.random.randint(4, 40)
@@ -53,7 +53,7 @@ def test_floorts(ts, fut, freq, expected, tz, iter):
         index = pd.date_range(ts, periods=periods, freq=freq)  # ts no longer at index 0
         index += ts - index[0]  # index starts again with ts and has non-floored values
 
-        result = stamps.floor_ts(index, fut, freq)
+        result = stamps.floor_ts(index, freq, fut)
         result.freq = None  # disregard checking frequencies here
         expected = pd.date_range(expected, periods=periods, freq=freq)
         expected.freq = None  # disregard checking frequencies here
@@ -87,11 +87,11 @@ def test_floorts(ts, fut, freq, expected, tz, iter):
 )
 def test_tsleftright(tss, expected, tz_left, tz_right):
     tzs = [tz_left, tz_right]
-    tss = [pd.Timestamp(ts) for ts in tss] # turn into timestamps for comparison
+    tss = [pd.Timestamp(ts) for ts in tss]  # turn into timestamps for comparison
     if tss[0] == tss[1] and tz_left != tz_right:
-        return # too complicated to test; would have to recreate function here.
+        return  # too complicated to test; would have to recreate function here.
     swap = tss[0] > tss[1]
-    tss = [ts.tz_localize(tz) for ts, tz in zip(tss, tzs)] # add timezone info
+    tss = [ts.tz_localize(tz) for ts, tz in zip(tss, tzs)]  # add timezone info
 
     result = stamps.ts_leftright(*tss)
 

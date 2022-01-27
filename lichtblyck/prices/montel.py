@@ -2,8 +2,7 @@
 Module to read montel price data from disk.
 """
 
-from . import utils
-from .convert import offpeak
+from . import utils, convert
 from ..tools.frames import set_ts_index
 from typing import Dict
 from pathlib import Path
@@ -13,6 +12,20 @@ import numpy as np
 
 
 _MONTELFILEPATH = Path(__file__).parent / "sourcedata" / "prices_montel.xlsm"
+
+PERIOD_TYPES = {"gas": ["a", "s", "q", "m", "d"], "power": ["a", "q", "m", "h"]}
+
+
+def periodtype_to_freq(period_type: str):
+    if period_type == "a":
+        return "AS"
+    elif period_type == "q":
+        return "QS"
+    elif period_type == "m":
+        return "MS"
+    raise ValueError(
+        f"Parameter ``period_type`` must be one of 'a', 's', 'q', 'm'; got {period_type}."
+    )
 
 
 def _excel_gas(
@@ -63,7 +76,9 @@ def _excel_gas(
             sheet_name = "gas_A_stat"
             max_anticipation = 6
         else:
-            raise ValueError("Invalid value for parameter `period_type`.")
+            raise ValueError(
+                f"Parameter ``period_type`` must be one of {', '.join(PERIOD_TYPES['gas'])}; got {period_type}."
+            )
 
         if period_start > max_anticipation:
             raise NotImplementedError(
@@ -122,7 +137,9 @@ def _excel_power(
             sheet_name = "pwr_A_stat"
             max_anticipation = 6
         else:
-            raise ValueError("Invalid value for parameter `period_type`.")
+            raise ValueError(
+                f"Parameter ``period_type`` must be one of {', '.join(PERIOD_TYPES['power'])}; got {period_type}."
+            )
 
         if period_start > max_anticipation:
             raise NotImplementedError(
@@ -134,7 +151,9 @@ def _excel_power(
         elif product_code == "peak":
             startcol = 6
         else:
-            raise ValueError("Invalid value for parameter `product_code`.")
+            raise ValueError(
+                f"Parameter ``product_code`` must be one of 'peak', 'base'; got {product_code}."
+            )
         startcol += (period_start - 1) * 12
 
         kwargs.update(
@@ -176,7 +195,7 @@ def power_spot() -> pd.Series:
             to_insert = pd.Series(spot[ts], [ts])
         spot = pd.concat([spot[:ts], to_insert, spot[ts:][1:]])
     spot = set_ts_index(spot).rename("p")
-    spot = spot.resample("H").asfreq()
+    spot = spot.resample("H").asfreq().astype("pint[Eur/MWh]")
     return spot
 
 
@@ -226,8 +245,10 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
     for df in (b, p):
         df.dropna(inplace=True)
         df.columns = ["ts_left_trade", "p"]
+        df.p = df.p.astype("pint[Eur/MWh]")
     b = set_ts_index(b, "ts_left_trade", continuous=False)
     p = set_ts_index(p, "ts_left_trade", continuous=False)
+
     # ...put into one object...
     df = p.merge(
         b,
@@ -236,43 +257,26 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
         right_index=True,
         suffixes=("_peak", "_base"),
     )
+    df.index = df.index.rename("ts_left_trade")
+
     # ...add some additional information...
-    @functools.lru_cache
-    def deliv_f(ts):
+
+    @functools.lru_cache(1500)
+    def calc_deliv(ts):
         return utils.ts_leftright(ts, period_type, period_start)
 
-    df["ts_left"], df["ts_right"] = zip(*df.index.map(deliv_f))
+    df["ts_left"], df["ts_right"] = zip(*df.index.map(calc_deliv))
     df["anticipation"] = df["ts_left"] - df.index
-    # ...get number of peak and base and offpeak hours...
-    # h = df[["ts_left", "ts_right"]].drop_duplicates().reset_index(drop=True)
-    # bpo = np.vectorize(duration_bpo)(h["ts_left"], h["ts_right"])
-    # h["basehours"], h["peakhours"], h["offpeakhours"] = bpo
-    # df = df.reset_index().merge(h, how="left").set_index(df.index.names)
-    # ...and use to calculate offpeak prices.
-    df["p_offpeak"] = df.apply(
-        lambda row: offpeak(
-            row["p_base"], row["p_peak"], row["ts_left"], row["ts_right"]
-        ),
-        axis=1,
-    )
+
+    # ...and calculate offpeak prices.
+    freq = periodtype_to_freq(period_type)
+    df["p_offpeak"] = convert.offpeak(df["p_base"], df["p_peak"], df.index, freq)
+
     # Finally, return in correct row and column order.
-    df.index = df.index.rename("ts_left_trade")
-    return df[
-        [
-            "ts_left",
-            "ts_right",
-            "anticipation",
-            "p_base",
-            "p_peak",
-            "p_offpeak",
-            # "basehours",
-            # "peakhours",
-            # "offpeakhours",
-        ]
-    ]
+    return df[["ts_left", "ts_right", "anticipation", "p_base", "p_peak", "p_offpeak"]]
 
 
-def power_futures(period_type: str = "m") -> pd.DataFrame:
+def power_futures(period_type: str = "m", start: int = None) -> pd.DataFrame:
     """
     Power futures prices, indexed by delivery period and trading day.
 
@@ -280,6 +284,11 @@ def power_futures(period_type: str = "m") -> pd.DataFrame:
     ----------
     period_type : {'m' (month, default), 'q' (quarter), 'a' (year)}
         Duration of the product.
+    period_start : int
+        - 1 = prices for trading days on which delivery was in next/coming (full) period
+          (i.e., "frontyear", "frontmonth" etc) (default),
+        - 2 = period after that, etc.
+        If None, return all trading days.
 
     Returns
     -------
@@ -291,9 +300,10 @@ def power_futures(period_type: str = "m") -> pd.DataFrame:
     """
     # Get all trading data and put in big dataframe.
     pieces = {}
-    for period_start in range(1, 10):
+    starts = [start] if start is not None else range(1, 10)
+    for start in starts:
         try:
-            pieces[period_start] = _power_futures(period_type, period_start)
+            pieces[start] = _power_futures(period_type, start)
         except NotImplementedError:
             pass
     fut = pd.concat(pieces.values()).reset_index()

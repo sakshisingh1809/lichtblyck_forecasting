@@ -1,6 +1,6 @@
-
 import numpy as np
 from scipy.stats import norm
+
 
 def randomwalkfactor(vola: float, time: float, percentile: float = None) -> float:
     """Calculate the factor with which to multiply a variable undergoing a random walk.
@@ -19,9 +19,10 @@ def randomwalkfactor(vola: float, time: float, percentile: float = None) -> floa
     float
         Multiplication factor
     """
-
+    if time <= 0:
+        return 1  # No random walk in past.
     if vola == 0:
-        vola = 1e-5 
+        vola = 1e-5
     if percentile is None:
         percentile = np.random.rand()
     mu = -0.5 * (vola ** 2)
