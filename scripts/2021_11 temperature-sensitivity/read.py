@@ -11,4 +11,4 @@ for pf, path in filenames.items():
     sensitivity = table["1 degC"] - 1
     ss[pf] = sensitivity
 
-df = pd.DataFrame(ss)
+sensitivity = pd.DataFrame(ss)
