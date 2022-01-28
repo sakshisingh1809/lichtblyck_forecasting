@@ -3,10 +3,10 @@ from typing import Callable
 
 
 class Animal(ABC):
-    def __new__(cls, name, weight):
+    def __new__(cls):
         print(f"{cls.__name__}, __new__")
         try:
-            return object.__new__(Cat(name, weight))
+            return object.__new__(Dog)
         except ValueError:
             pass
         try:
