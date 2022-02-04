@@ -40,7 +40,7 @@ def info(climate_zone: int, info: str = "name") -> Union[pd.Series, Any]:
 def historicdata(climate_zone: Union[int, Path]) -> bytes:
     """Return bytes object, i.e., file contents of historic climate data for
     specified climate zone (if int) or from specified file (if path)."""
-    if isinstance(climate_zone, int):    
+    if isinstance(climate_zone, int):
         # Find the correct station id...
         sid = info(climate_zone, "id")
         # ... then, find the zip archive corresponding to that station...

@@ -54,7 +54,7 @@ def _tmpr(climate_zone: int) -> pd.Series:
     return s
 
 
-def tmpr(fill_gaps:bool=True) -> pd.DataFrame:
+def tmpr(fill_gaps: bool = True) -> pd.DataFrame:
     """
     Return the daily temperatures for each climate zone.
 
@@ -258,7 +258,9 @@ def fill_gaps(t: pd.DataFrame) -> pd.DataFrame:
         Temperature dataframe with (some) gaps filled.
     """
     # Keep only days with at most 1 missing climate zone.
-    t = t[t.isna().sum(axis=1) < 2].copy() # remove days with >1 missing value. (.copy() only needed to stop 'A value is trying to be set on a copy of a slice' warning.)
+    t = t[
+        t.isna().sum(axis=1) < 2
+    ].copy()  # remove days with >1 missing value. (.copy() only needed to stop 'A value is trying to be set on a copy of a slice' warning.)
 
     # For each missing value, get estimate. Using average difference to other stations' values.
     complete = t.dropna()  # all days without any missing value
