@@ -5,16 +5,16 @@ Dataframe-like class to hold general energy-related timeseries; either volume ([
 
 from __future__ import annotations
 
+from . import single_helper
 from .base import PfLine
-from .common import PfLineCommon
-from .single_helper import make_dataframe
 from ..utils import changefreq_sum
+
 from typing import Dict, Iterable, Union
 import pandas as pd
 import numpy as np
 
 
-class SinglePfLine(PfLine, PfLineCommon):
+class SinglePfLine(PfLine):
     """Portfolio line without children. Has a single dataframe; .children is the empty
     dictionary.
 
@@ -26,8 +26,15 @@ class SinglePfLine(PfLine, PfLineCommon):
         PfLine object.
     """
 
+    def __new__(cls, data):
+        # Catch case where data is already a valid class instance.
+        if isinstance(data, SinglePfLine):
+            return data  # TODO: return copy
+        # Otherwise, do normal thing.
+        return super().__new__(cls, data)
+
     def __init__(self, data: Union[PfLine, Dict, pd.DataFrame, pd.Series]):
-        self._df = make_dataframe(data)
+        self._df = single_helper.make_dataframe(data)
 
     # Implementation of ABC methods.
 
@@ -89,12 +96,14 @@ class SinglePfLine(PfLine, PfLineCommon):
     def loc(self) -> _LocIndexer:
         return _LocIndexer(self)
 
-    # Additional methods, unique to this class.
-
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
         return self._df.equals(other._df)
+
+    # Additional methods, unique to this class.
+
+    # (none)
 
 
 class _LocIndexer:

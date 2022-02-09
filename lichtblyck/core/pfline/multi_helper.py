@@ -1,13 +1,22 @@
 """Verify input data and turn into object needed in MultiPfLine instantiation."""
 
 from __future__ import annotations
-from .base import PfLine
+
 from . import multi
-from .create import create_pfline
+from .base import PfLine
+
 from typing import Counter, Mapping, Dict
 
 
-def data_to_childrendict(data) -> Dict[str, PfLine]:
+def make_childrendict(data) -> Dict[str, PfLine]:
+    """From data, create a dictionary of PfLine instances. Also, do some data verification."""
+    children = _data_to_childrendict(data)
+    _assert_pfline_kindcompatibility(children)
+    children = _intersect_indices(children)
+    return children
+
+
+def _data_to_childrendict(data) -> Dict[str, PfLine]:
     """Check data, and turn into a dictionary."""
 
     if isinstance(data, multi.MultiPfLine):
@@ -24,12 +33,12 @@ def data_to_childrendict(data) -> Dict[str, PfLine]:
         if isinstance(value, PfLine):
             children[key] = value
         else:
-            children[key] = create_pfline(value)  # try to cast to PfLine instance
+            children[key] = PfLine(value)  # try to cast to PfLine instance
 
     return children
 
 
-def assert_pfline_kindcompatibility(children: Dict) -> None:
+def _assert_pfline_kindcompatibility(children: Dict) -> None:
     """Check pflines in dictionary, and raise error if their kind is not compatible."""
 
     if len(children) == 0:
@@ -53,7 +62,7 @@ def assert_pfline_kindcompatibility(children: Dict) -> None:
     )
 
 
-def intersect_indices(children: Dict[str, PfLine]) -> Dict[str, PfLine]:
+def _intersect_indices(children: Dict[str, PfLine]) -> Dict[str, PfLine]:
     """Keep only the overlapping part of each PfLine's index."""
 
     if len(children) < 2:
@@ -75,12 +84,4 @@ def intersect_indices(children: Dict[str, PfLine]) -> Dict[str, PfLine]:
         raise ValueError("PfLine indices describe non-overlapping periods.")
 
     children = {name: child.loc[idx] for name, child in children.items()}
-    return children
-
-
-def make_childrendict(data) -> Dict[str, PfLine]:
-    """From data, create a dictionary of PfLine instances. Also, do some data verification."""
-    children = data_to_childrendict(data)
-    assert_pfline_kindcompatibility(children)
-    children = intersect_indices(children)
     return children

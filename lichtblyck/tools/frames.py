@@ -4,10 +4,12 @@ Module with tools to modify and standardize dataframes.
 """
 
 from .stamps import FREQUENCIES, freq_up_or_down, trim_index
+
 from pandas.core.frame import NDFrame
-from typing import Iterable, Callable, Union
+from typing import Iterable, Union
 import pandas as pd
 import numpy as np
+import functools
 
 
 def set_ts_index(
@@ -240,11 +242,12 @@ def trim_frame(fr: NDFrame, freq: str) -> NDFrame:
     return fr.loc[i]
 
 
-def series_allclose(s1, s2):
+@functools.wraps(np.allclose)
+def series_allclose(s1, s2, *args, **kwargs):
     """Compare if all values in series are equal/close. Works with series that have units."""
     without_units = [not (hasattr(s, "pint")) for s in [s1, s2]]
     if all(without_units):
-        return np.allclose(s1, s2)
+        return np.allclose(s1, s2, *args, **kwargs)
     elif any(without_units):
         return False
     elif s1.pint.dimensionality != s2.pint.dimensionality:
@@ -252,4 +255,4 @@ def series_allclose(s1, s2):
     # Both have units, and both have same dimensionality (e.g. 'length'). Check values.
     s1_vals = s1.pint.m
     s2_vals = s2.astype(f"pint[{s1.pint.u}]").pint.m
-    return np.allclose(s1_vals, s2_vals)
+    return np.allclose(s1_vals, s2_vals, *args, **kwargs)

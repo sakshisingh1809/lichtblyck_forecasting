@@ -5,28 +5,36 @@ their name.
 """
 
 from __future__ import annotations
-import warnings
+
+from . import multi_helper
 from .base import PfLine
-from .common import PfLineCommon
-from .multi_helper import make_childrendict
+
 from typing import Dict, Iterable, Mapping, Optional, Union
 import pandas as pd
 import numpy as np
+import warnings
 
 
-class MultiPfLine(PfLine, PfLineCommon):
+class MultiPfLine(PfLine):
     """Portfolio line with children, can be found in .children dictionary attribute
     and can also be accessed by name from class instance.
 
     Parameters
     ----------
     data: Any
-        Generally: object with a mapping from strings to PfLie instances; most commonly a
+        Generally: object with a mapping from strings to PfLine instances; most commonly a
         dictionary.
     """
 
+    def __new__(cls, data):
+        # Catch case where data is already a valid class instance.
+        if isinstance(data, MultiPfLine):
+            return data  # TODO: make copy instead
+        # Otherwise, do normal thing.
+        return super().__new__(cls, data)
+
     def __init__(self, data: Union[MultiPfLine, Mapping[str, PfLine]]):
-        self._children = make_childrendict(data)
+        self._children = multi_helper.make_childrendict(data)
 
     # Implementation of ABC methods.
 
@@ -113,6 +121,11 @@ class MultiPfLine(PfLine, PfLineCommon):
     def loc(self) -> _LocIndexer:
         return _LocIndexer(self)
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        return self._children == other._children
+
     # Additional methods, unique to this class.
 
     @property
@@ -126,11 +139,6 @@ class MultiPfLine(PfLine, PfLineCommon):
         qp_children = {child.kind: child for child in self._children.values()}
         if "q" in qp_children and "p" in qp_children:
             return qp_children
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        return self._children == other._children
 
 
 class _LocIndexer:

@@ -1,7 +1,7 @@
+from lichtblyck import testing
 from lichtblyck.core import utils
 from lichtblyck.tools.stamps import freq_up_or_down
 from lichtblyck.tools.frames import set_ts_index, wavg
-from pandas import Series, DataFrame
 import numpy as np
 import pandas as pd
 import pytest
@@ -207,20 +207,19 @@ def avgable():
 @pytest.mark.parametrize("fr1,fr2,descr", summable())
 def test_changefreq_sum(fr1, fr2, descr):
     testfr = utils.changefreq_sum(fr1, fr2.index.freq)
-    if isinstance(fr1, Series):
-        pd.testing.assert_series_equal(testfr, fr2)
+    if isinstance(fr1, pd.Series):
+        testing.assert_series_equal(testfr, fr2)
     else:
-        pd.testing.assert_frame_equal(testfr, fr2)
+        testing.assert_frame_equal(testfr, fr2)
 
 
 @pytest.mark.parametrize("fr1,fr2,descr", avgable())
 def test_changefreq_avg(fr1, fr2, descr):
     testfr = utils.changefreq_avg(fr1, fr2.index.freq)
-    if isinstance(fr1, Series):
-        pd.testing.assert_series_equal(testfr, fr2)
+    if isinstance(fr1, pd.Series):
+        testing.assert_series_equal(testfr, fr2)
     else:
-        pd.testing.assert_frame_equal(testfr, fr2)
+        testing.assert_frame_equal(testfr, fr2)
 
 
 # # TODO: test where timeseries is downsampled that starts/ends in e.g. middle of month.
-

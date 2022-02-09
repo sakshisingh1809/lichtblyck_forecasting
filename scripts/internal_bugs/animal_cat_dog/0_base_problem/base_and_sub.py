@@ -1,26 +1,17 @@
 from abc import ABC, abstractmethod
-from typing import Callable
 
 
 class Animal(ABC):
-    def __new__(cls):
-        print(f"{cls.__name__}, __new__")
-        try:
-            return object.__new__(Dog)
-        except ValueError:
-            pass
-        try:
-            return Dog(name, weight)
-        except ValueError:
-            pass
-
-    # Methods to be implemented by subclasses.
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Name of the animal."""
-        ...
+    def __new__(cls, weight: float):
+        if cls is Animal:
+            # Try to return subclass instance instead.
+            for subcls in [Dog, Cat]:
+                try:
+                    return subcls(weight)
+                except ValueError:
+                    pass
+            raise NotImplementedError("No appropriate subclass found.")
+        return super().__new__(cls)
 
     @property
     @abstractmethod
@@ -28,40 +19,54 @@ class Animal(ABC):
         """weight of the animal in kg."""
         ...
 
-    @abstractmethod
-    def speak(self):
-        """Say the typical animal words."""
-        ...
 
-    # Methods directly implemented by base class.
+class Dog(Animal):
+    def __init__(self, weight: float = 5):
+        if not (1 < weight < 90):
+            raise ValueError("No dog has this weight")
+        self._weight = weight
 
-    def turn_into_cat(self):
-        return Cat(self.name, self.weight)
+    weight: float = property(lambda self: self._weight)
 
 
 class Cat(Animal):
-    def __init__(self, name: str, weight: float = 5):
+    def __init__(self, weight: float = 5):
         if not (0.5 < weight < 15):
             raise ValueError("No cat has this weight")
-        self._name, self._weight = name, weight
+        self._weight = weight
 
-    name: str = property(lambda self: self._name)
     weight: float = property(lambda self: self._weight)
-    speak: Callable = lambda self: print(f"{self.name} says 'miauw'")
 
 
-class Dog(Animal):
-    def __init__(self, name: str, weight: float = 5):
-        print("Dog.__init__")
-        if not (1 < weight < 90):
-            raise ValueError("No dog has this weight")
-        self._name, self._weight = name, weight
+if __name__ == "__main__":
 
-    name: str = property(lambda self: self._name)
-    weight: float = property(lambda self: self._weight)
-    speak = lambda self: print(f"{self.name} says 'woof'")
+    a1 = Dog(34)
+    try:
+        a2 = Dog(0.9)  # ValueError
+    except ValueError:
+        pass
+    else:
+        raise RuntimeError("Should have raised Exception!")
 
+    a3 = Cat(0.8)
+    try:
+        a4 = Cat(25)  # ValueError
+    except ValueError:
+        pass
+    else:
+        raise RuntimeError("Should have raised Exception!")
 
-mrchompers = Dog("Mr. Chompers", 3)
-mrchompers.speak()  # Mr. Chompers says 'woof'
-mrchompers.turn_into_cat().speak()  # Mr. Chompers says 'miauw'
+    a5 = Animal(80)  # can only be dog; should return dog.
+    assert type(a5) is Dog
+    a6 = Animal(0.7)  # can only be cat; should return cat.
+    assert type(a6) is Cat
+    a7 = Animal(10)  # can be both; should return dog.
+    assert type(a7) is Dog
+    try:
+        a8 = Animal(400)
+    except NotImplementedError:
+        pass
+    else:
+        raise RuntimeError("Should have raised Exception!")
+
+# %%

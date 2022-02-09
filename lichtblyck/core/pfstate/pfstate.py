@@ -7,27 +7,15 @@ from __future__ import annotations
 
 
 from .pfstate_helper import make_pflines
-from ..pfline import PfLine, NDFrameLike
-from ..mixins import (
-    PfStateText,
-    PfStatePlot,
-    PfStateArithmatic,
-    PfStateHedge,
-    OtherOutput,
-)
+from ..base import NDFrameLike
+from ..pfline import PfLine, SinglePfLine, MultiPfLine
+from ..mixins import PfStateText, PfStatePlot, OtherOutput
 from typing import Optional, Iterable, Union
 import pandas as pd
 import warnings
 
 
-class PfState(
-    NDFrameLike,
-    PfStateText,
-    PfStatePlot,
-    PfStateArithmatic,
-    PfStateHedge,
-    OtherOutput,
-):
+class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
     """Class to hold timeseries information of an energy portfolio, at a specific moment.
 
     Parameters
@@ -61,8 +49,8 @@ class PfState(
         The expected costs needed to source the offtake volume; the sum of the sourced
         and unsourced positions.
 
-    # index : pandas.DateTimeIndex
-    #     Left timestamp of row.
+    index : pandas.DateTimeIndex
+        Left timestamp of row.
 
     Notes
     -----
@@ -75,6 +63,7 @@ class PfState(
     @classmethod
     def from_series(
         cls,
+        *,
         pu: pd.Series,
         qo: Optional[pd.Series],
         qs: Optional[pd.Series],
@@ -145,7 +134,7 @@ class PfState(
 
     @property
     def pnl_cost(self):
-        return self.sourced + self.unsourced
+        return MultiPfLine({"sourced": self.sourced, "unsourced": self.unsourced})
 
     def df(self) -> pd.DataFrame:
         """DataFrame for this PfState.
@@ -206,18 +195,15 @@ class PfState(
         if hasattr(self, name):
             return getattr(self, name)
 
-    # def __len__(self):
-    #     return len(self.index)
-
-    # def __bool__(self):
-    #     return len(self) != 0
-
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, PfState):
             return False
         return all(
             [self[part] == other[part] for part in ["offtake", "unsourced", "sourced"]]
         )
+
+    def __bool__(self):
+        return True
 
     @property
     def loc(self) -> _LocIndexer:
@@ -237,3 +223,9 @@ class _LocIndexer:
         unsourcedprice = self.unsourcedprice.loc[arg]
         sourced = self.sourced.loc[arg]
         return PfState(offtakevolume, unsourcedprice, sourced)
+
+
+from . import enable_arithmatic, enable_hedging
+
+enable_arithmatic.apply()
+enable_hedging.apply()

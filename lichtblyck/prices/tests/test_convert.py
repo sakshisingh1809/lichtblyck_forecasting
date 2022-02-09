@@ -1,10 +1,9 @@
 from lichtblyck.prices import convert, utils
-from lichtblyck.core import dev, utils as cutils
+from lichtblyck.core import utils as cutils
 from lichtblyck.tools.frames import set_ts_index
 import numpy as np
 import pandas as pd
 import pytest
-import functools
 
 
 @pytest.mark.parametrize(
@@ -50,17 +49,11 @@ def test_pbaseppeakpoffpeak_explicit(b, p, o, ts_left, ts_right):
 )
 def test_completebpoframe_explicit(bpoframe):
     b, p, o = bpoframe["base"], bpoframe["peak"], bpoframe["offpeak"]
-    b2 = convert.complete_bpoframe(pd.DataFrame({"peak": p, "offpeak": o}))[
-        "base"
-    ]
+    b2 = convert.complete_bpoframe(pd.DataFrame({"peak": p, "offpeak": o}))["base"]
 
-    o2 = convert.complete_bpoframe(pd.DataFrame({"peak": p, "base": b}))[
-        "offpeak"
-    ]
+    o2 = convert.complete_bpoframe(pd.DataFrame({"peak": p, "base": b}))["offpeak"]
 
-    p2 = convert.complete_bpoframe(pd.DataFrame({"offpeak": o, "base": b}))[
-        "peak"
-    ]
+    p2 = convert.complete_bpoframe(pd.DataFrame({"offpeak": o, "base": b}))["peak"]
     pd.testing.assert_series_equal(b, b2, atol=0.01, check_dtype=False)
     pd.testing.assert_series_equal(o, o2, atol=0.01, check_dtype=False)
     pd.testing.assert_series_equal(p, p2, atol=0.01, check_dtype=False)
@@ -121,7 +114,11 @@ def series_and_frames():
 
     bpoframes_sourcedata = {
         freq: {**{key: [] for key in keys}, "index": [], "new": isstart(period)}
-        for freq, period in {"MS": "month", "QS": "quarter", "AS": "year",}.items()
+        for freq, period in {
+            "MS": "month",
+            "QS": "quarter",
+            "AS": "year",
+        }.items()
     }
 
     for ts, p in tseries["var"]["H"].items():
