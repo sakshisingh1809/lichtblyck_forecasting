@@ -22,14 +22,6 @@ import time
 import json
 import requests
 
-# import numpy as np
-# import datetime as dt
-
-# import subprocess
-# import pathlib
-# from OpenSSL import crypto
-# from socket import gethostname
-
 _server = "http://lbbelvis01:8040"
 
 _COMMOTEN = {"power": "PFMSTROM", "gas": "PFMGAS"}  # commodity: tenant dictionary
@@ -81,7 +73,7 @@ class _Connection:
             raise ConnectionError("No connection exists. Token incorrect?")
 
     def auth_successful(self) -> bool:
-        return True  # TODO # TODO # TODO # TODO # TODO # TODO
+        return True  # TODO
 
     def redo_auth(self) -> None:
         """Redo authentication. Necessary after timeout of log-in."""
@@ -228,7 +220,7 @@ def auth_with_token():
 
 def update_cache_files(commodity: str = None):
     """Update the cache files for all timeseries of a commodity (or all commodities, if
-    none specified). Takes a long time, only run when portfolio structure changed or 
+    none specified). Takes a long time, only run when portfolio structure changed or
     when relevant timeseries added/changed."""
     if not commodity:
         for commodity in _sources:
@@ -280,12 +272,12 @@ def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str
     Returns
     -------
     Dict[str, str]
-        Dictionary of matching portfolios. Key = portfolio abbreviation (e.g. 'LUD' or 
+        Dictionary of matching portfolios. Key = portfolio abbreviation (e.g. 'LUD' or
         'LUD_SIM', value = portfolio name (e.g. 'Ludwig Sichere Menge').
 
     Notes
     -----
-    Always uses cached information. If portfolio structure in Belvis is changed, run 
+    Always uses cached information. If portfolio structure in Belvis is changed, run
     the `.update_cache_files()` function to manually update the cache.
     """
     name = name.lower()
@@ -324,7 +316,7 @@ def find_tsids(
     pfid : str, optional (default: search in all portfolios. Only possible if use_cache)
         Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
     name : str, optional (default: return all timeseries).
-        Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf'). 
+        Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf').
     strict : bool, optional (default: False)
         If True, only returns timeseries if the name exactly matches. Otherwise, also
         return if name partially matches. Always case insensitive.
@@ -334,7 +326,7 @@ def find_tsids(
     Returns
     -------
     Dict[int, Tuple[str]]
-        Dictionary with found timeseries. Keys are the timeseries ids, the values are 
+        Dictionary with found timeseries. Keys are the timeseries ids, the values are
         (portfolio abbreviation, timeseries name)-tuples.
     """
     name = name.lower()
@@ -411,8 +403,8 @@ def find_tsid(
     """
     # Find all hits
     hits = find_tsids(commodity, pfid, name, strict, use_cache)
-    
-    #custom quick-fix
+
+    # custom quick-fix
     if set(hits.keys()) == set([44578448, 44580972]):
         hits = {44578448: hits[44578448]}
 
@@ -484,4 +476,3 @@ def series(
         df["v"].to_list(), pd.DatetimeIndex(df["ts"]).tz_convert("Europe/Berlin")
     )
     return s
-

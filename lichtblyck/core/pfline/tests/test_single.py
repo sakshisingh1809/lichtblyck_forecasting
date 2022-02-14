@@ -78,7 +78,7 @@ def test_singlepfline_access(columns):
         if col in columns:
             test_series_equal(col, df[col])
         elif col not in result.available:
-            test_series_equal(col, df.na)
+            test_series_equal(col, df.na.rename(col))
 
 
 # . check correct working of attributes .changefreq().
@@ -119,7 +119,7 @@ def test_singlepfline_changefreqimpossible(freq, newfreq, kind):
     """Test if changing frequency raises error if it's impossible."""
 
     periods = {"H": 200, "15T": 2000, "D": 20}[freq]
-    i = pd.date_range("2020-04-06", freq=freq, periods=periods)
+    i = pd.date_range("2020-04-06", freq=freq, periods=periods, tz="Europe/Berlin")
     pfl = dev.get_singlepfline(i, kind)
     with pytest.raises(ValueError):
         _ = pfl.changefreq(newfreq)

@@ -19,7 +19,7 @@ def test_pfline_init(inputtype, outputtype):
         else:  # pfline
             data_in = spfl
     elif outputtype is MultiPfLine:
-        mpfl = dev.get_pfline()
+        mpfl = dev.get_multipfline()
         if inputtype == "df":
             return  # no way to call with dataframe
         elif inputtype == "dict":

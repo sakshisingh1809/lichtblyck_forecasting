@@ -57,8 +57,6 @@ def test_makedataframe_freqtz(freq, tz):
         )
 
 
-# . check with various combinations of keys: p, q, w, p and q, q and w, etc.
-# . check that inconsistent data raises error.
 @pytest.mark.parametrize("tz", ["Europe/Berlin", None])
 @pytest.mark.parametrize("freq", ["MS", "D"])
 @pytest.mark.parametrize(
@@ -155,7 +153,6 @@ def test_makedataframe_unequalfrequencies(freq1, freq2, columns):
             _ = single_helper.make_dataframe(dic)
 
 
-# . check with keys having unequal indexes: unequal timeperiod.
 @pytest.mark.parametrize("freq", ["15T", "H", "D", "MS"])
 @pytest.mark.parametrize("overlap", [True, False])
 def test_pfline_unequaltimeperiods(freq, overlap):

@@ -144,7 +144,7 @@ class PfStatePlot:
             labeltop=True
         )  # make x-axis tick labels on the top of a plot
         ax2.xaxis.set_tick_params(labelbottom=False)
-        ax2.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
+        ax2.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
         self.plot_to_ax(ax2, "hedgedfraction")
 
         # plot price
