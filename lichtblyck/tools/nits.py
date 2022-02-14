@@ -50,8 +50,10 @@ def to_compact(value: Union[pint.Quantity, pd.Series, pd.DataFrame]):
         return value.pint.to(newunits)
     elif isinstance(value, pd.DataFrame):
         return pd.DataFrame({name: to_compact(s) for name, s in value.items()})
-    else: 
-        raise TypeError('`value` must be a Quantity, or Series or DataFrame of quantities.')
+    else:
+        raise TypeError(
+            "`value` must be a Quantity, or Series or DataFrame of quantities."
+        )
 
 
 def unit2name(unit: pint.Unit) -> str:

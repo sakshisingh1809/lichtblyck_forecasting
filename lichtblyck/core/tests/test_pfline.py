@@ -258,10 +258,7 @@ def test_pfline_unequaltimeperiods(freq, choice):
 # . .kind property always correctly set.
 # . timeseries can be accessed with .q, .p, .r, .w, ['q'], ['p'], etc.
 # . check correct working of attributes .df() and .changefreq().
-# . check correct working of dunder methods. E.g. assert correct addition:
-# . . pflines having same or different kind
-# . . pflines having same or different frequency
-# . . pflines covering same or different time periods
+
 
 # . initialisation with dictionary, with dataframe, with named tuple.
 # . initialisation with pfline returns identical pfline.
@@ -280,14 +277,40 @@ def test_pfline_init(tz, freq, columns):
 
 
 # . .kind property always correctly set.
-@pytest.mark.parametrize("str", ["q", "p", None])
+@pytest.mark.parametrize("str", ["q", "p", "r", None])
 def test_kind(str):
-    pass
+    if str == "q":
+        if PfLine.df(str) == "r" or PfLine.df(str) == "p":
+            result = "p"
+        else:
+            result = "q"
+    elif str == "p":
+        result = PfLine.df(str)
+    else:
+        return
+
+    expected_result = PfLine.kind(result)
+    pd.testing.assert_frame_equal(result, expected_result)
 
 
 # . timeseries can be accessed with .q, .p, .r, .w, ['q'], ['p'], etc.
-def test_pfline_consistency():
-    pass
+@pytest.mark.parametrize("str", ["q", "p", "r", None])
+def test_pfline_consistency(str):
+
+    if str == "q":
+        result = PfLine.df(str)
+        expected = PfLine.q
+    elif str == "p":
+        result = PfLine.df(str)
+        expected = PfLine.p
+    elif str == "r":
+        result = PfLine.df(str)
+        expected = PfLine.r
+    else:
+        result = PfLine.df(str)
+        expected = PfLine.w
+
+    pd.testing.assert_frame_equal(result.iloc[:, 0], expected)
 
 
 # . check correct working of attributes .df().
@@ -329,11 +352,3 @@ def test_changefreq(freq, newfreq, columns):
 
     assert np.isclose(df1.columns[0].sum(), df2.columns[0].sum())
     assert np.isclose(df1.columns[1].sum(), df2.columns[1].sum())
-
-
-# . check correct working of dunder methods. E.g. assert correct addition:
-# . . pflines having same or different kind
-# . . pflines having same or different frequency
-# . . pflines covering same or different time periods
-def test_dunder():
-    pass
