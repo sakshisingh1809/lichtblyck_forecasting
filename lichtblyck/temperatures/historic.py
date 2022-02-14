@@ -258,14 +258,8 @@ def fill_gaps(t: pd.DataFrame) -> pd.DataFrame:
         Temperature dataframe with (some) gaps filled.
     """
     # Keep only days with at most 1 missing climate zone.
-<<<<<<< HEAD
-    t = t[
-        t.isna().sum(axis=1) < 2
-    ].copy()  # remove days with >1 missing value. (.copy() only needed to stop 'A value is trying to be set on a copy of a slice' warning.)
-=======
     # remove days with >1 missing value. (.copy() only needed to stop 'A value is trying to be set on a copy of a slice' warning.)
     t = t[t.isna().sum(axis=1) < 2].copy()
->>>>>>> eda053728c5be785a01393d82f25fb395735e12a
 
     # For each missing value, get estimate. Using average difference to other stations' values.
     complete = t.dropna()  # all days without any missing value

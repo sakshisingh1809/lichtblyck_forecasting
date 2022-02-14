@@ -15,6 +15,12 @@ i3 = pd.date_range(
 i4 = pd.date_range("2020", periods=8, freq="QS", tz=tz)  # longer freq, part overlap
 
 
+# . check correct working of dunder methods. E.g. assert correct addition:
+# . . pflines having same or different kind
+# . . pflines having same or different frequency
+# . . pflines covering same or different time periods
+
+
 @pytest.mark.parametrize(
     ("pfl_in", "value", "returntype", "returnkind"),
     [
@@ -24,27 +30,6 @@ i4 = pd.date_range("2020", periods=8, freq="QS", tz=tz)  # longer freq, part ove
         (dev.get_pfline(i, "p"), Q_(12, "cent/kWh"), PfLine, "p"),
         (dev.get_pfline(i, "p"), Q_(12, "Eur"), None, None),
         (dev.get_pfline(i, "q"), 8.1, PfLine, "q"),
-<<<<<<< HEAD
-        (dev.get_pfline(i, "q"), nits.ureg("8.1 GWh"), PfLine, "q"),
-        (dev.get_pfline(i, "q"), nits.ureg("8.1 MWh"), PfLine, "q"),
-        (dev.get_pfline(i, "q"), nits.ureg("-8.1 kWh"), PfLine, "q"),
-        (dev.get_pfline(i, "q"), nits.ureg("-8.1 Wh"), PfLine, "q"),
-        (dev.get_pfline(i, "q"), nits.ureg("12 Eur"), None),
-        (dev.get_pfline(i, "all"), 5.9, None),
-        (dev.get_pfline(i, "all"), nits.ureg("12 Eur"), None),
-        (dev.get_pfline(i, "all"), nits.ureg("6 Eur/MWh"), None),
-        (dev.get_pfline(i, "all"), nits.ureg("6 MW"), None),
-        (dev.get_pfline(i, "p"), dev.get_series(i, "p").pint.magnitude, PfLine, "p"),
-        (dev.get_pfline(i, "p"), dev.get_series(i, "p"), PfLine, "p"),
-        (dev.get_pfline(i, "p"), dev.get_pfline(i, "p"), PfLine, "p"),
-        (dev.get_pfline(i, "p"), dev.get_series(i, "q"), None),
-        (dev.get_pfline(i, "p"), dev.get_pfline(i, "q"), None),
-        (dev.get_pfline(i, "p"), dev.get_pfline(i, "all"), None),
-        (dev.get_pfline(i, "q"), dev.get_series(i, "q").pint.magnitude, PfLine, "q"),
-        (dev.get_pfline(i, "q"), dev.get_series(i, "q"), PfLine, "q"),
-        (dev.get_pfline(i, "q"), dev.get_pfline(i, "q"), PfLine, "q"),
-        (dev.get_pfline(i, "all"), dev.get_pfline(i, "all"), None),
-=======
         (dev.get_pfline(i, "q"), Q_(8.1, "GWh"), PfLine, "q"),
         (dev.get_pfline(i, "q"), Q_(8.1, "MWh"), PfLine, "q"),
         (dev.get_pfline(i, "q"), Q_(-8.1, "kWh"), PfLine, "q"),
@@ -66,7 +51,6 @@ i4 = pd.date_range("2020", periods=8, freq="QS", tz=tz)  # longer freq, part ove
         (dev.get_pfline(i, "all"), dev.get_pfline(i, "all"), None, None),
         (dev.get_pfline(i, "all"), dev.get_pfline(i2, "all"), PfLine, "all"),
         (dev.get_pfline(i, "all"), dev.get_pfline(i3, "all"), PfLine, "all"),
->>>>>>> 533460325ca84bbfb54a8d52fbbd19ca37880df5
     ],
 )
 def test_pfl_addition(pfl_in, value, returntype, returnkind):
