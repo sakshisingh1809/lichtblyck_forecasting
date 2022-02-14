@@ -15,13 +15,13 @@ DEFAULTTSNAMES_PER_COMMODITY = {  # commodity, ts, name or list of names.
         "wo": "#LB FRM Offtake - MW - incl subpf",
         "ws": (
             "#LB FRM Procurement/Forward - MW - incl subpf",
-            # "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
-            # "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
+            "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
+            "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
         ),
         "rs": (
             "#LB FRM Procurement/Forward - EUR (contract) - incl subpf",
-            # "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
-            # "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
+            "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
+            "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
         ),
     },
     "gas": {
