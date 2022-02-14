@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from lichtblyck.core.dev import get_index
+from lichtblyck.core.develop import dev
 import lichtblyck as lb
 import pandas as pd
 import numpy as np
@@ -29,8 +29,8 @@ def prev_qh(ts):
 
 
 def assert_w_vs_t_series(s, threshold=0.9):
-    """Check if colder means more consumption. s is Series of consumption values 
-    [MW] as function of single index (temperature [degC]). threshold = lowest 
+    """Check if colder means more consumption. s is Series of consumption values
+    [MW] as function of single index (temperature [degC]). threshold = lowest
     allowed fraction of values that defy the rule."""
     diff = s.sort_index().diff().dropna()
     total = len(diff)
@@ -39,7 +39,7 @@ def assert_w_vs_t_series(s, threshold=0.9):
 
 
 def assert_w_vs_w_series(w_more, w_less, threshold=0.9):
-    """Check if consumption in series w_more is more than in w_less. threshold = 
+    """Check if consumption in series w_more is more than in w_less. threshold =
     lowest allowed fraction of values that defy the rule."""
     diff = w_more - w_less
     total = len(diff)
@@ -81,7 +81,7 @@ def test_power_series_fromsource(source):
 
 @pytest.mark.parametrize("source", np.random.choice(lb.tlp.power.SOURCES, 8, False))
 def test_power_fromsource(source):
-    i = get_index("D")  # some random time index in days
+    i = dev.get_index("D")  # some random time index in days
     t = pd.Series(np.random.uniform(-30, 30, len(i)), i)
     tlp1 = lb.tlp.power.fromsource(source["name"], spec=1)
     w1 = tlp1(t)
@@ -95,7 +95,7 @@ def test_power_fromsource(source):
 
 
 def test_gas_D14():
-    i = get_index("D")  # some random time index in days
+    i = dev.get_index("D")  # some random time index in days
     t = pd.Series(np.random.uniform(-30, 30, len(i)), i)
     tlp1 = lb.tlp.gas.D14(kw=1)
     w1 = tlp1(t)

@@ -1,6 +1,6 @@
 from lichtblyck.prices import hedge
 from lichtblyck.prices import utils as putils
-from lichtblyck.core import dev
+from lichtblyck.core.develop import dev
 from lichtblyck.core import utils as cutils
 import lichtblyck as lb
 import numpy as np
@@ -49,6 +49,7 @@ def get_prices(tz, p_peak, p_offpeak):
     mu = {True: p_peak, False: p_offpeak}
     values = [np.random.normal(mu[lb.is_peak_hour(ts)], 1) for ts in i]
     return pd.Series(values, i)
+
 
 @pytest.mark.parametrize(
     ("values", "start", "notbpo", "bpo"),
@@ -227,4 +228,3 @@ def test_narrow_bpoTrue(start, freq_bpoTrue, count, tz, aggfreq, how):
     ref_values = [ref_results[key][how][ind] for key, ind in zip(keys, inds)]
     ref_result = pd.Series(ref_values, w.index)
     pd.testing.assert_series_equal(test_result, ref_result, check_names=False)
-

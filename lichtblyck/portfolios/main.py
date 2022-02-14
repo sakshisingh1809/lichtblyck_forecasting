@@ -1,7 +1,7 @@
 """Module to set up the portfolios as they are used and reported."""
 
 from ..core.pfstate import PfState
-from ..core.pfline import PfLine
+from ..core.pfline.single import SinglePfLine
 from .. import belvis  # to add functionality to pfline and pfstate
 import pandas as pd
 

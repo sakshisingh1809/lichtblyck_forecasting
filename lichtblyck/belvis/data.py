@@ -1,9 +1,9 @@
 """Module that uses connection to Belvis to generate PfLine and PfState objects."""
 
-from ..tools import stamps, frames
-from ..core.pfline import PfLine
-from ..core.pfstate import PfState
 from . import connector
+from ..tools import stamps, frames
+from ..core.pfline import PfLine, SinglePfLine
+from ..core.pfstate import PfState
 from typing import Union, Tuple
 import functools
 import datetime as dt
@@ -120,7 +120,7 @@ def offtakevolume(
     pfid: str,
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
-) -> PfLine:
+) -> SinglePfLine:
     """Get offtake volume for a certain portfolio from Belvis.
 
     Parameters
@@ -141,7 +141,7 @@ def offtakevolume(
     ts_left, ts_right = _ts_leftright(ts_left, ts_right)
     # Get timeseries.
     s = _series(commodity, pfid, "wo", ts_left, ts_right)
-    return PfLine({"w": s})
+    return SinglePfLine({"w": s})
 
 
 def sourced(
@@ -173,7 +173,7 @@ def sourced(
         n: _series(commodity, pfid, ts, ts_left, ts_right)
         for n, ts in {"w": "ws", "r": "rs"}.items()
     }
-    return PfLine(data)
+    return SinglePfLine(data)
 
 
 @functools.lru_cache()  # memoization
@@ -203,7 +203,7 @@ def unsourcedprice(
     tsid = connector.find_tsid(commodity, pfid, tsname, strict=True)
     s = connector.series(commodity, tsid, ts_left, ts_right)
     s = frames.set_ts_index(s, bound="right")
-    return PfLine({"p": s})
+    return SinglePfLine({"p": s})
 
 
 def pfstate(
