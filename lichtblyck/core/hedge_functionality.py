@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from ..prices.hedge import hedge
 from ..prices import convert, hedge
 from ..prices.utils import duration_bpo
 from typing import List, Callable, Dict, Tuple, TYPE_CHECKING
@@ -59,7 +58,7 @@ class PfLineHedge:
                 "Can only hedge with peak and offpeak products if PfLine has (quarter)hourly information."
             )
 
-        wout, pout = hedge(self.w, p.p, how, freq, po)
+        wout, pout = hedge.hedge(self.w, p.p, how, freq, po)
         return self.__class__({"w": wout, "p": pout})
 
     def po(self: PfLine, freq: str = "MS") -> pd.DataFrame:
@@ -130,7 +129,7 @@ class PfStateHedge:
         PfLine
             Hedge (volumes and prices) of unsourced volume.
         """
-        return self.unsourced.volume.hedge_width(self.unsourcedprice, how, freq, po)
+        return self.unsourced.volume.hedge_with(self.unsourcedprice, how, freq, po)
 
     def source_unsourced(
         self: PfState, how: str = "val", freq: str = "MS", po: bool = None

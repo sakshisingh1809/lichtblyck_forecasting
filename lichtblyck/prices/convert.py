@@ -11,7 +11,7 @@ Convert volume [MW] and price [Eur/MWh] timeseries using base, peak, offpeak tim
 """
 
 from typing import Union, Iterable
-from .utils import is_peak_hour, duration_bpo
+from . import utils
 from ..core.utils import changefreq_avg
 from ..tools.nits import Q_
 from ..tools.types import Value, Stamp
@@ -19,7 +19,7 @@ from ..tools.stamps import freq_up_or_down
 from ..tools.frames import trim_frame
 import pandas as pd
 import numpy as np
-from warnings import warn
+import warnings
 
 
 BPO = ("base", "peak", "offpeak")
@@ -29,61 +29,81 @@ def group_function(freq: str, bpo: bool = False):
     """Function to group all rows that belong to same 'product'."""
     if freq == "MS":
         if bpo:
-            return lambda ts: (ts.year, ts.month, is_peak_hour(ts))
+            return lambda ts: (ts.year, ts.month, utils.is_peak_hour(ts))
         else:
             return lambda ts: (ts.year, ts.month)
     elif freq == "QS":
         if bpo:
-            return lambda ts: (ts.year, ts.quarter, is_peak_hour(ts))
+            return lambda ts: (ts.year, ts.quarter, utils.is_peak_hour(ts))
         else:
             return lambda ts: (ts.year, ts.quarter)
     elif freq == "AS":
         if bpo:
-            return lambda ts: (ts.year, is_peak_hour(ts))
+            return lambda ts: (ts.year, utils.is_peak_hour(ts))
         else:
             return lambda ts: ts.year
-    else:
-        raise ValueError("Argument 'freq' must be on of {'MS', 'QS', 'AS'}.")
+
+    raise ValueError(f"Parameter ``freq`` must be one of 'MS', 'QS', 'AS'; got {freq}.")
 
 
 def offpeak(
     base: Union[Value, Iterable[Value]],
     peak: Union[Value, Iterable[Value]],
     ts_left: Union[Stamp, Iterable[Stamp]],
-) -> Union[Value, Iterable[Value]]:
-    """Return offpeak value from base and peak value and time interval they apply to."""
-    if isinstance(base, Iterable):
-        return np.vectorize(offpeak)(base, peak, ts_left)
-    b, p, o = duration_bpo(ts_left)
-    if o == 0:
-        return np.nan
-    return (base * b - peak * p) / o
+    freq: str = None,
+) -> Union[Value, pd.Series]:
+    """Offpeak value, given base and peak value and time interval they apply to.
+
+    Parameters
+    ----------
+    base : Union[Value, Iterable[Value]]
+        Base value
+    peak : Union[Value, Iterable[Value]]
+        Peak value
+    ts_left : Union[Stamp, Iterable[Stamp]]
+        (Left-bound) timestamp of period.
+    freq : {'MS' (month), 'QS' (quarter), 'AS' (year)}, optional
+        Length of delivery period. If none specified, use ``.freq`` attribute of
+        ``ts_left``.
+
+    Returns
+    -------
+    offpeak value(s)
+    """
+    fr = utils.duration_bpo(ts_left, freq)  # Series or DataFrame
+    return (base * fr["base"] - peak * fr["peak"]) / fr["offpeak"]
 
 
 def peak(
     base: Union[Value, Iterable[Value]],
     offpeak: Union[Value, Iterable[Value]],
     ts_left: Union[Stamp, Iterable[Stamp]],
-) -> Union[Value, Iterable[Value]]:
-    """Return peak value from base and offpeak value and time interval they apply to."""
-    if isinstance(base, Iterable):
-        return np.vectorize(peak)(base, offpeak, ts_left)
-    b, p, o = duration_bpo(ts_left)
-    if p == 0:
-        return np.nan
-    return (base * b - offpeak * o) / p
+    freq: str = None,
+) -> Union[Value, pd.Series]:
+    """Peak value, given base and offpeak value and time interval they apply to.
+
+    See also
+    --------
+    .offpeak
+    """
+    fr = utils.duration_bpo(ts_left, freq)  # Series or DataFrame
+    return (base * fr["base"] - offpeak * fr["offpeak"]) / fr["peak"]
 
 
 def base(
     peak: Union[Value, Iterable[Value]],
     offpeak: Union[Value, Iterable[Value]],
     ts_left: Union[Stamp, Iterable[Stamp]],
-) -> Union[Value, Iterable[Value]]:
-    """Return base value from peak and offpeak value and time interval they apply to."""
-    if isinstance(peak, Iterable):
-        return np.vectorize(base)(peak, offpeak, ts_left)
-    b, p, o = duration_bpo(ts_left)
-    return (peak * p + offpeak * o) / b
+    freq: str = None,
+) -> Union[Value, pd.Series]:
+    """Base value, given peak and offpeak value and time interval they apply to.
+
+    See also
+    --------
+    .offpeak
+    """
+    fr = utils.duration_bpo(ts_left, freq)  # Series or DataFrame
+    return (peak * fr["peak"] + offpeak * fr["offpeak"]) / fr["base"]
 
 
 def complete_bpoframe(partial_bpoframe: pd.DataFrame, prefix: str = "") -> pd.DataFrame:
@@ -142,7 +162,7 @@ def complete_bpoframe(partial_bpoframe: pd.DataFrame, prefix: str = "") -> pd.Da
             f"At least 2 of {', '.join(col2bpo.keys())} must be present as columns."
         )
     df = partial_bpoframe.copy()
-    durations = duration_bpo(df.index)
+    durations = utils.duration_bpo(df.index)
     b, p, o = durations["base"], durations["peak"], durations["offpeak"]
     if "offpeak" not in series:
         df[f"{prefix}offpeak"] = (series["base"] * b - series["peak"] * p) / o
@@ -198,7 +218,7 @@ def tseries2singlebpo(s: pd.Series, prefix: str = "") -> pd.Series:
     sin, units = (s.pint.magnitude, s.pint.units) if hasattr(s, "pint") else (s, None)
 
     # Do calculations. Use normal mean, because all rows have same duration.
-    grouped = sin.groupby(is_peak_hour).mean()
+    grouped = sin.groupby(utils.is_peak_hour).mean()
     sout = pd.Series(
         {
             f"{prefix}base": sin.mean(),
@@ -262,7 +282,9 @@ def tseries2bpoframe(s: pd.Series, freq: str = "MS", prefix: str = "") -> pd.Dat
     12 rows × 3 columns
     """
     if freq not in ("MS", "QS", "AS"):
-        raise ValueError("Argument 'freq' must be on of {'MS', 'QS', 'AS'}.")
+        raise ValueError(
+            f"Parameter ``freq`` must be one of 'MS', 'QS', 'AS'; got {freq}."
+        )
 
     # Remove partial data
     s = trim_frame(s, freq)
@@ -330,12 +352,12 @@ def bpoframe2tseries(
     Freq: H, Length: 8784, dtype: float64
     """
     if freq not in ("H", "15T"):
-        raise ValueError("Argument 'freq' must be on of {'H', '15T'}.")
+        raise ValueError(f"Parameter ``freq`` must be 'H' or '15T'; got {freq}")
 
     df = bpoframe.rename({f"{prefix}{bpo}": bpo for bpo in BPO}, axis=1)  # remove prefx
     df = complete_bpoframe(df)  # make sure we have peak and offpeak columns
     df = changefreq_avg(df[["peak", "offpeak"]], freq)
-    df["ispeak"] = df.index.map(is_peak_hour)
+    df["ispeak"] = df.index.map(utils.is_peak_hour)
 
     return df["offpeak"].where(df["ispeak"], df["peak"])
 
@@ -389,7 +411,7 @@ def tseries2tseries(s: pd.Series, freq: str = "MS") -> pd.Series:
     """
     if s.index.freq not in ("H", "15T"):
         raise ValueError(
-            f"Frequency of provided timeseries must be hourly or quarterhourly (got {s.index.freq} instead)."
+            f"Frequency of provided timeseries must be hourly or quarterhourly; got {s.index.freq}."
         )
 
     # Handle possible units.
@@ -454,8 +476,12 @@ def bpoframe2bpoframe(
     2020-10-01 00:00:00+02:00   39.455197   54.468722   31.063728
     """
     if freq not in ("MS", "QS", "AS"):
-        raise ValueError("Argument 'freq' must be one of {'MS', 'QS', 'AS'}.")
+        raise ValueError(
+            f"Parameter ``freq`` must be one of 'MS', 'QS', 'AS'; got {freq}."
+        )
     if freq_up_or_down(bpoframe.index.freq, freq) == 1:
-        warn("This conversion includes upsampling, e.g. from yearly to monthly values.")
+        warnings.warn(
+            "This conversion includes upsampling, e.g. from yearly to monthly values."
+        )
 
     return tseries2bpoframe(bpoframe2tseries(bpoframe, "H", prefix), freq, prefix)

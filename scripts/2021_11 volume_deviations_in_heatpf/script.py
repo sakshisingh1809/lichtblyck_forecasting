@@ -19,7 +19,7 @@ class Pf:
     deviation_per_calmonth: pd.Series = None
 
 
-#%% TEMPERATURE TO OFFTAKE.
+# %% TEMPERATURE TO OFFTAKE.
 
 # Temperature weights.
 weights = pd.DataFrame(
@@ -57,7 +57,7 @@ for label, pf in pfs.items():
     lb.tlp.plot.vs_time(pf.tlp)
     lb.tlp.plot.vs_t(pf.tlp)
 
-#%% PER MONTH: EXPECTED AND ACTUAL OFFTAKE, AND DEVIATION.
+# %% PER MONTH: EXPECTED AND ACTUAL OFFTAKE, AND DEVIATION.
 
 for label, pf in pfs.items():
     # offtake.

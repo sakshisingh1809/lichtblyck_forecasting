@@ -63,12 +63,15 @@ def _changefreq_general(fr: NDFrame, freq: str = "MS", is_summable: bool = True)
     contains."""
 
     # TODO: Make sure result has correct dtype (currently float -> object sometimes)
+    # TODO: Add tests with multiindex columns
 
     # Some resampling labels are right-bound by default. Change to make left-bound.
     if freq in ["M", "A", "Q"]:
         freq += "S"
     if freq not in FREQUENCIES:
-        raise ValueError(f"Parameter `freq` must be one of {','.join(FREQUENCIES)}.")
+        raise ValueError(
+            f"Parameter ``freq`` must be one of {','.join(FREQUENCIES)}; got {freq}."
+        )
 
     # Empty frame.
     if len(fr) == 0:

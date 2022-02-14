@@ -236,7 +236,7 @@ class PfLineArithmatic:
             else:  # self.kind == "q"
                 s = self.q / other.q
             s = s.dropna().resample(self.index.freq).asfreq()
-            return s.pint.magnitude.rename("fraction")
+            return s.rename("fraction")
 
         # Other is a Series (but not containing [power], [energy] or [price]).
         elif isinstance(other, pd.Series):

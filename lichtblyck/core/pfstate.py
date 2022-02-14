@@ -36,7 +36,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
 
     # Unsourced prices.
     if isinstance(unsourcedprice, pd.Series):
-        if unsourcedprice.name and unsourcedprice.name  in "qwr":
+        if unsourcedprice.name and unsourcedprice.name in "qwr":
             ValueError("Name implies this is not a price timeseries.")
         elif unsourcedprice.name != "p":
             warnings.warn("Will assume prices, even though series name is not 'p'.")
@@ -72,7 +72,7 @@ def _make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
 class PfState(
     PfStateTextOutput, PfStatePlotOutput, OtherOutput, PfStateArithmatic, PfStateHedge
 ):
-    """Class to hold timeseries information of an energy portfolio, at a specific moment. 
+    """Class to hold timeseries information of an energy portfolio, at a specific moment.
 
     Parameters
     ----------
@@ -104,28 +104,29 @@ class PfState(
     pnl_costs : PfLine ('all')
         The expected costs needed to source the offtake volume; the sum of the sourced
         and unsourced positions.
-        
+
     # index : pandas.DateTimeIndex
     #     Left timestamp of row.
 
     Notes
     -----
-    Sign conventions: 
+    Sign conventions:
     . Volumes (`q`, `w`): >0 if volume flows into the portfolio.
-    . Revenues (`r`): >0 if money flows out of the portfolio (i.e., costs).  
+    . Revenues (`r`): >0 if money flows out of the portfolio (i.e., costs).
     . Prices (`p`): normally positive.
     """
 
     @classmethod
     def from_series(
         cls,
+        /,
         pu: pd.Series,
-        qo: Optional[pd.Series],
-        qs: Optional[pd.Series],
-        rs: Optional[pd.Series],
-        wo: Optional[pd.Series],
-        ws: Optional[pd.Series],
-        ps: Optional[pd.Series],
+        qo: Optional[pd.Series] = None,
+        qs: Optional[pd.Series] = None,
+        rs: Optional[pd.Series] = None,
+        wo: Optional[pd.Series] = None,
+        ws: Optional[pd.Series] = None,
+        ps: Optional[pd.Series] = None,
     ):
         """Create Portfolio instance from timeseries.
 
@@ -141,7 +142,7 @@ class PfState(
             `rs` [Eur]
             `ps` [Eur/MWh]
             If no volume has been sourced, all 4 sourced timeseries may be None.
-        
+
         Returns
         -------
         PfState
@@ -184,8 +185,12 @@ class PfState(
         return -self.unsourced
 
     @property
-    def pnl_cost(self):
+    def pnl_cost(self) -> PfLine:
         return self.sourced + self.unsourced
+
+    @property
+    def hedgefraction(self) -> pd.Series:
+        return -self._sourced.volume / self._offtakevolume
 
     def df(self) -> pd.DataFrame:
         """DataFrame for this PfState.
@@ -228,7 +233,7 @@ class PfState(
         freq : str, optional
             The frequency at which to resample. 'AS' for year, 'QS' for quarter, 'MS'
             (default) for month, 'D for day', 'H' for hour, '15T' for quarterhour.
-        
+
         Returns
         -------
         PfState
@@ -258,4 +263,3 @@ class PfState(
         return all(
             [self[part] == other[part] for part in ["offtake", "unsourced", "sourced"]]
         )
-

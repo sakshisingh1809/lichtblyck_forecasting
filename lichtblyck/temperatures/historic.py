@@ -22,8 +22,8 @@ import numpy as np
 
 def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
     """Return dataframe with historic daily climate data for specified climate zone (if
-    int) or from specified file (if path). Values before 1917 are dropped. Index is 
-    gapless with missing values filled with np.nan. Column names not standardized but 
+    int) or from specified file (if path). Values before 1917 are dropped. Index is
+    gapless with missing values filled with np.nan. Column names not standardized but
     rather as found in source file."""
     # Get file content and turn into dataframe...
     bytes_data = historicdata(climate_zone)
@@ -67,7 +67,7 @@ def tmpr(fill_gaps: bool = True) -> pd.DataFrame:
     -------
     Dataframe
         With daily temperature values. Index: timestamp (daily). Columns: climate zones
-        (1..15). Values: average temperature for corresponding day and climate zone in 
+        (1..15). Values: average temperature for corresponding day and climate zone in
         degC.
     """
     return forallzones(_tmpr)
@@ -258,9 +258,14 @@ def fill_gaps(t: pd.DataFrame) -> pd.DataFrame:
         Temperature dataframe with (some) gaps filled.
     """
     # Keep only days with at most 1 missing climate zone.
+<<<<<<< HEAD
     t = t[
         t.isna().sum(axis=1) < 2
     ].copy()  # remove days with >1 missing value. (.copy() only needed to stop 'A value is trying to be set on a copy of a slice' warning.)
+=======
+    # remove days with >1 missing value. (.copy() only needed to stop 'A value is trying to be set on a copy of a slice' warning.)
+    t = t[t.isna().sum(axis=1) < 2].copy()
+>>>>>>> eda053728c5be785a01393d82f25fb395735e12a
 
     # For each missing value, get estimate. Using average difference to other stations' values.
     complete = t.dropna()  # all days without any missing value
