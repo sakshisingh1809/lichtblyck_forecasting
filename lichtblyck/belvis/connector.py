@@ -19,11 +19,12 @@ import numpy as np
 import datetime as dt
 import jwt
 import time
+import datetime
 import json
 import requests
 
 # import numpy as np
-# import datetime as dt
+
 
 # import subprocess
 # import pathlib
@@ -58,30 +59,58 @@ class _Connection:
         if not self.auth_successful():
             raise ConnectionError("No connection exists. Username/password incorrect?")
 
-    def auth_with_token(self) -> None:
+    def encode_with_token(self, user_id, private_key):
+        # Create token that is valid for a given amount of time.
+        try:
+            claims = {
+                "name": self._tenant,
+                "sub": user_id,
+                "exp": datetime.datetime.utcnow()
+                + datetime.timedelta(days=0, seconds=120),
+                "iat": datetime.datetime.utcnow(),
+            }
+
+            # "RSA 512 bit" in the PKCS standard for your client.
+            return jwt.encode(payload=claims, key=private_key, algorithm="RS512")
+
+        except Exception as e:
+            return e
+
+    def decode_with_token(self, token, private_key):
+        try:
+            payload = jwt.decode(
+                token, key=private_key, options={"verify_signature": True}
+            )
+            return payload["sub"]
+        except jwt.ExpiredSignatureError:
+            return "Signature expired. Please log in again."
+        except jwt.InvalidTokenError:
+            return "Invalid token. Please log in again."
+
+    def auth_with_token(self, usrID) -> None:
         """Authentication with public-private key pair."""
+
         # Open private key to sign token with.
         with open(self._AUTHFOLDER / "privatekey.txt", "r") as f:
             private_key = f.read()
 
-        # Create token that is valid for a given amount of time.
-        claims = {
-            "preferred_username": "Ruud.Wijtvliet",
-            "clientId": self._tenant,
-            "exp": int(time.time()) + 10 * 60,
-        }
+        token = self.encode_with_token(usrID)
+        self.assertTrue(isinstance(token, bytes))
 
-        # "RSA 512 bit" in the PKCS standard for your client.
-        token = jwt.encode(claims, private_key, algorithm="RS512")
-        # decoded = jwt.decode(token, options={"verify_signature": True})
         self._details = {"headers": {"Authorization": f"Bearer {token}"}}
         self._lastquery = None  # reset to keep track of this auth method's validity
+
         # Check if successful.
-        if not self.auth_successful():
+        if not self.auth_successful():  # check for connection failures
             raise ConnectionError("No connection exists. Token incorrect?")
 
+        self.assertTrue(
+            self.decode_with_token(token) == 1
+        )  # decode the token and assert
+
     def auth_successful(self) -> bool:
-        return True  # TODO # TODO # TODO # TODO # TODO # TODO
+        return connection_alive(self._tenant)
+        # TODO # TODO # TODO # TODO # TODO # TODO
 
     def redo_auth(self) -> None:
         """Redo authentication. Necessary after timeout of log-in."""
@@ -220,15 +249,15 @@ def auth_with_password(usr: str, pwd: str):
         source.connection.auth_with_password(usr, pwd)
 
 
-def auth_with_token():
+def auth_with_token(usrID: int):
     """Authentication with private-public key pair."""
     for source in _sources.values():
-        source.connection.auth_with_token()
+        source.connection.auth_with_token(usrID)
 
 
 def update_cache_files(commodity: str = None):
     """Update the cache files for all timeseries of a commodity (or all commodities, if
-    none specified). Takes a long time, only run when portfolio structure changed or 
+    none specified). Takes a long time, only run when portfolio structure changed or
     when relevant timeseries added/changed."""
     if not commodity:
         for commodity in _sources:
@@ -280,12 +309,12 @@ def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str
     Returns
     -------
     Dict[str, str]
-        Dictionary of matching portfolios. Key = portfolio abbreviation (e.g. 'LUD' or 
+        Dictionary of matching portfolios. Key = portfolio abbreviation (e.g. 'LUD' or
         'LUD_SIM', value = portfolio name (e.g. 'Ludwig Sichere Menge').
 
     Notes
     -----
-    Always uses cached information. If portfolio structure in Belvis is changed, run 
+    Always uses cached information. If portfolio structure in Belvis is changed, run
     the `.update_cache_files()` function to manually update the cache.
     """
     name = name.lower()
@@ -324,7 +353,7 @@ def find_tsids(
     pfid : str, optional (default: search in all portfolios. Only possible if use_cache)
         Portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM')
     name : str, optional (default: return all timeseries).
-        Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf'). 
+        Name of timeseries (e.g. '#LB FRM Procurement/Forward - MW - excl subpf').
     strict : bool, optional (default: False)
         If True, only returns timeseries if the name exactly matches. Otherwise, also
         return if name partially matches. Always case insensitive.
@@ -334,7 +363,7 @@ def find_tsids(
     Returns
     -------
     Dict[int, Tuple[str]]
-        Dictionary with found timeseries. Keys are the timeseries ids, the values are 
+        Dictionary with found timeseries. Keys are the timeseries ids, the values are
         (portfolio abbreviation, timeseries name)-tuples.
     """
     name = name.lower()
@@ -411,8 +440,8 @@ def find_tsid(
     """
     # Find all hits
     hits = find_tsids(commodity, pfid, name, strict, use_cache)
-    
-    #custom quick-fix
+
+    # custom quick-fix
     if set(hits.keys()) == set([44578448, 44580972]):
         hits = {44578448: hits[44578448]}
 
@@ -484,4 +513,3 @@ def series(
         df["v"].to_list(), pd.DatetimeIndex(df["ts"]).tz_convert("Europe/Berlin")
     )
     return s
-

@@ -77,7 +77,7 @@ def _unitsline2(headerline: str, units: Dict[str, nits.ureg.Unit]) -> str:
 
 
 def _treegraphs(drawprev: List[bool], has_children: bool, is_last: bool) -> Tuple[str]:
-    """Return 2-element list with tree lines and coloring. One for first row, 
+    """Return 2-element list with tree lines and coloring. One for first row,
     and one for all subsequent rows."""
     # continuation of parent lines
     base = "".join([_style(l) + ("│ ", "  ")[p] for l, p in enumerate(drawprev)])
@@ -325,4 +325,3 @@ class PfStateTextOutput:
 
     def __repr__(self: PfState):
         return "Lichtblick PfState object.\n" + self._as_str(0, False)
-
