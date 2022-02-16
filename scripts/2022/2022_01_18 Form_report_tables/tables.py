@@ -33,6 +33,7 @@ def var(pfs):
 
 
 def big_df(aggpfs, aggprices):
+    """Create big dataframe with selected information."""
     dfs = {
         "offtake": -1 * aggpfs.offtake.df("q"),
         "hedged": pd.DataFrame(
@@ -63,7 +64,7 @@ def write_to_excel(pfname, thisyear: bool = True):
 
 # %% GET DATA AND WRITE TO EXCEL
 
-writer = pd.ExcelWriter(f"state_on_{dt.date.today()}f.xlsx", engine="xlsxwriter")
+writer = pd.ExcelWriter(f"state_on_{dt.date.today()}_test.xlsx", engine="xlsxwriter")
 
 write_to_excel("B2C_HH_LEGACY", True)
 write_to_excel("B2C_P2H_LEGACY", True)

@@ -145,7 +145,7 @@ tsidtestcases = [
         38721055,
     ),  # >1 result, 1 exact
     ("power", "PKG", "Noneexistingtimeseries", [], None),  # 0 results
-]
+]  # "commodity", "pfid", "name", "result_if_not_strict", "result_if_strict"
 
 
 @pytest.mark.parametrize("strict", [True, False])

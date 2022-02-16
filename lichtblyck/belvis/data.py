@@ -12,6 +12,7 @@ import pandas as pd
 # For offtake volume, sourced volume, and sourced revenue: timeseries names.
 DEFAULTTSNAMES_PER_COMMODITY = {  # commodity, ts, name or list of names.
     "power": {
+        # currently used:
         "wo": "#LB FRM Offtake - MW - incl subpf",
         "ws": (
             "#LB FRM Procurement/Forward - MW - incl subpf",
@@ -83,7 +84,7 @@ def _tsname(commodity: str, pfid: str, ts: str):
     defaulttsname = defaulttsnames.get(ts)
     if defaulttsname is None:
         raise ValueError(
-            f"`ts` '{ts}' not found. Must be one of {', '.join(defaulttsnames.keys())}."
+            f"``ts`` '{ts}' not found. Must be one of {', '.join(defaulttsnames.keys())}."
         )
     return tsnames.get(ts, defaulttsname)
 
@@ -92,7 +93,7 @@ def _pfid_and_tsname_for_pu(commodity: str) -> Tuple:
     try:
         return PFID_AND_TSNAME_FOR_PU[commodity]
     except KeyError:
-        raise ValueError("`commodity` must be one of {'power', 'gas'}.")
+        raise ValueError("``commodity`` must be one of {'power', 'gas'}.")
 
 
 @functools.lru_cache()
