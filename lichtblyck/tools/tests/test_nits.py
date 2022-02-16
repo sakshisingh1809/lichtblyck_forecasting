@@ -1,5 +1,4 @@
-from lichtblyck.core import dev
-from lichtblyck.tools.nits import ureg, Q_, name2unit
+from lichtblyck.tools.nits import ureg, Q_
 import numpy as np
 import pytest
 
@@ -58,10 +57,9 @@ EXTENTED_IDENTITIES = [
     (30 * ureg.MWh / (40 * ureg.kWh), 750),
     (30 * ureg.kWh / (40e6 * ureg.W * 3600 * ureg.s), 0.75e-3),
 ]
+
+
 @pytest.mark.parametrize("quants", EXTENTED_IDENTITIES)
 def test_extended_identities(quants):
     for q in quants:
         assert np.isclose(q, quants[0])
-
-
-

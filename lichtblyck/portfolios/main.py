@@ -1,7 +1,7 @@
 """Module to set up the portfolios as they are used and reported."""
 
 from ..core.pfstate import PfState
-from ..core.pfline import PfLine
+from ..core.pfline.single import SinglePfLine
 from .. import belvis  # to add functionality to pfline and pfstate
 import pandas as pd
 
@@ -113,6 +113,7 @@ def pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
 
     # Portfolio is original portfolio.
     pf_dic = POWER_ORIGINAL[pfname]
+
     # Offtake: combine two curves.
     offtakevolume_100 = sum(
         belvis.data.offtakevolume(commodity, pfid, ts_left, ts_right)
@@ -126,14 +127,17 @@ def pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
     cutoff = now + pd.Timedelta(days=4)
     df1 = offtakevolume_100.df()[offtakevolume_100.index < cutoff]
     df2 = offtakevolume_certain.df()[offtakevolume_certain.index >= cutoff]
-    offtakevolume = PfLine(pd.concat([df1, df2]).w)
+    offtakevolume = SinglePfLine(pd.concat([df1, df2]).w)
+
     # Sourced.
     sourced = sum(
         belvis.data.sourced(commodity, pfid, ts_left, ts_right)
         for pfid in pf_dic["sourced"]
     )
+
     # Unsourcedprice.
     unsourcedprice = belvis.data.unsourcedprice(commodity, ts_left, ts_right)
+
     # Combine.
     return PfState(offtakevolume, unsourcedprice, sourced)
 

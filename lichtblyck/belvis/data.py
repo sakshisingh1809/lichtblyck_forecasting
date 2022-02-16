@@ -1,9 +1,9 @@
 """Module that uses connection to Belvis to generate PfLine and PfState objects."""
 
-from ..tools import stamps, frames
-from ..core.pfline import PfLine
-from ..core.pfstate import PfState
 from . import connector
+from ..tools import stamps, frames
+from ..core.pfline import PfLine, SinglePfLine
+from ..core.pfstate import PfState
 from typing import Union, Tuple
 import functools
 import datetime as dt
@@ -12,16 +12,17 @@ import pandas as pd
 # For offtake volume, sourced volume, and sourced revenue: timeseries names.
 DEFAULTTSNAMES_PER_COMMODITY = {  # commodity, ts, name or list of names.
     "power": {
+        # currently used:
         "wo": "#LB FRM Offtake - MW - incl subpf",
         "ws": (
             "#LB FRM Procurement/Forward - MW - incl subpf",
-            # "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
-            # "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
+            "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
+            "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
         ),
         "rs": (
             "#LB FRM Procurement/Forward - EUR (contract) - incl subpf",
-            # "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
-            # "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
+            "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
+            "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
         ),
     },
     "gas": {
@@ -83,7 +84,7 @@ def _tsname(commodity: str, pfid: str, ts: str):
     defaulttsname = defaulttsnames.get(ts)
     if defaulttsname is None:
         raise ValueError(
-            f"`ts` '{ts}' not found. Must be one of {', '.join(defaulttsnames.keys())}."
+            f"``ts`` '{ts}' not found. Must be one of {', '.join(defaulttsnames.keys())}."
         )
     return tsnames.get(ts, defaulttsname)
 
@@ -92,7 +93,7 @@ def _pfid_and_tsname_for_pu(commodity: str) -> Tuple:
     try:
         return PFID_AND_TSNAME_FOR_PU[commodity]
     except KeyError:
-        raise ValueError("`commodity` must be one of {'power', 'gas'}.")
+        raise ValueError("``commodity`` must be one of {'power', 'gas'}.")
 
 
 @functools.lru_cache()
@@ -120,7 +121,7 @@ def offtakevolume(
     pfid: str,
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
-) -> PfLine:
+) -> SinglePfLine:
     """Get offtake volume for a certain portfolio from Belvis.
 
     Parameters
@@ -141,7 +142,7 @@ def offtakevolume(
     ts_left, ts_right = _ts_leftright(ts_left, ts_right)
     # Get timeseries.
     s = _series(commodity, pfid, "wo", ts_left, ts_right)
-    return PfLine({"w": s})
+    return SinglePfLine({"w": s})
 
 
 def sourced(
@@ -173,7 +174,7 @@ def sourced(
         n: _series(commodity, pfid, ts, ts_left, ts_right)
         for n, ts in {"w": "ws", "r": "rs"}.items()
     }
-    return PfLine(data)
+    return SinglePfLine(data)
 
 
 @functools.lru_cache()  # memoization
@@ -203,7 +204,7 @@ def unsourcedprice(
     tsid = connector.find_tsid(commodity, pfid, tsname, strict=True)
     s = connector.series(commodity, tsid, ts_left, ts_right)
     s = frames.set_ts_index(s, bound="right")
-    return PfLine({"p": s})
+    return SinglePfLine({"p": s})
 
 
 def pfstate(

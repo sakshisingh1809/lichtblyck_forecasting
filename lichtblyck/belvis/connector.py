@@ -23,14 +23,6 @@ import datetime
 import json
 import requests
 
-# import numpy as np
-
-
-# import subprocess
-# import pathlib
-# from OpenSSL import crypto
-# from socket import gethostname
-
 _server = "http://lbbelvis01:8040"
 
 _COMMOTEN = {"power": "PFMSTROM", "gas": "PFMGAS"}  # commodity: tenant dictionary
@@ -110,7 +102,6 @@ class _Connection:
 
     def auth_successful(self) -> bool:
         return connection_alive(self._tenant)
-        # TODO # TODO # TODO # TODO # TODO # TODO
 
     def redo_auth(self) -> None:
         """Redo authentication. Necessary after timeout of log-in."""
