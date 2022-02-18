@@ -8,7 +8,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 from scipy import stats
 
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 pfname = "B2C_P2H_LEGACY"
 ref = lb.portfolios.pfstate("power", pfname, "2022", "2023")
 

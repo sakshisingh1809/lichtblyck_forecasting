@@ -122,11 +122,18 @@ class _Connection:
         # if not self.auth_successful():  # Check if successful.
         #    raise ConnectionError("No connection exists. Token incorrect?")
 
+<<<<<<< HEAD
         # self.assertTrue(isinstance(token, bytes))
         # self._details = {"headers": {"Authorization": f"Bearer {token}"}}
         # self.assertTrue(
         #    self.decode_with_token(token, public_key) == 1
         # )  # decode the token and assert
+=======
+    def auth_successful(self) -> bool:
+        return True
+        # TODO: if I keep this line, I get a recursion error:
+        return connection_alive(self._tenant)
+>>>>>>> dec9123bea779b547b9483d9fe1508af046fd0de
 
     def redo_auth(self) -> None:
         """Redo authentication. Necessary after timeout of log-in."""
@@ -261,12 +268,24 @@ def _source(commodity):
 
 
 def auth_with_password(usr: str, pwd: str):
-    """Authentication with username `usr` and password `pwd`."""
+    """Authentication with username ``usr`` and password ``pwd``."""
     for source in _sources.values():
         source.connection.auth_with_password(usr, pwd)
 
 
+<<<<<<< HEAD
 def auth_with_token(usr: str):
+=======
+def auth_with_passwordfile(path: Path):
+    """Authentication with username and password stored on first 2 lines of textfile.
+    (NB: Whitespace is stripped.)"""
+    with open(path, "r") as f:
+        usr, pwd, *rest = f.readlines()
+    auth_with_password(usr.strip(), pwd.strip())
+
+
+def auth_with_token(usrID: int):
+>>>>>>> dec9123bea779b547b9483d9fe1508af046fd0de
     """Authentication with private-public key pair."""
     for source in _sources.values():
         source.connection.auth_with_token(usr)

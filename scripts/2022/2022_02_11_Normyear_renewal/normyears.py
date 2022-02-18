@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-climate_zone = "t_4"  # t_3 = hamburg, t_4 = potsdamm, t_5 = essen, t_12 = mannheim
+climate_zone = "t_3"  # t_3 = hamburg, t_4 = potsdamm, t_5 = essen, t_12 = mannheim
 
 # %% HISTORIC DATA.
 hist = lb.tmpr.hist.tmpr(True)[climate_zone]
@@ -21,7 +21,7 @@ t = pd.DataFrame({"hist": hist})
 ti = pd.date_range(
     "1992-01-01", "2021-01-01", freq="D", tz="Europe/Berlin", closed="left"
 )
-ti0 = pd.Timestamp("1900-01-01", tz="Europe/Berlin")
+ti0 = pd.Timestamp("2000-01-01", tz="Europe/Berlin")
 tau = (ti - ti0).total_seconds() / 3600 / 24 / 365.24  # years since ti0
 
 models = {}
@@ -30,31 +30,29 @@ hiddenname = True  # if True, use 'A', 'B', 'C' instead of real names.
 # linear + cos
 name = "A" if hiddenname else "simple"
 parameters = {
-    "t_3": (6.4698e00, 3.1393e-02, -8.3735e00, 2.0892e01),
+    "t_3": (9.60842e00, 3.14050e-02, 8.37243e00, 5.51718e-01),
     "t_4": (3.7320e00, 5.7780e-02, -9.6124e00, 1.6865e01),
     "t_5": (6.326879, 0.039805, -8.065436, 19.783243),
     "t_12": (8.009155, 0.031172, -9.346911, 16.306732),
 }
 a0, a1, a2, a3 = parameters[climate_zone]
-values = a0 + a1 * tau + a2 * np.cos(2 * np.pi * (tau - a3 / 365.24))
+values = a0 + a1 * tau + a2 * np.cos(2 * np.pi * (tau - a3))
 models[name] = pd.Series(values, ti)
 
 # linear + fourierseries
 name = "B" if hiddenname else "fourier"
 parameters = {
     "t_3": (
-        6.42082e00,
-        3.20586e-02,
-        -8.34319e00,
-        2.11414e01,
-        2.02009e-01,
-        1.25303e-01,
-        3.62181e-01,
-        -3.96979e00,
-        -2.44922e-01,
-        -1.24842e01,
-        2.40667e-01,
-        -1.46246e-02,
+        9.61428e00,
+        3.23511e-02,
+        8.31630e00,
+        5.52208e-01,
+        4.22991e-01,
+        8.06904e-02,
+        3.10878e-01,
+        3.17047e-01,
+        2.91373e-01,
+        8.03333e-02,
     ),
     "t_4": (
         3.66571e00,
@@ -67,14 +65,12 @@ parameters = {
         -3.15546e00,
         -3.07479e-01,
         -1.04868e01,
-        2.43193e-01,
-        -1.46868e-02,
     ),
 }
-a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11 = parameters[climate_zone]
+a0, a1, a2, a3, a4, a5, a6, a7, a8, a9 = parameters[climate_zone]
 values = a0 + a1 * tau
-for n, (a, o) in enumerate(((a2, a3), (a4, a5), (a6, a7), (a8, a9), (a10, a11))):
-    values += a * np.cos((n + 1) * 2 * np.pi * (tau - o / 365.24))
+for n, (a, o) in enumerate(((a2, a3), (a4, a5), (a6, a7), (a8, a9))):
+    values += a * np.cos((n + 1) * 2 * np.pi * (tau - o))
 models[name] = pd.Series(values, ti)
 
 # polynomial (from Jan)
@@ -138,6 +134,7 @@ colors = {
     "A": "orange",
     "B": "green",
     "C": "purple",
+    "B2": "blue",
 }
 
 # Daily values, in one long graph.
@@ -268,3 +265,5 @@ fig, axes = plt.subplots(figsize=(15, 10))
 fig.suptitle(title)
 rms_merror_peryear.plot.bar(ax=axes, color=colors)
 fig.savefig(f"{title}.png")
+
+# %%

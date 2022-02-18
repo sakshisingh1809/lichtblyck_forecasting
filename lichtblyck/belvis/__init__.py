@@ -1,8 +1,9 @@
 """Getting data from Kisters' portfolio management system 'Belvis'."""
 
-from . import data
+from .data import offtakevolume, sourced, forward, spot, unsourcedprice
 from .connector import (
     auth_with_password,
+    auth_with_passwordfile,
     auth_with_token,
     update_cache_files,
 )

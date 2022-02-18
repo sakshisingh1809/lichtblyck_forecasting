@@ -1,7 +1,7 @@
 
 #%%
 import lichtblyck as lb
-lb.belvis.auth_with_password('Ruud.Wijtvliet', 'Ammm1mmm2mmm3mmm')
+lb.belvis.auth_with_password('API-User-FRM', '')
 pfs = lb.portfolios.pfstate('power', 'B2C_P2H', '2021-11', '2022')
 d = pfs.changefreq('D')
 

@@ -18,7 +18,7 @@ sensitivity = pd.DataFrame(ss)
 
 import lichtblyck as lb
 
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_passwordfile("username_password.txt")
 
 pfs = lb.portfolios.pfstate("power", "B2C_P2H_LEGACY", "2022", "2023")
 # %%

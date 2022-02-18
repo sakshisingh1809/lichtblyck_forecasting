@@ -6,7 +6,7 @@ import numpy as np
 from tqdm.auto import tqdm
 import winsound
 
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 pfname = "B2C_HH_LEGACY"
 ref = lb.portfolios.pfstate("power", pfname, "2022", "2023")
 

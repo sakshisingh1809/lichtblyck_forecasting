@@ -15,7 +15,7 @@ import pandas as pd
 import datetime as dt
 
 # Get situation as realized.
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 pf = lb.portfolios.pfstate("power", "B2C_P2H", "2021-12", "2022")
 
 # Get prices before start of month.

@@ -1,5 +1,6 @@
 """Module to set up the portfolios as they are used and reported."""
 
+from lichtblyck.core.pfline.multi import MultiPfLine
 from ..core.pfstate import PfState
 from ..core.pfline.single import SinglePfLine
 from .. import belvis  # to add functionality to pfline and pfstate
@@ -91,25 +92,25 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
 
     if commodity not in ("power", "gas"):
         raise ValueError(
-            f"Values of parameter ``commodity`` must be 'power' or 'gas'; got {commodity}."
+            f"Parameter ``commodity`` must be one of 'power', 'gas'; got {commodity}."
         )
     if pfname not in PFNAMES[commodity]:
         raise ValueError(
-            f"Parameter ``pfname`` must be one of {PFNAMES[commodity]}; got {pfname}."
+            f"Parameter ``pfname`` must be one of {', '.join(PFNAMES[commodity])}; got {pfname}."
         )
 
     if commodity == "power":
-        return pfstate_power(pfname, ts_left, ts_right)
+        return _pfstate_power(pfname, ts_left, ts_right)
     else:
-        return pfstate_gas(pfname, ts_left, ts_right)
+        return _pfstate_gas(pfname, ts_left, ts_right)
 
 
-def pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
+def _pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
     commodity = "power"
 
     # Portfolio is sum of several portfolios.
     if pfnames := POWER_SYNTHETIC.get(pfname):
-        return sum(pfstate_power(pfn, ts_left, ts_right) for pfn in pfnames)
+        return sum(_pfstate_power(pfn, ts_left, ts_right) for pfn in pfnames)
 
     # Portfolio is original portfolio.
     pf_dic = POWER_ORIGINAL[pfname]
@@ -129,11 +130,12 @@ def pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
     df2 = offtakevolume_certain.df()[offtakevolume_certain.index >= cutoff]
     offtakevolume = SinglePfLine(pd.concat([df1, df2]).w)
 
-    # Sourced.
-    sourced = sum(
-        belvis.data.sourced(commodity, pfid, ts_left, ts_right)
-        for pfid in pf_dic["sourced"]
-    )
+    # Sourced: add forward and spot from individual components.
+    data = {"forward": None, "spot": None}
+    for pfid in pf_dic["sourced"]:
+        data["forward"] += belvis.data.forward(commodity, pfid, ts_left, ts_right)
+        data["spot"] += belvis.data.spot(commodity, pfid, ts_left, ts_right)
+    sourced = MultiPfLine(data)
 
     # Unsourcedprice.
     unsourcedprice = belvis.data.unsourcedprice(commodity, ts_left, ts_right)
@@ -142,9 +144,9 @@ def pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
     return PfState(offtakevolume, unsourcedprice, sourced)
 
 
-def pfstate_gas(pfname: str, ts_left, ts_right) -> PfState:
+def _pfstate_gas(pfname: str, ts_left, ts_right) -> PfState:
     commodity = "gas"
 
     # Portfolio is sum of several portfolios.
     if pfnames := GAS_SYNTHETIC.get(pfname):
-        return sum(pfstate_gas(pfn, ts_left, ts_right) for pfn in pfnames)
+        return sum(_pfstate_gas(pfn, ts_left, ts_right) for pfn in pfnames)

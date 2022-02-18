@@ -13,7 +13,7 @@ from scipy.stats import norm
 
 #%% Volume and market value of open positions.
 ts_left = lb.tools.stamps.ceil_ts(pd.Timestamp.now(), "AS", 0)
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 pfs = lb.portfolios.pfstate("power", "B2C_P2H", ts_left)
 unsourced_current = pfs.changefreq("MS").unsourced
 
