@@ -49,9 +49,15 @@ PFS = {
         "B2C_P2H": {
             "offtake": {
                 "100%": ("LUD_NSp", "LUD_WP"),
-                "certain": ("LUD_NSp_SiM", "LUD_WP_SiM",),
+                "certain": (
+                    "LUD_NSp_SiM",
+                    "LUD_WP_SiM",
+                ),
             },
-            "sourced": ("LUD_NSp", "LUD_WP",),
+            "sourced": (
+                "LUD_NSp",
+                "LUD_WP",
+            ),
         },
         "B2C_HH": {
             "offtake": ("PK_SiM", "LUD_Stg_SiM"),
@@ -69,7 +75,7 @@ timerange = [
 ]
 
 # Access belvis and get data.
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 offtakevolume_100 = sum(
     lb.PfLine.from_belvis_offtakevolume(commodity, belvispf, *timerange)
     for belvispf in PFS[commodity][pfname]["offtake"]["100%"]

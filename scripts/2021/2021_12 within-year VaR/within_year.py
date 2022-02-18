@@ -15,7 +15,7 @@ class WhatIf:
 
 portfolio = {}
 
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
 vola = 1  # fraction per calender year
 
@@ -43,4 +43,3 @@ name = "B2C_HH"
 portfolio[name]["ref"].pfl.to_clipboard()
 portfolio[name]["falling"].pfl.to_clipboard()
 portfolio[name]["rising"].pfl.to_clipboard()
-

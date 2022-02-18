@@ -146,10 +146,10 @@ def wp_sourced(
     # Prepare series for resampling.
     if hasattr(w_offtake, "pint"):
         w_unit = w_offtake.pint.units
-        sin = -w_offtake.pint.magnitude
+        sin = -1 * w_offtake.pint.magnitude
     else:
         w_unit = None
-        sin = -w_offtake
+        sin = -1 * w_offtake
 
     # Do resampling.
     def fn(sub_s):
@@ -160,7 +160,7 @@ def wp_sourced(
     if sin.index.freq in ["15T", "H"]:
         df = sin.groupby(is_peak_hour).apply(lambda s: s.resample("MS").apply(fn))
     else:
-        df = sin.resample("MS".apply(fn))
+        df = sin.resample(freq).apply(fn)
     w, p = df.w, df.p
 
     # Add unit if wanted.

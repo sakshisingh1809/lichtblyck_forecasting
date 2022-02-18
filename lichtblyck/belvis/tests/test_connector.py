@@ -15,7 +15,7 @@ def run_before_tests():
     global _didauth
 
     if not _didauth:  # check if authentication (either by session or token) is done.
-        connector.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+        connector.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
         _didauth = True
 
     yield  # this is where the testing happens

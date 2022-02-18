@@ -5,7 +5,7 @@
 import lichtblyck as lb
 import pandas as pd
 
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
 # As-is portfolio.
 pfs = lb.portfolios.pfstate("power", "B2C_P2H", "2021-10", "2022")

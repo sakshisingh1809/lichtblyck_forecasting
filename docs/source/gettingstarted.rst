@@ -6,7 +6,7 @@ This library is used for monitoring portfolios (getting the current best-picture
 As a data source, Belvis is commonly used. We first need to authorize with its REST-API:
    
    >>> import lichtblyck as lb
-   >>> lb.belvis.auth_with_password('Ruud.Wijtvliet', 'my_long_and_5tr0ng_password')
+   >>> lb.belvis.auth_with_password('MyFirst.LastName', 'my_long_and_5tr0ng_password')
 
 Then, we can get portfolio state of several pre-defined portfolios. The available ones are found here:
 

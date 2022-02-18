@@ -6,7 +6,7 @@ import datetime as dt
 import math
 from scipy import stats
 
-lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
 
 def var(pfs):

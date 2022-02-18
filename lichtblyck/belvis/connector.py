@@ -58,7 +58,7 @@ class _Connection:
 
         # Create token that is valid for a given amount of time.
         claims = {
-            "preferred_username": "Ruud.Wijtvliet",
+            "preferred_username": "API-User-FRM",
             "clientId": self._tenant,
             "exp": int(time.time()) + 10 * 60,
         }
@@ -207,9 +207,17 @@ def _source(commodity):
 
 
 def auth_with_password(usr: str, pwd: str):
-    """Authentication with username `usr` and password `pwd`."""
+    """Authentication with username ``usr`` and password ``pwd``."""
     for source in _sources.values():
         source.connection.auth_with_password(usr, pwd)
+
+
+def auth_with_passwordfile(path: Path):
+    """Authentication with username and password stored on first 2 lines of textfile.
+    (NB: Whitespace is stripped.)"""
+    with open(path, "r") as f:
+        usr, pwd, *rest = f.readlines()
+    auth_with_password(usr.strip(), pwd.strip())
 
 
 def auth_with_token():
