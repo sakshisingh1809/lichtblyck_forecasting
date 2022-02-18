@@ -20,7 +20,8 @@ def test_authenication(case: str):
 
     elif case == "correctcred":
         # Authentication with correct credentials should work.
-        connector.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+        # connector.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+        connector.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
     elif case == "token":
         # Authentication with token should work.connector.auth_with_token()

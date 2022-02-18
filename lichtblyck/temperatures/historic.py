@@ -25,6 +25,7 @@ def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
     int) or from specified file (if path). Values before 1917 are dropped. Index is
     gapless with missing values filled with np.nan. Column names not standardized but
     rather as found in source file."""
+
     # Get file content and turn into dataframe...
     bytes_data = historicdata(climate_zone)
     data = StringIO(str(bytes_data, "utf-8"))
@@ -172,6 +173,7 @@ def tmpr_struct(
     yymm = t.groupby([t.index.month, t.index.year]).apply(f)
     yymm.index.rename(["MM", "YY"], inplace=True)
     mm = yymm.groupby("MM").mean()
+
     #    2: calculate geographic average; weigh with consumption / customer presence in each zone
     weights = pd.DataFrame(
         {

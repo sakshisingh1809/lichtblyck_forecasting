@@ -9,7 +9,7 @@ from ...visualize import visualize as vis
 from ...tools import nits
 from typing import Dict, TYPE_CHECKING
 import numpy as np
-import matplotlib as mpl
+import matplotlib
 from matplotlib import pyplot as plt
 
 if TYPE_CHECKING:  # needed to avoid circular imports
@@ -147,7 +147,7 @@ class PfStatePlot:
             labeltop=True
         )  # make x-axis tick labels on the top of a plot
         ax2.xaxis.set_tick_params(labelbottom=False)
-        ax2.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
+        ax2.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
         self.plot_to_ax(ax2, "hedgedfraction")
 
         # plot price
@@ -188,6 +188,7 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
         4,
         gridspec_kw={"width_ratios": [0.3, 0.3, 2, 2], "height_ratios": ratios_list},
     )
+
     fig.set_size_inches(20, 10)
     pfnames = list(dic.keys())
     pfstates = list(dic.values())
@@ -223,6 +224,16 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
         pfs.plot_to_ax(axes[i - 1, 3], "hedgedfraction")  # plot hedgedfraction
         pfs.plot_to_ax(axes[i, 2], "price")  # plot price
 
+        # print portfolio names on the left most (i-1,0), eg. (0,0), (2,0),...
+        print_labels(axes, i - 1, 0, pfnames[j])
+
+        # print offtake units on next column (i-1,1), eg. (0,1), (2,1),...
+        print_labels(axes, i - 1, 1, axes[i - 1, 2].get_xticklabels())
+
+        # print price units on next column (i,1), eg. (0,1), (2,1),...
+        print_labels(axes, i, 1, axes[i, 2].get_xticklabels())
+
+        """
         axes[i - 1, 0].text(
             0.5,
             0.5,
@@ -230,7 +241,7 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
             fontsize=14,
             fontweight="bold",
             horizontalalignment="center",
-        )  # print portfolio names on the left most (i-1,0), eg. (0,0), (2,0),...
+        )
 
         axes[i - 1, 1].text(
             0.5,
@@ -238,7 +249,7 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
             axes[i - 1, 2].get_xticklabels(),
             fontsize=14,
             horizontalalignment="center",
-        )  # print offtake units on next column (i-1,1), eg. (0,1), (2,1),...
+        )
 
         axes[i, 1].text(
             0.5,
@@ -246,8 +257,8 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
             axes[i, 2].get_xticklabels(),
             fontsize=14,
             horizontalalignment="center",
-        )  # print price units on next column (i,1), eg. (0,1), (2,1),...
-
+        )
+        """
         plt.ylim(-1000000, 1000000)
         axes[i, 1].set_frame_on(False)
         axes[i, 1].set_yticklabels([])
@@ -261,7 +272,14 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     axes[0, 1].xaxis.tick_top()
     axes[0, 2].xaxis.tick_top()
 
-    draw_horizontal_lines(fig, axes)  # draw horizontal lines between portfolios
+    # draw_horizontal_lines(fig, axes)  # draw horizontal lines between portfolios
+
+
+def print_labels(axes, x, y, value):
+    axes[x, y].text(
+        0.5, 0.5, value, fontsize=14, fontweight="bold", horizontalalignment="center",
+    )
+    return
 
 
 def draw_horizontal_lines(fig, axes):

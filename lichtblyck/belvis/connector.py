@@ -20,7 +20,6 @@ import datetime as dt
 import jwt
 
 # import time
-import datetime
 import json
 import requests
 
@@ -41,13 +40,16 @@ class _Connection:
 
     tenant = property(lambda self: self._tenant)
 
+    # usr: "API-User-FRM" and pwd: "boring!Apfelmexiko85hirsch"
     def auth_with_password(self, usr: str, pwd: str) -> None:
         """Authentication with username `usr` and password `pwd`; open a session."""
         self._details = {"usr": usr, "pwd": pwd, "session": requests.Session()}
         self.query_general(
             "/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={self._tenant}"
         )
-        self._lastquery = None  # reset to keep track of this auth method's validity
+        self._lastquery = (
+            dt.datetime.now()
+        )  # reset to keep track of this auth method's validity
 
         if not self.auth_successful():  # Check if successful.
             raise ConnectionError("No connection exists. Username/password incorrect?")
@@ -59,9 +61,8 @@ class _Connection:
             claims = {
                 "name": usr,
                 "sub": self._tenant,
-                "exp": datetime.datetime.utcnow()
-                + datetime.timedelta(days=0, seconds=30),
-                "iat": datetime.datetime.utcnow(),
+                "exp": dt.datetime.utcnow() + dt.timedelta(days=0, seconds=30),
+                "iat": dt.datetime.utcnow(),
             }
 
             # "RSA 512 bit" in the PKCS standard for your client.
@@ -109,7 +110,9 @@ class _Connection:
                 "usr": decoded_user,
                 "token": token,
             }
-        self._lastquery = None  # reset to keep track of this auth method's validity
+        self._lastquery = (
+            dt.datetime.now()
+        )  # reset to keep track of this auth method's validity
 
         # self.assertTrue(isinstance(token, bytes))
         # self._details = {"headers": {"Authorization": f"Bearer {token}"}}
@@ -119,7 +122,6 @@ class _Connection:
 
     def auth_successful(self) -> bool:
         return True
-        # return connection_alive(self._tenant)
 
     def redo_auth(self) -> None:
         """Redo authentication. Necessary after timeout of log-in."""
@@ -127,7 +129,7 @@ class _Connection:
         if "session" in self._details:
             self.auth_with_password(self._details["usr"], self._details["pwd"])
         elif "token" in self._details:
-            self.decode_with_token(self._details["usr"], self._details["token"])
+            self.auth_with_token(self._details["usr"])
         else:
             raise PermissionError(
                 "First authenicate with `auth_with_password` or `auth_with_token`."
@@ -141,8 +143,8 @@ class _Connection:
         try:
             if "session" in self._details:
                 req = self._details["session"].get(string)
-            elif "headers" in self._details:
-                req = requests.get(string, headers=self._details["headers"])
+            elif "token" in self._details:
+                req = requests.get(string, token=self._details["token"])
             else:
                 raise PermissionError(
                     "First authenicate with `auth_with_password` or `auth_with_token`."

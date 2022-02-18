@@ -91,7 +91,7 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
         -------
         PfState
         """
-        if ws or qs or rs or ps:
+        if ws is not None or qs is not None or rs is not None or ps is not None:
             sourced = PfLine({"w": ws, "q": qs, "r": rs, "p": ps})
         else:
             sourced = None

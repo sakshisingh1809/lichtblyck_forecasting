@@ -56,11 +56,7 @@ def get_series(i=None, name="w", has_unit: bool = True) -> pd.Series:
         return pd.Series(100 + 100 * np.random.rand(len(i)), i, name=name)
 
 
-def get_dataframe(
-    i=None,
-    columns="wp",
-    has_unit: bool = True,
-) -> pd.DataFrame:
+def get_dataframe(i=None, columns="wp", has_unit: bool = True,) -> pd.DataFrame:
     """Get DataFrame with index `i` and columns `columns`. Columns (e.g. `q` and `w`)
     are not made consistent."""
     if i is None:
@@ -121,8 +117,8 @@ def get_pfstate(i=None) -> PfState:
     """Get portfolio state."""
     if i is None:
         i = get_index()
-    wo = -get_singlepfline(i, "w")
-    pu = get_singlepfline(i, "p")
+    wo = (-1) * get_singlepfline(i, "q").w
+    pu = get_singlepfline(i, "p").p
     ws, ps = mockup.wp_sourced(wo)
     return PfState.from_series(wo=wo, pu=pu, ws=ws, ps=ps)
 

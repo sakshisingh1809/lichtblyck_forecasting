@@ -160,7 +160,7 @@ def wp_sourced(
     if sin.index.freq in ["15T", "H"]:
         df = sin.groupby(is_peak_hour).apply(lambda s: s.resample("MS").apply(fn))
     else:
-        df = sin.resample("MS".apply(fn))
+        df = sin.resample("MS").apply(fn)
     w, p = df.w, df.p
 
     # Add unit if wanted.
