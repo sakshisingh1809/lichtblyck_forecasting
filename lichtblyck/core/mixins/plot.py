@@ -185,8 +185,8 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
 
     fig, axes = plt.subplots(
         len(dic) * 2,
-        3,
-        gridspec_kw={"width_ratios": [0.3, 2, 2], "height_ratios": ratios_list},
+        4,
+        gridspec_kw={"width_ratios": [0.3, 0.3, 2, 2], "height_ratios": ratios_list},
     )
     fig.set_size_inches(20, 10)
     pfnames = list(dic.keys())
@@ -199,27 +199,29 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
 
     for i in range(1, len(axes), 2):
         pfs = pfstates[j].changefreq(freq)
+
         axes[i - 1, 0].axis("off")
         axes[i, 0].axis("off")
-        axes[i, 2].axis("off")
-        axes[i - 1, 1].set_yticklabels([])
+        axes[i - 1, 1].axis("off")
+        axes[i, 1].axis("off")
+        axes[i, 3].axis("off")
+        axes[i - 1, 2].set_yticklabels([])
 
         if i != 1:  # don't remove labels from axes[0,0]
-            axes[i - 1, 1].set_xticklabels([])
             axes[i - 1, 2].set_xticklabels([])
+            axes[i - 1, 3].set_xticklabels([])
 
-        axes[i - 1, 2].set_ylabel("Percentage")
-        axes[i - 1, 2].xaxis.set_tick_params(
+        axes[i - 1, 3].xaxis.set_tick_params(
             labeltop=True
         )  # make x-axis tick labels on the top of a plot
-        axes[i - 1, 2].xaxis.set_tick_params(labelbottom=False)
-        axes[i - 1, 2].yaxis.set_major_formatter(
+        axes[i - 1, 3].xaxis.set_tick_params(labelbottom=False)
+        axes[i - 1, 3].yaxis.set_major_formatter(
             matplotlib.ticker.PercentFormatter(1.0)
         )
 
-        pfs.plot_to_ax(axes[i - 1, 1], "offtake", "q")  # plot offtake
-        pfs.plot_to_ax(axes[i - 1, 2], "hedgedfraction")  # plot hedgedfraction
-        pfs.plot_to_ax(axes[i, 1], "price")  # plot price
+        pfs.plot_to_ax(axes[i - 1, 2], "offtake", "q")  # plot offtake
+        pfs.plot_to_ax(axes[i - 1, 3], "hedgedfraction")  # plot hedgedfraction
+        pfs.plot_to_ax(axes[i, 2], "price")  # plot price
 
         axes[i - 1, 0].text(
             0.5,
@@ -228,7 +230,23 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
             fontsize=14,
             fontweight="bold",
             horizontalalignment="center",
-        )  # print portfolio names on the left most (i-1,0)
+        )  # print portfolio names on the left most (i-1,0), eg. (0,0), (2,0),...
+
+        axes[i - 1, 1].text(
+            0.5,
+            0.5,
+            axes[i - 1, 2].get_xticklabels(),
+            fontsize=14,
+            horizontalalignment="center",
+        )  # print offtake units on next column (i-1,1), eg. (0,1), (2,1),...
+
+        axes[i, 1].text(
+            0.5,
+            0.5,
+            axes[i, 2].get_xticklabels(),
+            fontsize=14,
+            horizontalalignment="center",
+        )  # print price units on next column (i,1), eg. (0,1), (2,1),...
 
         plt.ylim(-1000000, 1000000)
         axes[i, 1].set_frame_on(False)
@@ -243,6 +261,19 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     axes[0, 1].xaxis.tick_top()
     axes[0, 2].xaxis.tick_top()
 
+    draw_horizontal_lines(fig, axes)  # draw horizontal lines between portfolios
+
+
+def draw_horizontal_lines(fig, axes):
+    """Function to draw horizontal lines between multiple portfolios.
+    This function does not return anything, but tries to plot a 2D line after every 2 axes, eg.
+    after (0,2), (0,4),... beacuse each portfolio requires 2x4 axes in the fig (where rows=2, columns=4).
+
+    Parameters
+    ----------
+    fig : plt.subplots()
+    axes : plt.subplots()
+    """
     # rearange the axes for no overlap
     fig.tight_layout()
 
@@ -255,7 +286,8 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
 
     """TO CORRECT: the horizontal line is not exactly in the middle of two graphs.
     It is more inclined towards the second or next graph in the queue.
-    Each pftstate has 4x4 grid and this is plotted in the same graph, but as subgraphs."""
+    Each pftstate has 4x4 grid and this is plotted in the same graph, but as subgraphs.
+    """
 
     # Get the minimum and maximum extent, get the coordinate half-way between those
     ymax = (
@@ -271,37 +303,3 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     for y in ys:
         line = plt.Line2D([0, 1], [y, y], transform=fig.transFigure, color="black")
         fig.add_artist(line)
-
-    """
-    fig = plt.figure()
-    fig.set_size_inches(20, 10)
-
-    for i, (pfname, pfs) in enumerate(dic.items()):
-        pfs = pfs.changefreq(freq)
-        ax1 = plt.subplot2grid(shape=(len(dic) + 4, 2), loc=(0 + i * 2, 0), colspan=1)
-        ax1.xaxis.set_tick_params(
-            labeltop=True
-        )  # make x-axis tick labels on the top of a plot
-        ax1.xaxis.set_tick_params(labelbottom=False)
-        ax1.set_title("Offtake Volume")
-        pfs.plot_to_ax(ax1, "offtake", "q")
-
-        ax2 = plt.subplot2grid(shape=(len(dic) + 4, 2), loc=(0 + i * 2, 1), colspan=1)
-        hedgefraction = -pfs.sourced.volume / pfs.offtake.volume
-        ax2.set_title("Hedged Fraction")
-        ax2.set_ylabel("Percentage")
-        ax2.xaxis.set_tick_params(
-            labeltop=True
-        )  # make x-axis tick labels on the top of a plot
-        ax2.xaxis.set_tick_params(labelbottom=False)
-        pfs.plot_to_ax(ax2, "hedgedfraction")
-
-        ax3 = plt.subplot2grid(shape=(len(dic) + 4, 2), loc=(1 + i * 2, 0), colspan=1)
-        ax3.set_frame_on(False)
-        plt.ylim(-1000000, 1000000)
-        ax3.set_yticklabels([])  # make yticks disappear
-        ax3.get_xaxis().tick_bottom()
-        ax3.axes.get_xaxis().set_visible(False)
-        plt.yticks(color="w")
-        pfs.plot_to_ax(ax3, "price")
-    """

@@ -19,6 +19,7 @@ import numpy as np
 import datetime as dt
 import jwt
 import time
+import datetime
 import json
 import requests
 
@@ -50,30 +51,57 @@ class _Connection:
         if not self.auth_successful():
             raise ConnectionError("No connection exists. Username/password incorrect?")
 
-    def auth_with_token(self) -> None:
+    def encode_with_token(self, user_id, private_key):
+        # Create token that is valid for a given amount of time.
+        try:
+            claims = {
+                "name": self._tenant,
+                "sub": user_id,
+                "exp": datetime.datetime.utcnow()
+                + datetime.timedelta(days=0, seconds=120),
+                "iat": datetime.datetime.utcnow(),
+            }
+
+            # "RSA 512 bit" in the PKCS standard for your client.
+            return jwt.encode(payload=claims, key=private_key, algorithm="RS512")
+
+        except Exception as e:
+            return e
+
+    def decode_with_token(self, token, private_key):
+        try:
+            payload = jwt.decode(
+                token, key=private_key, options={"verify_signature": True}
+            )
+            return payload["sub"]
+        except jwt.ExpiredSignatureError:
+            return "Signature expired. Please log in again."
+        except jwt.InvalidTokenError:
+            return "Invalid token. Please log in again."
+
+    def auth_with_token(self, usrID) -> None:
         """Authentication with public-private key pair."""
+
         # Open private key to sign token with.
         with open(self._AUTHFOLDER / "privatekey.txt", "r") as f:
             private_key = f.read()
 
-        # Create token that is valid for a given amount of time.
-        claims = {
-            "preferred_username": "API-User-FRM",
-            "clientId": self._tenant,
-            "exp": int(time.time()) + 10 * 60,
-        }
+        token = self.encode_with_token(usrID)
+        self.assertTrue(isinstance(token, bytes))
 
-        # "RSA 512 bit" in the PKCS standard for your client.
-        token = jwt.encode(claims, private_key, algorithm="RS512")
-        # decoded = jwt.decode(token, options={"verify_signature": True})
         self._details = {"headers": {"Authorization": f"Bearer {token}"}}
         self._lastquery = None  # reset to keep track of this auth method's validity
+
         # Check if successful.
-        if not self.auth_successful():
+        if not self.auth_successful():  # check for connection failures
             raise ConnectionError("No connection exists. Token incorrect?")
 
+        self.assertTrue(
+            self.decode_with_token(token) == 1
+        )  # decode the token and assert
+
     def auth_successful(self) -> bool:
-        return True  # TODO
+        return connection_alive(self._tenant)
 
     def redo_auth(self) -> None:
         """Redo authentication. Necessary after timeout of log-in."""
@@ -220,10 +248,10 @@ def auth_with_passwordfile(path: Path):
     auth_with_password(usr.strip(), pwd.strip())
 
 
-def auth_with_token():
+def auth_with_token(usrID: int):
     """Authentication with private-public key pair."""
     for source in _sources.values():
-        source.connection.auth_with_token()
+        source.connection.auth_with_token(usrID)
 
 
 def update_cache_files(commodity: str = None):
