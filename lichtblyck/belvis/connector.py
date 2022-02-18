@@ -13,6 +13,7 @@ from requests.exceptions import ConnectionError
 from typing import Tuple, Dict, List, Union, Iterable
 from urllib import parse
 from pathlib import Path
+from sympy import re
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
@@ -44,16 +45,23 @@ class _Connection:
     def auth_with_password(self, usr: str, pwd: str) -> None:
         """Authentication with username `usr` and password `pwd`; open a session."""
         self._details = {"usr": usr, "pwd": pwd, "session": requests.Session()}
-        self.query_general(
+        sessionID = self.query_general(
             "/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={self._tenant}"
         )
-        self._lastquery = (
-            dt.datetime.now()
-        )  # reset to keep track of this auth method's validity
+        self._lastquery = None  # reset to keep track of this auth method's validity
 
-        if not self.auth_successful():  # Check if successful.
-            raise ConnectionError("No connection exists. Username/password incorrect?")
-        print("Welcome", usr)
+        if self.auth_successful(usr, pwd):  # Check if successful.
+            print("Welcome", usr)
+
+    def auth_successful(self, usr, pwd) -> bool:
+        response = self.request(
+            "/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={self._tenant}"
+        )
+        if response.status_code != 200:
+            raise ConnectionError(
+                "No connection exists. Username/password/tenant incorrect?"
+            )
+        return True
 
     def encode_with_token(self, usr, key):
         # Create token that is valid for a given amount of time.
@@ -76,7 +84,7 @@ class _Connection:
             payload = jwt.decode(
                 token,
                 key=key,
-                algorithms=["RS512",],
+                algorithms=["RS512"],
                 options={"verify_signature": True},
             )
 
@@ -95,9 +103,6 @@ class _Connection:
 
         token = self.encode_with_token(usr, private_key)
 
-        if not self.auth_successful():  # Check if successful.
-            raise ConnectionError("No connection exists. Token incorrect?")
-
         # Open public key to decode the token with.
         with open(self._AUTHFOLDER / "publickey.txt", "r") as f:
             public_key = f.read()
@@ -114,14 +119,14 @@ class _Connection:
             dt.datetime.now()
         )  # reset to keep track of this auth method's validity
 
+        # if not self.auth_successful():  # Check if successful.
+        #    raise ConnectionError("No connection exists. Token incorrect?")
+
         # self.assertTrue(isinstance(token, bytes))
         # self._details = {"headers": {"Authorization": f"Bearer {token}"}}
         # self.assertTrue(
         #    self.decode_with_token(token, public_key) == 1
         # )  # decode the token and assert
-
-    def auth_successful(self) -> bool:
-        return True
 
     def redo_auth(self) -> None:
         """Redo authentication. Necessary after timeout of log-in."""
@@ -161,11 +166,11 @@ class _Connection:
         response = self.request(path, *queryparts)
         if response.status_code == 200:
             return json.loads(response.text)
-        elif self._lastquery is not None:  # authentication might be expired.
+        elif self._lastquery is None:  # authentication might be expired.
             self.redo_auth()
             return self.query_general(path, *queryparts)  # retry.
         else:
-            raise RuntimeError(response)
+            return RuntimeError(response)
 
     def query_timeseries(
         self, remainingpath: str, *queryparts: str
