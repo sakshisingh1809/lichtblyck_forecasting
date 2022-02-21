@@ -18,6 +18,7 @@ from pathlib import Path
 import lichtblyck as lb
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
@@ -25,6 +26,7 @@ def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
     int) or from specified file (if path). Values before 1917 are dropped. Index is
     gapless with missing values filled with np.nan. Column names not standardized but
     rather as found in source file."""
+
     # Get file content and turn into dataframe...
     bytes_data = historicdata(climate_zone)
     data = StringIO(str(bytes_data, "utf-8"))
@@ -172,6 +174,7 @@ def tmpr_struct(
     yymm = t.groupby([t.index.month, t.index.year]).apply(f)
     yymm.index.rename(["MM", "YY"], inplace=True)
     mm = yymm.groupby("MM").mean()
+
     #    2: calculate geographic average; weigh with consumption / customer presence in each zone
     weights = pd.DataFrame(
         {
@@ -274,3 +277,103 @@ def fill_gaps(t: pd.DataFrame) -> pd.DataFrame:
         y_pred = model.predict(x)
         t.loc[isna, col] = y_pred.reshape(-1)
     return t
+
+
+def explolatoryDataAnalysis():
+
+    t = tmpr()  # lb.temperatures.historic.tmpr()
+    complete_tmpr = fill_gaps(t)  # lb.temperatures.historic.fill_gaps(tmpr)
+
+    yearly_plot(
+        t, "Yearly temperatures with missing values"
+    )  # plot yearly data with missing values
+
+    # plot yearly data after filling the missing values with multiple Linear regression
+    yearly_plot(complete_tmpr, "Yearly temperatures after filling missing gaps")
+
+    # plot montly data with complete data
+    monthly_plot(complete_tmpr, "Monthly temperature averages")
+
+    return
+
+
+def yearly_plot(tmpr: pd.DataFrame, title: str):
+    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(15, 12))
+    plt.subplots_adjust(hspace=0.5)
+    fig.suptitle(title, fontsize=18, y=0.95)
+    climatezones = [
+        "t_1",
+        "t_2",
+        "t_3",
+        "t_4",
+        "t_5",
+        "t_6",
+        "t_7",
+        "t_8",
+        "t_9",
+        "t_10",
+        "t_11",
+        "t_12",
+        "t_13",
+        "t_14",
+        "t_15",
+    ]
+
+    df = tmpr.resample(rule="AS").mean()  # resampling the data into "Yearly" format
+    fig.text(0.5, 0.09, "year", ha="center")
+    fig.text(0.09, 0.5, "temp", va="center", rotation="vertical")
+
+    for cz, ax in zip(climatezones, axes.ravel()):  # loop through climatezones and axes
+        df[cz].plot(ax=ax)  # filter df for cz and plot on specified axes
+        ax.set_title(cz)  # chart formatting
+        ax.set_xlabel("")
+
+    axes[3, 3].axis(
+        "off"
+    )  # since we have only 15 climatezones, so we ignore the 16th graph
+
+    for i in range(
+        4
+    ):  # set all labels of the 1st row at the top and make bottom labels invisible
+        axes[0, i].xaxis.set_tick_params(labeltop=True)
+        axes[0, i].xaxis.set_tick_params(labelbottom=False)
+        # axes[i, 0].set_ylabel("temp")
+
+    for i in range(1, 4):
+        for j in range(4):
+            axes[i, j].axes.get_xaxis().set_visible(False)
+
+    plt.show()
+
+
+def monthly_plot(t: pd.DataFrame, title: str):
+
+    colors = {
+        "t_1": "gray",
+        "t_2": "orange",
+        "t_3": "green",
+        "t_4": "purple",
+        "t_5": "red",
+        "t_6": "blue",
+        "t_7": "black",
+        "t_8": "blue",
+        "t_9": "blue",
+        "t_10": "blue",
+        "t_11": "blue",
+        "t_12": "blue",
+        "t_13": "blue",
+        "t_14": "blue",
+        "t_15": "blue",
+    }
+
+    t = t.dropna()
+    tavg = t.groupby(lambda ts: (ts.year, ts.month)).mean()
+
+    fig, axes = plt.subplots(3, 4, sharey=False, figsize=(15, 10))
+    fig.suptitle(title)
+    for (m, df), ax in zip(tavg.groupby("month"), axes.flatten()):
+        ax.set_title(f"Month: {m}")
+        for name, s in df.droplevel(1).items():
+            ax.plot(s, c=colors.get(name, "gray"), label=name)
+        if m == 1:
+            ax.legend()

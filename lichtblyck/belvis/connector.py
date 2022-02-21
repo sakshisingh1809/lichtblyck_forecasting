@@ -38,43 +38,32 @@ class _Connection:
 
     tenant = property(lambda self: self._tenant)
 
-    # usr: "API-User-FRM" and pwd: "boring!Apfelmexiko85hirsch"
     def auth_with_password(self, usr: str, pwd: str) -> None:
         """Authentication with username `usr` and password `pwd`; open a session."""
-        self._details = {"usr": usr, "pwd": pwd, "session": requests.Session()}
-        sessionID = self.query_general(
-            "/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={self._tenant}"
-        )
         self._lastquery = None  # reset to keep track of this auth method's validity
-
-        if self.auth_successful(usr, pwd):  # Check if successful.
-            print("Welcome", usr)
-
-    def auth_successful(self, usr, pwd) -> bool:
-        response = self.request(
-            "/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={self._tenant}"
-        )
-        if response.status_code != 200:
-            raise ConnectionError(
-                "No connection exists. Username/password/tenant incorrect?"
-            )
-        return True
-
-    def encode_with_token(self, usr, key):
-        # Create token that is valid for a given amount of time.
+        self._details = {"usr": usr, "pwd": pwd, "session": requests.Session()}
         try:
-            claims = {
-                "name": usr,
-                "sub": self._tenant,
-                "exp": dt.datetime.utcnow() + dt.timedelta(days=0, seconds=30),
-                "iat": dt.datetime.utcnow(),
-            }
+            self.query_general(
+                "/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={self._tenant}"
+            )
+        except RuntimeError as e:
+            raise ConnectionError(
+                "No connection exists. Username/password incorrect?"
+            ) from e
 
-            # "RSA 512 bit" in the PKCS standard for your client.
-            return jwt.encode(payload=claims, key=key, algorithm="RS512")
+        print("Welcome", usr)
 
-        except Exception as e:
-            return e
+    def encode_with_token(self, usr: str, key: str):
+        # Create token that is valid for a given amount of time.
+        claims = {
+            "name": usr,
+            "sub": self._tenant,
+            "exp": dt.datetime.utcnow() + dt.timedelta(days=0, seconds=30),
+            "iat": dt.datetime.utcnow(),
+        }
+
+        # "RSA 512 bit" in the PKCS standard for your client.
+        return jwt.encode(payload=claims, key=key, algorithm="RS512")
 
     def decode_with_token(self, token, key):
         try:
@@ -91,8 +80,8 @@ class _Connection:
         except jwt.InvalidTokenError:
             return "Invalid token. Please log in again."
 
-    def auth_with_token(self, usr) -> None:
-        """Authentication with public-private key pair."""
+    def auth_with_token(self, usr: str) -> None:
+        """Authentication with public-private key pair for user ``usr``."""
 
         # Open private key to sign token with.
         with open(self._AUTHFOLDER / "privatekey.txt", "r") as f:
@@ -107,7 +96,7 @@ class _Connection:
         decoded_user = self.decode_with_token(token, public_key)
 
         if decoded_user == usr:
-            print("Welcome", decoded_user, ",token authentication successful.")
+            print("Welcome", decoded_user, ", token authentication successful.")
             self._details = {
                 "usr": decoded_user,
                 "token": token,
@@ -127,6 +116,8 @@ class _Connection:
 
     def redo_auth(self) -> None:
         """Redo authentication. Necessary after timeout of log-in."""
+
+        self._lastquery = None
 
         if "session" in self._details:
             self.auth_with_password(self._details["usr"], self._details["pwd"])
@@ -163,7 +154,8 @@ class _Connection:
         response = self.request(path, *queryparts)
         if response.status_code == 200:
             return json.loads(response.text)
-        elif self._lastquery is None:  # authentication might be expired.
+        elif self._lastquery is not None:
+            # Query has worked before, so authentication might have expired.
             self.redo_auth()
             return self.query_general(path, *queryparts)  # retry.
         else:
@@ -271,7 +263,7 @@ def auth_with_passwordfile(path: Path):
     auth_with_password(usr.strip(), pwd.strip())
 
 
-def auth_with_token(usrID: int):
+def auth_with_token(usr: str):
     """Authentication with private-public key pair."""
     for source in _sources.values():
         source.connection.auth_with_token(usr)
