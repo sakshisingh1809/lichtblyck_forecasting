@@ -117,13 +117,8 @@ def get_pfstate(i=None) -> PfState:
     """Get portfolio state."""
     if i is None:
         i = get_index()
-<<<<<<< HEAD
-    wo = (-1) * get_singlepfline(i, "q").w
-    pu = get_singlepfline(i, "p").p
-=======
     wo = -get_singlepfline(i, "q")
     pu = get_singlepfline(i, "p")
->>>>>>> dec9123bea779b547b9483d9fe1508af046fd0de
     ws, ps = mockup.wp_sourced(wo)
     return PfState.from_series(wo=wo, pu=pu, ws=ws, ps=ps)
 
