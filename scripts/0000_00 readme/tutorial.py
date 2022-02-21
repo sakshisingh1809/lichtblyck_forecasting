@@ -17,7 +17,6 @@ lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
 offtake = lb.belvis.offtakevolume("power", "PKG", "2023")
 
-
 # %% PYTHON BASICS.
 
 # Before we continue using this object,, let's discuss some helpful standard python functionality that is not exclusive to the `lichtblyck` library.
