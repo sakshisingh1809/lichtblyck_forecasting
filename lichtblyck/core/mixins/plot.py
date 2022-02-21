@@ -9,7 +9,7 @@ from ...visualize import visualize as vis
 from ...tools import nits
 from typing import Dict, TYPE_CHECKING
 import numpy as np
-import matplotlib as mpl
+import matplotlib
 from matplotlib import pyplot as plt
 
 if TYPE_CHECKING:  # needed to avoid circular imports
@@ -62,7 +62,7 @@ class PfLinePlot:
             sharey=False,
             squeeze=False,
             figsize=(10, len(cols) * 3),
-            gridspec_kw={"height_ratios": [4, 1]},
+            # gridspec_kw={"height_ratios": [4, 1]},
         )
 
         for col, ax in zip(cols, axes.flatten()):
@@ -92,7 +92,7 @@ class PfStatePlot:
         if line == "offtake":
             (-self.offtake).plot_to_ax(ax, col)
             ax.bar_label(
-                ax.containers[0], label_type="edge", fmt="%.0f"
+                ax.containers[0], label_type="edge", fmt="%.0f".replace(",", " ")
             )  # print labels on top of each bar
 
         elif line == "hedgedfraction":
@@ -107,10 +107,10 @@ class PfStatePlot:
         elif line == "price":
             vis.plot_timeseries_as_bar(ax, self.unsourcedprice["p"], alpha=0.0)
             ax.bar_label(
-                ax.containers[0], label_type="center"
+                ax.containers[0], label_type="center", fmt="%.2f"
             )  # print labels on top of each bar
 
-    def plot(self: PfState, cols: str = "wp") -> plt.Figure:
+    def plot(self: PfState, cols: str = "wp", freq: str = "MS") -> plt.Figure:
         """Plot one or more timeseries of the portfolio state.
 
         Parameters
@@ -124,42 +124,41 @@ class PfStatePlot:
         plt.Figure
             The figure object to which the series was plotted.
         """
+        fig, axes = plt.subplots(
+            2, 3, gridspec_kw={"width_ratios": [0.3, 2, 2], "height_ratios": [4, 1],},
+        )
 
-        fig = plt.figure()
         fig.set_size_inches(20, 10)
+        pf = self.changefreq(freq)
 
-        # plot Offtake
-        ax1 = plt.subplot2grid(shape=(2, 2), loc=(0, 0), colspan=1)
-        ax1.xaxis.set_tick_params(
-            labeltop=True
-        )  # make x-axis tick labels on the top of a plot
-        ax1.xaxis.set_tick_params(labelbottom=False)
+        axes[0, 0].axis("off")
+        axes[1, 0].axis("off")
+        axes[1, 2].axis("off")
+        axes[0, 1].yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
 
-        ax1.set_title("Offtake Volume")
-        self.plot_to_ax(ax1, "offtake", "q")
+        # make x-axis tick labels on the top of a plot
+        axes[0, 1].xaxis.set_tick_params(labeltop=True)
+        axes[0, 2].xaxis.set_tick_params(labeltop=True)
+        axes[0, 1].xaxis.set_tick_params(labelbottom=False)
+        axes[0, 2].xaxis.set_tick_params(labelbottom=False)
 
-        # plot Hedged volumne (%)
-        ax2 = plt.subplot2grid(shape=(2, 2), loc=(0, 1), colspan=1)
+        pf.plot_to_ax(axes[0, 1], "offtake", "q")  # plot offtake
+        pf.plot_to_ax(axes[0, 2], "hedgedfraction")  # plot hedgedfraction
+        pf.plot_to_ax(axes[1, 1], "price")  # plot price
 
-        ax2.set_title("Hedged Fraction")
-        ax2.set_ylabel("Percentage")
-        ax2.xaxis.set_tick_params(
-            labeltop=True
-        )  # make x-axis tick labels on the top of a plot
-        ax2.xaxis.set_tick_params(labelbottom=False)
-        ax2.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0))
-        self.plot_to_ax(ax2, "hedgedfraction")
+        # print offtake units
+        print_labels(axes, 0, 0, axes[0, 1].get_ylabel())
 
-        # plot price
-        ax3 = plt.subplot2grid(shape=(2, 2), loc=(1, 0), colspan=1)
-        ax3.set_frame_on(False)
+        # print price units
+        print_labels(axes, 1, 0, axes[1, 1].get_ylabel())
+
         plt.ylim(-1000000, 1000000)
-        ax3.set_yticklabels([])  # make yticks disappear
-        ax3.get_xaxis().tick_bottom()
-        ax3.set_title("Portfolio Price")
-        ax3.axes.get_xaxis().set_visible(False)
+        axes[1, 1].set_frame_on(False)
+        axes[0, 1].axes.get_yaxis().set_visible(False)
+        axes[0, 2].axes.get_yaxis().set_visible(False)
+        axes[1, 1].axes.get_yaxis().set_visible(False)
+        axes[1, 1].axes.get_xaxis().set_visible(False)
         plt.yticks(color="w")
-        self.plot_to_ax(ax3, "price")
 
 
 def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
@@ -188,6 +187,7 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
         4,
         gridspec_kw={"width_ratios": [0.3, 0.3, 2, 2], "height_ratios": ratios_list},
     )
+
     fig.set_size_inches(20, 10)
     pfnames = list(dic.keys())
     pfstates = list(dic.values())
@@ -205,7 +205,6 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
         axes[i - 1, 1].axis("off")
         axes[i, 1].axis("off")
         axes[i, 3].axis("off")
-        axes[i - 1, 2].set_yticklabels([])
 
         if i != 1:  # don't remove labels from axes[0,0]
             axes[i - 1, 2].set_xticklabels([])
@@ -223,45 +222,41 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
         pfs.plot_to_ax(axes[i - 1, 3], "hedgedfraction")  # plot hedgedfraction
         pfs.plot_to_ax(axes[i, 2], "price")  # plot price
 
-        axes[i - 1, 0].text(
-            0.5,
-            0.5,
-            pfnames[j],
-            fontsize=14,
-            fontweight="bold",
-            horizontalalignment="center",
-        )  # print portfolio names on the left most (i-1,0), eg. (0,0), (2,0),...
+        # print portfolio names on the left most (i-1,0), eg. (0,0), (2,0),...
+        print_labels(axes, i - 1, 0, pfnames[j])
 
-        axes[i - 1, 1].text(
-            0.5,
-            0.5,
-            axes[i - 1, 2].get_xticklabels(),
-            fontsize=14,
-            horizontalalignment="center",
-        )  # print offtake units on next column (i-1,1), eg. (0,1), (2,1),...
+        # print offtake units on next column (i-1,1), eg. (0,1), (2,1),...
+        print_labels(axes, i - 1, 1, axes[i - 1, 2].get_ylabel())
 
-        axes[i, 1].text(
-            0.5,
-            0.5,
-            axes[i, 2].get_xticklabels(),
-            fontsize=14,
-            horizontalalignment="center",
-        )  # print price units on next column (i,1), eg. (0,1), (2,1),...
+        # print price units on next column (i,1), eg. (0,1), (2,1),...
+        print_labels(axes, i, 1, axes[i, 2].get_ylabel())
 
         plt.ylim(-1000000, 1000000)
-        axes[i, 1].set_frame_on(False)
-        axes[i, 1].set_yticklabels([])
-        axes[i, 1].get_xaxis().tick_bottom()
-        axes[i, 1].axes.get_xaxis().set_visible(False)
+        axes[i, 2].set_frame_on(False)
+        axes[i - 1, 2].axes.get_yaxis().set_visible(False)
+        axes[i - 1, 3].axes.get_yaxis().set_visible(False)
+        axes[i, 2].axes.get_yaxis().set_visible(False)
+
+        axes[i - 1, 2].set_yticklabels([])
+        axes[i, 2].set_yticklabels([])
+        axes[i, 2].get_xaxis().tick_bottom()
+        axes[i, 2].axes.get_xaxis().set_visible(False)
         plt.yticks(color="w")
         j = j + 1
 
-    axes[0, 1].set_title("Offtake Volume", y=1.3)
-    axes[0, 2].set_title("Hedged Fraction [%]", y=1.3)
-    axes[0, 1].xaxis.tick_top()
+    axes[0, 2].set_title("Offtake Volume", y=1.3)
+    axes[0, 3].set_title("Hedged Fraction [%]", y=1.3)
     axes[0, 2].xaxis.tick_top()
+    axes[0, 3].xaxis.tick_top()
 
     draw_horizontal_lines(fig, axes)  # draw horizontal lines between portfolios
+
+
+def print_labels(axes, x, y, value):
+    axes[x, y].text(
+        0.5, 0.5, value, fontsize=14, fontweight="bold", horizontalalignment="center",
+    )
+    return
 
 
 def draw_horizontal_lines(fig, axes):
@@ -280,9 +275,9 @@ def draw_horizontal_lines(fig, axes):
     # Get the bounding boxes of the axes including text decorations
     r = fig.canvas.get_renderer()
     get_bbox = lambda ax: ax.get_tightbbox(r).transformed(fig.transFigure.inverted())
-    bboxes = np.array(list(map(get_bbox, axes.flat)), mpl.transforms.Bbox).reshape(
-        axes.shape
-    )
+    bboxes = np.array(
+        list(map(get_bbox, axes.flat)), matplotlib.transforms.Bbox
+    ).reshape(axes.shape)
 
     """TO CORRECT: the horizontal line is not exactly in the middle of two graphs.
     It is more inclined towards the second or next graph in the queue.

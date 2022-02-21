@@ -36,10 +36,17 @@ def test_authenication(how: str, case: str):
                 connector.auth_with_passwordfile(path)
             return
 
+<<<<<<< HEAD
+    elif case == "correctcred":
+        # Authentication with correct credentials should work.
+        # connector.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+        connector.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
+=======
         elif case == "correct":
             # Authentication with correct credentials should work.
             path = Path(__file__).parent / "correctcreds.txt"
             connector.auth_with_passwordfile(path)
+>>>>>>> dec9123bea779b547b9483d9fe1508af046fd0de
 
     elif how == "token":
         # Authentication with token should work.connector.auth_with_token()
