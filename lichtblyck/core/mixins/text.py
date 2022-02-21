@@ -32,13 +32,10 @@ def _df_with_strvalues(df: pd.DataFrame, units: Dict = _UNITS):
         raise ValueError("Dataframe must have single column index; has MultiIndex.")
     str_series = {}
     for name, s in df.items():
-        s = s.pint.to(units.get(name))
-        formatstring = VALUEFORMAT.get(name)
+        s = s.pint.to(units.get(name)).pint.magnitude
+        formt = VALUEFORMAT.get(name).format
+        str_series[name] = s.apply(formt).str.replace(".", " ", regex=False).fillna("")
 
-        def formatting(v):
-            return "" if np.isnan(v) else formatstring.format(v).replace(",", " ")
-
-        str_series[name] = s.pint.magnitude.apply(formatting)
     return pd.DataFrame(str_series)
 
 

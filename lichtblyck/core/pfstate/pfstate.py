@@ -45,7 +45,7 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
         Does not follow sign conventions (see 'Notes' below); volumes are <0 if
         portfolio is short and >0 if long. Identical to `.unsourced`, but with sign
         change for volumes and revenues (but not prices).
-    pnl_costs : PfLine ('all')
+    procurement : PfLine ('all')
         The expected costs needed to source the offtake volume; the sum of the sourced
         and unsourced positions.
 
@@ -140,7 +140,7 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
     def hedgefraction(self) -> pd.Series:
         return -self._sourced.volume / self._offtakevolume
 
-    def df(self) -> pd.DataFrame:
+    def df(self, *args, **kwargs) -> pd.DataFrame:
         """DataFrame for this PfState.
 
         Returns

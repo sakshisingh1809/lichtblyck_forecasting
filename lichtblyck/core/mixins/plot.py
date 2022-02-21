@@ -83,7 +83,7 @@ class PfStatePlot:
             The axes object to which to plot the timeseries.
         line : str, optional
             The pfline to plot. One of {'offtake' (default), 'sourced', 'unsourced',
-            'netposition', 'pnl_costs', 'hedgedfraction'}.
+            'netposition', 'procurement', 'hedgedfraction'}.
         col : str, optional
             The column to plot. Default: plot volume `w` [MW] (if available) or else
             price `p` [Eur/MWh].

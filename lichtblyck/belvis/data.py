@@ -122,6 +122,8 @@ def _series(commodity, pfid, tsnames, ts_left, ts_right):
 def _singlepfline(commodity, pfid, part, ts_left, ts_right):
     # Fix timestamps (if necessary).
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
+    if not (ts_left < ts_right):
+        raise ValueError("Left timestamp must be strictly before right timestamp.")
     # Get timeseries names.
     tsnamedict = _tsnamedict(commodity, pfid, part)
     # Collect data.

@@ -1,0 +1,5 @@
+API-User-FRM    
+   boring!Apfelmexiko85hirsch   
+irrelevant line of additional text
+that should be ignored, just like 
+the whitespace around the username and password
