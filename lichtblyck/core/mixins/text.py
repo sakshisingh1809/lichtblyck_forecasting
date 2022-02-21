@@ -34,7 +34,7 @@ def _df_with_strvalues(df: pd.DataFrame, units: Dict = _UNITS):
     for name, s in df.items():
         s = s.pint.to(units.get(name)).pint.magnitude
         formt = VALUEFORMAT.get(name).format
-        str_series[name] = s.apply(formt).str.replace(".", " ", regex=False).fillna("")
+        str_series[name] = s.fillna("").apply(formt).str.replace(",", " ", regex=False)
 
     return pd.DataFrame(str_series)
 

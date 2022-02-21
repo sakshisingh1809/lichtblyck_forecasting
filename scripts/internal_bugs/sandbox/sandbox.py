@@ -2,7 +2,9 @@
 import lichtblyck as lb
 import cProfile
 
+# %%
 lb.belvis.auth_with_passwordfile("cred.txt")
+
 # %%
 
 pfs = lb.portfolios.pfstate("power", "PKG", "2022", "2022-02")

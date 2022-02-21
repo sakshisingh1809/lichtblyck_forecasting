@@ -9,6 +9,7 @@ Retrieve data from Belvis using Rest-API.
 # 2.5 reading timeseries values
 # 7 how to connect
 
+from abc import ABC, abstractmethod
 from requests.exceptions import ConnectionError
 from typing import Tuple, Dict, List, Union, Iterable
 from urllib import parse
@@ -21,37 +22,124 @@ import jwt
 import json
 import requests
 
-_server = "http://lbbelvis01:8040"
 
 _COMMOTEN = {"power": "PFMSTROM", "gas": "PFMGAS"}  # commodity: tenant dictionary
 
 
-class _Connection:
-    """Class to connect to a Belvis tenant, including authentication and querying."""
+class _BelvisConnection(ABC):
 
-    _AUTHFOLDER = Path(__file__).parent / "auth"
+    _SERVER = "http://lbbelvis01:8040"
 
     def __init__(self, tenant: str):
-        self._details = {}
         self._tenant = tenant
-        self._lastquery = None
+        self._lastsuccessfulquery = None
 
     tenant = property(lambda self: self._tenant)
 
-    def auth_with_password(self, usr: str, pwd: str) -> None:
-        """Authentication with username `usr` and password `pwd`; open a session."""
-        self._lastquery = None  # reset to keep track of this auth method's validity
-        self._details = {"usr": usr, "pwd": pwd, "session": requests.Session()}
+    # To be implemented by children.
+
+    @abstractmethod
+    def authenticate(self):
+        """Authenticate with server; raise PermissionError if details are incorrect."""
+        ...
+
+    @abstractmethod
+    def request(self, url: str) -> requests.request:
+        """Request data from the rest API."""
+        ...
+
+    # Directly implemented at parent.
+
+    def url(self, path: str, *queryparts: str) -> str:
+        u = f"{self._SERVER}{path}"
+        if not queryparts:
+            return u
+        else:
+            return u + "?" + "&".join([parse.quote(qp, safe=":=") for qp in queryparts])
+
+    def query_general(self, path: str, *queryparts: str) -> Union[Dict, List]:
+        """Query connection for general information."""
         try:
-            self.query_general(
-                "/rest/session", f"usr={usr}", f"pwd={pwd}", f"tenant={self._tenant}"
-            )
-        except RuntimeError as e:
+            response = self.request(self.url(path, *queryparts))
+        except ConnectionError as e:
+            self._lastsuccessfulquery = None
             raise ConnectionError(
-                "No connection exists. Username/password incorrect?"
+                "Check if VPN connection to Lichtblick exists."
             ) from e
 
-        print("Welcome", usr)
+        if response.status_code == 200:
+            self._lastsuccessfulquery = dt.datetime.now()
+            return json.loads(response.text)
+        elif self._lastsuccessfulquery is not None:
+            # Query has worked before, so authentication might have expired. Try once.
+            self._lastsuccessfulquery = None
+            self.authenticate()
+            return self.query_general(path, *queryparts)  # retry.
+        else:
+            return RuntimeError(response)
+
+    def query_timeseries(
+        self, remainingpath: str, *queryparts: str
+    ) -> Union[Dict, List]:
+        """Query connection for timeseries information."""
+        path = f"/rest/energy/belvis/{self.tenant}/timeSeries{remainingpath}"
+        return self.query_general(path, *queryparts)
+
+
+class _ConnectionWithPwd(_BelvisConnection):
+    def __init__(self, tenant: str, usr: str, pwd: str):
+        super().__init__(tenant)
+        self.__usr = usr
+        self.__pwd = pwd
+        self._session = requests.Session()
+        self.authenticate()
+
+    def authenticate(self) -> None:
+        # Check if usr/pwd is accepted by server.
+        parts = (f"usr={self.__usr}", f"pwd={self.__pwd}", f"tenant={self.tenant}")
+        url = self.url("/rest/session", *parts)
+        response = self.request(url)
+        if response.status_code != 200:
+            raise PermissionError(f"Please check authentication details: {response}")
+
+    def request(self, url: str) -> requests.request:
+        """Create a request."""
+        return self._session.get(url)
+
+
+class _ConnectionWithToken(_BelvisConnection):
+
+    _AUTHFOLDER = Path(__file__).parent / "auth"
+
+    def __init__(self, tenant: str, usr: str):
+        super().__init__(tenant)
+        self.__usr = usr
+        self.authenticate()
+
+    def authenticate(self) -> None:
+        """Authentication with public-private key pair for user ``usr``."""
+
+        # Open private key to sign token with.
+        with open(self._AUTHFOLDER / "privatekey.txt", "r") as f:
+            private_key = f.read()
+        token = self.encode_with_token(self.__usr, private_key)
+
+        # Open public key to decode the token with.
+        with open(self._AUTHFOLDER / "publickey.txt", "r") as f:
+            public_key = f.read()
+        decoded_user = self.decode_with_token(token, public_key)
+        if decoded_user != self.__usr:
+            raise PermissionError(
+                f"Username ({self.__usr}) and public key don't match."
+            )
+
+        # TODO: How to handle situation with multiple users?
+        # TODO: Should token be located in the lichtblyck package? Or supplied by user via path?
+
+        # Save details to be able to make queries.
+        self._token = token
+
+        # TODO: Check if authentication is accepted by server
 
     def encode_with_token(self, usr: str, key: str):
         # Create token that is valid for a given amount of time.
@@ -67,106 +155,18 @@ class _Connection:
 
     def decode_with_token(self, token, key):
         try:
-            payload = jwt.decode(
-                token,
-                key=key,
-                algorithms=["RS512"],
-                options={"verify_signature": True},
+            payload = jwt.decode(  # TODO: module jwt has no attribute 'decode'
+                token, key=key, algorithms=["RS512"], options={"verify_signature": True}
             )
-
             return payload["name"]
         except jwt.ExpiredSignatureError:
             return "Signature expired. Please log in again."
         except jwt.InvalidTokenError:
             return "Invalid token. Please log in again."
 
-    def auth_with_token(self, usr: str) -> None:
-        """Authentication with public-private key pair for user ``usr``."""
-
-        # Open private key to sign token with.
-        with open(self._AUTHFOLDER / "privatekey.txt", "r") as f:
-            private_key = f.read()
-
-        token = self.encode_with_token(usr, private_key)
-
-        # Open public key to decode the token with.
-        with open(self._AUTHFOLDER / "publickey.txt", "r") as f:
-            public_key = f.read()
-
-        decoded_user = self.decode_with_token(token, public_key)
-
-        if decoded_user == usr:
-            print("Welcome", decoded_user, ", token authentication successful.")
-            self._details = {
-                "usr": decoded_user,
-                "token": token,
-            }
-        self._lastquery = (
-            dt.datetime.now()
-        )  # reset to keep track of this auth method's validity
-
-        # if not self.auth_successful():  # Check if successful.
-        #    raise ConnectionError("No connection exists. Token incorrect?")
-
-        # self.assertTrue(isinstance(token, bytes))
-        # self._details = {"headers": {"Authorization": f"Bearer {token}"}}
-        # self.assertTrue(
-        #    self.decode_with_token(token, public_key) == 1
-        # )  # decode the token and assert
-
-    def redo_auth(self) -> None:
-        """Redo authentication. Necessary after timeout of log-in."""
-
-        self._lastquery = None
-
-        if "session" in self._details:
-            self.auth_with_password(self._details["usr"], self._details["pwd"])
-        elif "token" in self._details:
-            self.auth_with_token(self._details["usr"])
-        else:
-            raise PermissionError(
-                "First authenicate with `auth_with_password` or `auth_with_token`."
-            )
-
-    def request(self, path: str, *queryparts: str) -> requests.request:
-        string = f"{_server}{path}"
-        if queryparts:
-            queryparts = [parse.quote(qp, safe=":=") for qp in queryparts]
-            string += "?" + "&".join(queryparts)
-        try:
-            if "session" in self._details:
-                req = self._details["session"].get(string)
-            elif "token" in self._details:
-                req = requests.get(string, token=self._details["token"])
-            else:
-                raise PermissionError(
-                    "First authenicate with `auth_with_password` or `auth_with_token`."
-                )
-        except ConnectionError as e:
-            raise ConnectionError(
-                "Check if VPN connection to Lichtblick exists."
-            ) from e
-        self._lastquery = dt.datetime.now()
-        return req
-
-    def query_general(self, path: str, *queryparts: str) -> Union[Dict, List]:
-        """Query connection for general information."""
-        response = self.request(path, *queryparts)
-        if response.status_code == 200:
-            return json.loads(response.text)
-        elif self._lastquery is not None:
-            # Query has worked before, so authentication might have expired.
-            self.redo_auth()
-            return self.query_general(path, *queryparts)  # retry.
-        else:
-            return RuntimeError(response)
-
-    def query_timeseries(
-        self, remainingpath: str, *queryparts: str
-    ) -> Union[Dict, List]:
-        """Query connection for timeseries information."""
-        path = f"/rest/energy/belvis/{self.tenant}/timeSeries{remainingpath}"
-        return self.query_general(path, *queryparts)
+    def request(self, url: str) -> requests.request:
+        """Create a request."""
+        return requests.get(url, token=self._token)
 
 
 class _Cache:
@@ -197,10 +197,10 @@ class _Source:
 
     _CACHED_TS_KEYS = ("instanceToken", "measurementUnit", "timeSeriesName")
 
-    def __init__(self, tenant: str):
-        self._connection = _Connection(tenant)
-        self._tsscache = _Cache(f"{tenant}_timeseries.json")
-        self._pfscache = _Cache(f"{tenant}_portfolios.json")
+    def __init__(self, connection: _BelvisConnection):
+        self._connection = connection
+        self._tsscache = _Cache(f"{connection.tenant}_timeseries.json")
+        self._pfscache = _Cache(f"{connection.tenant}_portfolios.json")
 
     connection = property(lambda self: self._connection)
     tsscache = property(lambda self: self._tsscache)
@@ -239,20 +239,24 @@ class _Source:
         self._pfscache.update(pfs)
 
 
-_sources = {commodity: _Source(tenant) for commodity, tenant in _COMMOTEN.items()}
+_sources = {}
 
 
 def _source(commodity):
-    try:
-        return _sources[commodity]
-    except KeyError:
+    if commodity not in _COMMOTEN:
         raise ValueError(f"`commodity` must be one of {_COMMOTEN.keys()}.")
+    if commodity not in _sources:
+        raise PermissionError(
+            "First authenticate using `auth_with_password()`, `auth_with_passwordfile()` or `auth_with_token()`"
+        )
+    return _sources[commodity]
 
 
 def auth_with_password(usr: str, pwd: str):
     """Authentication with username ``usr`` and password ``pwd``."""
-    for source in _sources.values():
-        source.connection.auth_with_password(usr, pwd)
+    for commodity, tenant in _COMMOTEN.items():
+        connection = _ConnectionWithPwd(tenant, usr, pwd)
+        _sources[commodity] = _Source(connection)
 
 
 def auth_with_passwordfile(path: Path):
@@ -265,8 +269,9 @@ def auth_with_passwordfile(path: Path):
 
 def auth_with_token(usr: str):
     """Authentication with private-public key pair."""
-    for source in _sources.values():
-        source.connection.auth_with_token(usr)
+    for commodity, tenant in _COMMOTEN.items():
+        connection = _ConnectionWithToken(tenant, usr)
+        _sources[commodity] = _Source(connection)
 
 
 def update_cache_files(commodity: str = None):
@@ -283,12 +288,9 @@ def update_cache_files(commodity: str = None):
 
 def connection_alive(commodity: str):
     """Return True if connection to Belvis tenant for `commodity` is (still) alive."""
-    return (
-        _source(commodity)
-        .connection.request("/rest/belvis/internal/heartbeat/ping")
-        .status_code
-        == 200
-    )
+    connection = _source(commodity).connection
+    url = connection.url("/rest/belvis/internal/heartbeat/ping")
+    return connection.request(url).status_code == 200
 
 
 def info(commodity: str, id: int) -> Dict:

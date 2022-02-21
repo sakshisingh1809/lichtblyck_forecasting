@@ -41,29 +41,9 @@ def test_info(id, partial_result):
         assert result[key] == value
 
 
-@pytest.mark.parametrize(
-    ("commodity", "pf", "partial_result"),
-    [
-        ("power", "LUD", [44133187, 44133192, 44133197, 44133202]),
-        ("power", "PKG", [16238, 16240, 16242, 16244, 16246]),
-        ("power", "B2B", []),
-    ],
-)
-def test_all_ids_in_pf(commodity, pf, partial_result):
-    """Test if correct timeseries info can be retrieved."""
-    if partial_result:
-        result = connector.all_ids_in_pf(commodity, pf)
-        for key, value in partial_result.items():
-            assert result[key] == value
-
-    else:
-        with pytest.raises(ValueError):
-            connector.all_ids_in_pf(commodity, pf)
-
-
 @pytest.mark.parametrize("strict", [True, False])
 @pytest.mark.parametrize(
-    ("commodity", "name", "result_if_not_strict"),
+    ("commodity", "name", "list_if_not_strict"),
     [
         (
             "power",
@@ -103,14 +83,14 @@ def test_all_ids_in_pf(commodity, pf, partial_result):
         ("power", "Nonexistingname", {}),
     ],
 )
-def test_find_pfs(commodity, name, result_if_not_strict, strict):
+def test_find_pfids(commodity, name, list_if_not_strict, strict):
     """Test if portfolio id can be found from their name."""
     if strict:
         expected = {
-            key: value for key, value in result_if_not_strict.items() if value == name
+            key: value for key, value in list_if_not_strict.items() if value == name
         }
     else:
-        expected = result_if_not_strict
+        expected = list_if_not_strict
 
     if not expected:
         with pytest.raises(ValueError):
@@ -145,41 +125,41 @@ tsidtestcases = [
         38721055,
     ),  # >1 result, 1 exact
     ("power", "PKG", "Noneexistingtimeseries", [], None),  # 0 results
-]  # "commodity", "pfid", "name", "result_if_not_strict", "result_if_strict"
+]  # "commodity", "pfid", "name", "list_if_not_strict", "value_if_strict"
 
 
 @pytest.mark.parametrize("strict", [True, False])
 @pytest.mark.parametrize(
-    ("commodity", "pfid", "name", "result_if_not_strict", "result_if_strict"),
+    ("commodity", "pfid", "name", "list_if_not_strict", "value_if_strict"),
     tsidtestcases,
 )
 def test_find_tsids(
-    commodity, pfid, name, result_if_not_strict, result_if_strict, strict
+    commodity, pfid, name, list_if_not_strict, value_if_strict, strict
 ):
     """Test if timeseries ids can be found from their name."""
     if strict:
-        expectedkeys = [result_if_strict] if result_if_strict is not None else []
+        expectedkeys = [value_if_strict] if value_if_strict is not None else []
     else:
-        expectedkeys = result_if_not_strict
+        expectedkeys = list_if_not_strict
 
     result = connector.find_tsids(commodity, pfid, name, strict=strict)
-    for key in expectedkeys.items():
+    for key in expectedkeys:
         assert key in result
 
 
 @pytest.mark.parametrize("strict", [True, False])
 @pytest.mark.parametrize(
-    ("commodity", "pfid", "name", "result_if_not_strict", "result_if_strict"),
+    ("commodity", "pfid", "name", "list_if_not_strict", "value_if_strict"),
     tsidtestcases,
 )
 def test_find_tsid(
-    commodity, pfid, name, result_if_not_strict, result_if_strict, strict
+    commodity, pfid, name, list_if_not_strict, value_if_strict, strict
 ):
     """Test if timeseries id can be found from its name."""
     if strict:
-        expected = [result_if_strict] if result_if_strict is not None else []
+        expected = [value_if_strict] if value_if_strict is not None else []
     else:
-        expected = result_if_not_strict
+        expected = list_if_not_strict
 
     if len(expected) == 1:
         result = connector.find_tsids(commodity, pfid, name, strict=strict)
@@ -212,5 +192,5 @@ def test_records(method, commodity, tsid, ts_left, ts_right, has_result):
         assert isinstance(result, Iterable)
         assert len(result) > 0
     else:
-        with pytest.raises(ValueError):
+        with pytest.raises((RuntimeError, ValueError)):
             _ = getter(commodity, tsid, ts_left, ts_right)

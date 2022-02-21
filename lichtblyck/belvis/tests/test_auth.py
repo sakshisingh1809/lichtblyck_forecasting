@@ -11,15 +11,15 @@ def test_authenication(how: str, case: str):
     if case == "before":
         if how == "usrpwdstr":
             # Without authenication, we should get an error.
-            with pytest.raises(ConnectionError):
-                connector.connection_alive()
+            with pytest.raises(PermissionError):
+                connector.connection_alive("power")
         return
 
     if how == "usrpwdstr":
 
         if case == "wrong":
             # Authentication with incorrect credentials should give error.
-            with pytest.raises(ConnectionError):
+            with pytest.raises(PermissionError):
                 connector.auth_with_password("nonexstinguser", "")
             return
 
@@ -31,29 +31,22 @@ def test_authenication(how: str, case: str):
 
         if case == "wrong":
             # Authentication with incorrect credentials should give error.
-            with pytest.raises(ConnectionError):
-                path = Path(__file__).parent / "wrongcreds.txt"
+            path = Path(__file__).parent / "wrongcreds.txt"
+            with pytest.raises(PermissionError):
                 connector.auth_with_passwordfile(path)
             return
 
-<<<<<<< HEAD
-    elif case == "correctcred":
-        # Authentication with correct credentials should work.
-        # connector.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
-        connector.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
-=======
         elif case == "correct":
             # Authentication with correct credentials should work.
             path = Path(__file__).parent / "correctcreds.txt"
             connector.auth_with_passwordfile(path)
->>>>>>> dec9123bea779b547b9483d9fe1508af046fd0de
 
     elif how == "token":
-        # Authentication with token should work.connector.auth_with_token()
-        connector.auth_with_token()
+        # Authentication with token should work.
+        connector.auth_with_token("API-User-FRM")
 
     # See if we can get information on existing timeseries.
-    info = connector.info("power", 123)
+    info = connector.info("power", 38721055)
 
-    with pytest.raises(ValueError):
-        info = connector.info("gas", 123)
+    with pytest.raises(RuntimeError):
+        info = connector.info("power", 9999999)
