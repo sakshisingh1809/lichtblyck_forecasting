@@ -1,11 +1,10 @@
 """Module that uses connection to Belvis to generate PfLine and PfState objects."""
 
-from numpy import isin
-from . import connector
+from . import raw
 from ..tools import stamps, frames
 from ..core.pfline import PfLine, SinglePfLine, MultiPfLine
 from ..core.pfstate import PfState
-from typing import Dict, Iterable, Union, Tuple
+from typing import Dict, Union, Tuple
 import functools
 import datetime as dt
 import pandas as pd
@@ -114,8 +113,8 @@ def _series(commodity, pfid, tsnames, ts_left, ts_right):
     series = []
     for tsname in tsnames:
         _print_status(f". {tsname}")
-        tsid = connector.find_tsid(commodity, pfid, tsname, strict=True)
-        series.append(connector.series(commodity, tsid, ts_left, ts_right))
+        tsid = raw.find_tsid(commodity, pfid, tsname, strict=True)
+        series.append(raw.series(commodity, tsid, ts_left, ts_right))
     return frames.set_ts_index(sum(series), bound="right")
 
 

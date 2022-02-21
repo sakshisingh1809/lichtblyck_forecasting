@@ -1,7 +1,5 @@
 from typing import Iterable
-
-import py
-from lichtblyck.belvis import connector
+from lichtblyck.belvis import raw
 import pandas as pd
 import pytest
 
@@ -15,7 +13,7 @@ def run_before_tests():
     global _didauth
 
     if not _didauth:  # check if authentication (either by session or token) is done.
-        connector.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
+        raw.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
         _didauth = True
 
     yield  # this is where the testing happens
@@ -36,7 +34,7 @@ def run_before_tests():
 )
 def test_info(id, partial_result):
     """Test if correct timeseries info can be retrieved."""
-    result = connector.info("power", id)
+    result = raw.info("power", id)
     for key, value in partial_result.items():
         assert result[key] == value
 
@@ -94,9 +92,9 @@ def test_find_pfids(commodity, name, list_if_not_strict, strict):
 
     if not expected:
         with pytest.raises(ValueError):
-            _ = connector.find_pfids(commodity, name, strict=strict)
+            _ = raw.find_pfids(commodity, name, strict=strict)
     else:
-        result = connector.find_pfids(commodity, name, strict=strict)
+        result = raw.find_pfids(commodity, name, strict=strict)
         for key, value in expected.items():
             assert key in result
             assert result[key] == value
@@ -133,16 +131,14 @@ tsidtestcases = [
     ("commodity", "pfid", "name", "list_if_not_strict", "value_if_strict"),
     tsidtestcases,
 )
-def test_find_tsids(
-    commodity, pfid, name, list_if_not_strict, value_if_strict, strict
-):
+def test_find_tsids(commodity, pfid, name, list_if_not_strict, value_if_strict, strict):
     """Test if timeseries ids can be found from their name."""
     if strict:
         expectedkeys = [value_if_strict] if value_if_strict is not None else []
     else:
         expectedkeys = list_if_not_strict
 
-    result = connector.find_tsids(commodity, pfid, name, strict=strict)
+    result = raw.find_tsids(commodity, pfid, name, strict=strict)
     for key in expectedkeys:
         assert key in result
 
@@ -152,9 +148,7 @@ def test_find_tsids(
     ("commodity", "pfid", "name", "list_if_not_strict", "value_if_strict"),
     tsidtestcases,
 )
-def test_find_tsid(
-    commodity, pfid, name, list_if_not_strict, value_if_strict, strict
-):
+def test_find_tsid(commodity, pfid, name, list_if_not_strict, value_if_strict, strict):
     """Test if timeseries id can be found from its name."""
     if strict:
         expected = [value_if_strict] if value_if_strict is not None else []
@@ -162,11 +156,11 @@ def test_find_tsid(
         expected = list_if_not_strict
 
     if len(expected) == 1:
-        result = connector.find_tsids(commodity, pfid, name, strict=strict)
+        result = raw.find_tsid(commodity, pfid, name, strict=strict)
         assert result == expected[0]
     else:
         with pytest.raises(ValueError):
-            _ = connector.find_tsids(commodity, pfid, name, strict=strict)
+            _ = raw.find_tsid(commodity, pfid, name, strict=strict)
 
 
 @pytest.mark.parametrize("method", ["records", "series"])
@@ -183,9 +177,9 @@ def test_records(method, commodity, tsid, ts_left, ts_right, has_result):
 
     # Test the correct method.
     if method == "records":
-        getter = connector.records  # returns list
+        getter = raw.records  # returns list
     else:
-        getter = connector.series  # returns series
+        getter = raw.series  # returns series
 
     if has_result:
         result = getter(commodity, tsid, ts_left, ts_right)
