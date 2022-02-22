@@ -137,8 +137,12 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
         return MultiPfLine({"sourced": self.sourced, "unsourced": self.unsourced})
 
     @property
-    def hedgefraction(self) -> pd.Series:
+    def sourcedfraction(self) -> pd.Series:
         return -self._sourced.volume / self._offtakevolume
+
+    @property
+    def unsourcedfraction(self) -> pd.Series:
+        return 1 - self.sourcedfraction
 
     def df(self, *args, **kwargs) -> pd.DataFrame:
         """DataFrame for this PfState.
@@ -223,9 +227,9 @@ class _LocIndexer:
         self.pfs = pfs
 
     def __getitem__(self, arg) -> PfState:
-        offtakevolume = self.offtake.loc[arg]
-        unsourcedprice = self.unsourcedprice.loc[arg]
-        sourced = self.sourced.loc[arg]
+        offtakevolume = self.pfs.offtake.volume.loc[arg]
+        unsourcedprice = self.pfs.unsourcedprice.loc[arg]
+        sourced = self.pfs.sourced.loc[arg]
         return PfState(offtakevolume, unsourcedprice, sourced)
 
 

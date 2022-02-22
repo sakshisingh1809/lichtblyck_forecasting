@@ -37,7 +37,7 @@ def big_df(aggpfs, aggprices):
     dfs = {
         "offtake": -1 * aggpfs.offtake.df("q"),
         "hedged": pd.DataFrame(
-            {"fraction": aggpfs.hedgefraction, "p": aggpfs.sourced.p}
+            {"fraction": aggpfs.sourcedfraction, "p": aggpfs.sourced.p}
         ),
         "current_market_offpeak": aggprices["offpeak"][["p"]],
         "current_market_peak": aggprices["peak"][["p"]],

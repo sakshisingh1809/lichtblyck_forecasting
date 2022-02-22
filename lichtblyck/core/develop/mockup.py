@@ -128,11 +128,11 @@ def wp_sourced(
     freq : str, optional (default: 'MS')
         Frequency within which sourcing volume and price are uniform.
     w_avg : float, optional (default: 0.6)
-        Average hedge fraction.
+        Average sourced fraction.
     p_avg : float, optional (default: 100)
         Average hedge price in Eur/MWh.
     rand_amp : float, optional (default: 0.2)
-        Random amplitude, both of hedge fraction (absolute) and of price (as fraction).
+        Random amplitude, both of sourced fraction (absolute) and of price (as fraction).
     has_unit : bool, optional (default: True)
         If True, return Series with unit.
         - volume series: same unit as ``w_offtake`` or else with pint unit in MW.

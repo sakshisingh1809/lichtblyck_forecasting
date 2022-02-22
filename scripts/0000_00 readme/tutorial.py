@@ -47,7 +47,6 @@ help(lb.belvis.offtakevolume)
 #     Returns
 #     -------
 #     PfLine
-lb.belvis.offtakevolume()
 
 # If we don't supply a value for a required parameter, or if we supply an incorrect value, we'll be notified:
 incorrectfunctioncall = lb.belvis.offtakevolume("power", "B3C")
@@ -282,9 +281,9 @@ pfs.changefreq("QS")
 # is 0, and the sourced volume consists entirely of forward volume.
 
 # There is still unsourced volume. We can see how much volume is sourced, as a fraction of
-# the offtake volume, using the `.hedgefraction` property. On a 15-minute resolution, this
+# the offtake volume, using the `.sourcedfraction` property. On a 15-minute resolution, this
 # makes little sense, so let's do in on month level:
-pfs.changefreq("MS").hedgefraction
+pfs.changefreq("MS").sourcedfraction
 # ts_left
 # 2023-01-01 00:00:00+01:00    0.5435665353270686
 # 2023-02-01 00:00:00+01:00    0.5643945482052004
@@ -346,8 +345,8 @@ to_buy = pfs.hedge_of_unsourced("val", freq="AS")  #'val' for value hedge
 # Let's store the portfolio state, in case we actually did this, in a new variable:
 pfs2 = pfs.add_sourced(to_buy)
 
-# Let's verify that the hedge fraction of this portfolio is indeed close to 100%:
-pfs2.changefreq("MS").hedgefraction
+# Let's verify that the sourced fraction of this portfolio is indeed close to 100%:
+pfs2.changefreq("MS").sourcedfraction
 # ts_left
 # 2023-01-01 00:00:00+01:00    0.8380803170717684
 # 2023-02-01 00:00:00+01:00    0.8704356381443035
@@ -486,7 +485,7 @@ new_pfs.changefreq("MS").pnl_cost.p - pfs.changefreq("MS").pnl_cost.p
 # 2023-12-01 00:00:00+01:00     30.631
 # Freq: MS, Name: p, dtype: pint[Eur/MWh]
 
-# As expected, the price rise is especially large in the months where the hedge fraction
+# As expected, the price rise is especially large in the months where the sourced fraction
 # is low (e.g. in the winter), and small where it is high (e.g. in the summer) .
 
 
