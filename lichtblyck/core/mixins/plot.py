@@ -55,6 +55,9 @@ class PfLinePlot:
             The figure object to which the series was plotted.
         """
         cols = [col for col in cols if col in self.available]
+        if not cols:
+            raise ValueError("There are no columns selected to plot.")
+
         fig, axes = plt.subplots(
             len(cols),
             1,
@@ -62,7 +65,6 @@ class PfLinePlot:
             sharey=False,
             squeeze=False,
             figsize=(10, len(cols) * 3),
-            # gridspec_kw={"height_ratios": [4, 1]},
         )
 
         for col, ax in zip(cols, axes.flatten()):
@@ -83,7 +85,7 @@ class PfStatePlot:
             The axes object to which to plot the timeseries.
         line : str, optional
             The pfline to plot. One of {'offtake' (default), 'sourced', 'unsourced',
-            'netposition', 'pnl_costs', 'hedgedfraction'}.
+            'netposition', 'procurement', 'sourcedfraction'}.
         col : str, optional
             The column to plot. Default: plot volume `w` [MW] (if available) or else
             price `p` [Eur/MWh].
@@ -92,16 +94,16 @@ class PfStatePlot:
         if line == "offtake":
             (-self.offtake).plot_to_ax(ax, col)
             ax.bar_label(
-                ax.containers[0], label_type="edge", fmt="%.0f".replace(",", " ")
+                ax.containers[0], label_type="edge", fmt="%,.0f".replace(",", " ")
             )  # print labels on top of each bar
 
-        elif line == "hedgedfraction":
-            hedgefraction = -self.sourced.volume / self.offtake.volume
-            vis.plot_timeseries_as_bar(ax, hedgefraction, color="grey")
+        elif line == "sourcedfraction":
+            fractions = self.sourcedfraction
+            vis.plot_timeseries_as_bar(ax, fractions, color="grey")
             ax.bar_label(
                 ax.containers[0],
                 label_type="edge",
-                labels=[f"{val:.0%}" for val in hedgefraction],
+                labels=fractions.apply("{:.0%}".format),
             )  # print labels on top of each bar
 
         elif line == "price":
@@ -125,7 +127,12 @@ class PfStatePlot:
             The figure object to which the series was plotted.
         """
         fig, axes = plt.subplots(
-            2, 3, gridspec_kw={"width_ratios": [0.3, 2, 2], "height_ratios": [4, 1],},
+            2,
+            3,
+            gridspec_kw={
+                "width_ratios": [0.3, 2, 2],
+                "height_ratios": [4, 1],
+            },
         )
 
         fig.set_size_inches(20, 10)
@@ -143,7 +150,7 @@ class PfStatePlot:
         axes[0, 2].xaxis.set_tick_params(labelbottom=False)
 
         pf.plot_to_ax(axes[0, 1], "offtake", "q")  # plot offtake
-        pf.plot_to_ax(axes[0, 2], "hedgedfraction")  # plot hedgedfraction
+        pf.plot_to_ax(axes[0, 2], "sourcedfraction")  # plot sourcedfraction
         pf.plot_to_ax(axes[1, 1], "price")  # plot price
 
         # print offtake units
@@ -219,7 +226,7 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
         )
 
         pfs.plot_to_ax(axes[i - 1, 2], "offtake", "q")  # plot offtake
-        pfs.plot_to_ax(axes[i - 1, 3], "hedgedfraction")  # plot hedgedfraction
+        pfs.plot_to_ax(axes[i - 1, 3], "sourcedfraction")  # plot sourcedfraction
         pfs.plot_to_ax(axes[i, 2], "price")  # plot price
 
         # print portfolio names on the left most (i-1,0), eg. (0,0), (2,0),...
@@ -254,7 +261,12 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
 
 def print_labels(axes, x, y, value):
     axes[x, y].text(
-        0.5, 0.5, value, fontsize=14, fontweight="bold", horizontalalignment="center",
+        0.5,
+        0.5,
+        value,
+        fontsize=14,
+        fontweight="bold",
+        horizontalalignment="center",
     )
     return
 

@@ -1,14 +1,32 @@
 #%%
 import lichtblyck as lb
-import pandas as pd
+import cProfile
 
-u1 = lb.dev.get_singlepfline(kind="p")
-u2 = lb.dev.get_singlepfline(u1.index, kind="all")
-i = pd.date_range("2022", freq="15T", periods=10000)
-u3 = lb.dev.get_pfstate()
-#
+# %%
+lb.belvis.auth_with_passwordfile("cred.txt")
 
 # %%
 
-u3
+pfs = lb.portfolios.pfstate("power", "PKG", "2022", "2022-02")
+
 # %%
+
+
+#%%
+
+
+pr = cProfile.Profile()
+pr.enable()
+# code to execute
+pfs.print()
+pr.disable()
+
+# %%
+pr.print_stats(sort="cumtime")
+pr.print_stats(sort="tottime")
+# other sorting methods here:
+# https://docs.python.org/3/library/profile.html#pstats.Stats.sort_stats
+
+#%%
+result = cProfile.run("pfs.print()")
+result2 = cProfile.run("pfs.print()", sort=1)

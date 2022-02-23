@@ -45,7 +45,7 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
         Does not follow sign conventions (see 'Notes' below); volumes are <0 if
         portfolio is short and >0 if long. Identical to `.unsourced`, but with sign
         change for volumes and revenues (but not prices).
-    pnl_costs : PfLine ('all')
+    procurement : PfLine ('all')
         The expected costs needed to source the offtake volume; the sum of the sourced
         and unsourced positions.
 
@@ -137,10 +137,14 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
         return MultiPfLine({"sourced": self.sourced, "unsourced": self.unsourced})
 
     @property
-    def hedgefraction(self) -> pd.Series:
+    def sourcedfraction(self) -> pd.Series:
         return -self._sourced.volume / self._offtakevolume
 
-    def df(self) -> pd.DataFrame:
+    @property
+    def unsourcedfraction(self) -> pd.Series:
+        return 1 - self.sourcedfraction
+
+    def df(self, *args, **kwargs) -> pd.DataFrame:
         """DataFrame for this PfState.
 
         Returns
@@ -223,9 +227,9 @@ class _LocIndexer:
         self.pfs = pfs
 
     def __getitem__(self, arg) -> PfState:
-        offtakevolume = self.offtake.loc[arg]
-        unsourcedprice = self.unsourcedprice.loc[arg]
-        sourced = self.sourced.loc[arg]
+        offtakevolume = self.pfs.offtake.volume.loc[arg]
+        unsourcedprice = self.pfs.unsourcedprice.loc[arg]
+        sourced = self.pfs.sourced.loc[arg]
         return PfState(offtakevolume, unsourcedprice, sourced)
 
 

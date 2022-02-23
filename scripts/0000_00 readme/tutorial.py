@@ -17,7 +17,6 @@ lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
 offtake = lb.belvis.offtakevolume("power", "PKG", "2023")
 
-
 # %% PYTHON BASICS.
 
 # Before we continue using this object,, let's discuss some helpful standard python functionality that is not exclusive to the `lichtblyck` library.
@@ -184,7 +183,7 @@ sourced.spot
 # 2023-12-31 23:30:00 +0100          0.0           0                         0
 # 2023-12-31 23:45:00 +0100          0.0           0                         0
 
-# %% COMBINING OFFTAKE, SOURCED, AND FORWARD PRICES.
+# %% THE PFSTATE OBJECT
 
 # Combining the offtake volume, the sourced volume and its price, and the current forward curve,
 # we can get a complete picture of the portfolio. The object is called a portfolio state or `PfState`.
@@ -203,31 +202,105 @@ pfs
 #                                                 w           q           p             r
 #                                                MW         MWh     Eur/MWh           Eur
 # ──────── offtake
-#            2023-01-01 00:00:00 +0100       -111.6         -28
-#            2023-01-01 00:15:00 +0100       -104.2         -26
+#            2023-01-01 00:00:00 +0100        -90.8         -23
+#            2023-01-01 00:15:00 +0100        -84.9         -21
 #            ..                                  ..          ..          ..            ..
-#            2023-12-31 23:30:00 +0100        -95.1         -24
-#            2023-12-31 23:45:00 +0100        -87.5         -22
+#            2023-12-31 23:30:00 +0100        -78.3         -20
+#            2023-12-31 23:45:00 +0100        -72.2         -18
 # ─●────── pnl_cost
-#  │         2023-01-01 00:00:00 +0100        111.6          28      106.07         2 960
-#  │         2023-01-01 00:15:00 +0100        104.2          26       93.93         2 448
+#  │         2023-01-01 00:00:00 +0100         90.8          23      107.20         2 433
+#  │         2023-01-01 00:15:00 +0100         84.9          21       91.49         1 941
 #  │         ..                                  ..          ..          ..            ..
-#  │         2023-12-31 23:30:00 +0100         95.1          24       84.24         2 003
-#  │         2023-12-31 23:45:00 +0100         87.5          22       78.89         1 726
-#  ├────── sourced
-#  │         2023-01-01 00:00:00 +0100         80.5          20       87.45         1 759
-#  │         2023-01-01 00:15:00 +0100         80.5          20       87.45         1 759
+#  │         2023-12-31 23:30:00 +0100         78.3          20       87.68         1 715
+#  │         2023-12-31 23:45:00 +0100         72.2          18       81.64         1 473
+#  ├●───── sourced
+#  ││        2023-01-01 00:00:00 +0100         57.8          14       79.50         1 149
+#  ││        2023-01-01 00:15:00 +0100         57.8          14       79.50         1 149
+#  ││        ..                                  ..          ..          ..            ..
+#  ││        2023-12-31 23:30:00 +0100         57.8          14       79.50         1 149
+#  ││        2023-12-31 23:45:00 +0100         57.8          14       79.50         1 149
+#  │├───── forward
+#  ││        2023-01-01 00:00:00 +0100         57.8          14       79.50         1 149
+#  ││        2023-01-01 00:15:00 +0100         57.8          14       79.50         1 149
+#  ││        ..                                  ..          ..          ..            ..
+#  ││        2023-12-31 23:30:00 +0100         57.8          14       79.50         1 149
+#  ││        2023-12-31 23:45:00 +0100         57.8          14       79.50         1 149
+#  │└───── spot
+#  │         2023-01-01 00:00:00 +0100          0.0           0                         0
+#  │         2023-01-01 00:15:00 +0100          0.0           0                         0
 #  │         ..                                  ..          ..          ..            ..
-#  │         2023-12-31 23:30:00 +0100         73.0          18       76.94         1 404
-#  │         2023-12-31 23:45:00 +0100         73.0          18       76.94         1 404
+#  │         2023-12-31 23:30:00 +0100          0.0           0                         0
+#  │         2023-12-31 23:45:00 +0100          0.0           0                         0
 #  └────── unsourced
-#            2023-01-01 00:00:00 +0100         31.2           8      154.17         1 201
-#            2023-01-01 00:15:00 +0100         23.8           6      115.88           689
+#            2023-01-01 00:00:00 +0100         33.0           8      155.74         1 284
+#            2023-01-01 00:15:00 +0100         27.1           7      117.09           792
 #            ..                                  ..          ..          ..            ..
-#            2023-12-31 23:30:00 +0100         22.1           6      108.31           599
-#            2023-12-31 23:45:00 +0100         14.5           4       88.68           322
+#            2023-12-31 23:30:00 +0100         20.5           5      110.82           567
+#            2023-12-31 23:45:00 +0100         14.4           4       90.27
 
-# Let's see the forward price curve used:
+# We can aggregate the values to other time resolutions using `.changefreq()`. For
+# example, in quarters:
+pfs.changefreq("QS")
+# PfState object.
+# . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
+#                last: 2023-10-01 00:00:00+02:00         freq: <QuarterBegin: startingMonth=1> (4 datapoints)
+#                                                 w           q           p             r
+#                                                MW         MWh     Eur/MWh           Eur
+# ──────── offtake
+#            2023-01-01 00:00:00 +0100       -107.6    -232 338
+#            2023-04-01 00:00:00 +0200        -84.2    -183 819
+#            2023-07-01 00:00:00 +0200        -75.5    -166 662
+#            2023-10-01 00:00:00 +0200        -91.8    -202 838
+# ─●────── pnl_cost
+#  │         2023-01-01 00:00:00 +0100        107.6     232 338      132.49    30 781 290
+#  │         2023-04-01 00:00:00 +0200         84.2     183 819       93.60    17 205 147
+#  │         2023-07-01 00:00:00 +0200         75.5     166 662       90.80    15 132 764
+#  │         2023-10-01 00:00:00 +0200         91.8     202 838      108.47    22 001 072
+#  ├●───── sourced
+#  ││        2023-01-01 00:00:00 +0100         61.5     132 824       80.16    10 646 882
+#  ││        2023-04-01 00:00:00 +0200         61.5     134 269       80.15    10 761 755
+#  ││        2023-07-01 00:00:00 +0200         61.4     135 656       80.14    10 872 033
+#  ││        2023-10-01 00:00:00 +0200         61.4     135 714       80.14    10 876 628
+#  │├───── forward
+#  ││        2023-01-01 00:00:00 +0100         61.5     132 824       80.16    10 646 882
+#  ││        2023-04-01 00:00:00 +0200         61.5     134 269       80.15    10 761 755
+#  ││        2023-07-01 00:00:00 +0200         61.4     135 656       80.14    10 872 033
+#  ││        2023-10-01 00:00:00 +0200         61.4     135 714       80.14    10 876 628
+#  │└───── spot
+#  │         2023-01-01 00:00:00 +0100          0.0           0                         0
+#  │         2023-04-01 00:00:00 +0200          0.0           0                         0
+#  │         2023-07-01 00:00:00 +0200          0.0           0                         0
+#  │         2023-10-01 00:00:00 +0200          0.0           0                         0
+#  └────── unsourced
+#            2023-01-01 00:00:00 +0100         46.1      99 514      202.33    20 134 408
+#            2023-04-01 00:00:00 +0200         22.7      49 550      130.04     6 443 392
+#            2023-07-01 00:00:00 +0200         14.0      31 006      137.42     4 260 732
+#            2023-10-01 00:00:00 +0200         30.4      67 124      165.73    11 124 444
+
+# Because we are looking at a delivery period that is fully in the future, the spot volume
+# is 0, and the sourced volume consists entirely of forward volume.
+
+# There is still unsourced volume. We can see how much volume is sourced, as a fraction of
+# the offtake volume, using the `.sourcedfraction` property. On a 15-minute resolution, this
+# makes little sense, so let's do in on month level:
+pfs.changefreq("MS").sourcedfraction
+# ts_left
+# 2023-01-01 00:00:00+01:00    0.5435665353270686
+# 2023-02-01 00:00:00+01:00    0.5643945482052004
+# 2023-03-01 00:00:00+01:00    0.6103273987176215
+# 2023-04-01 00:00:00+02:00     0.664881283738455
+# 2023-05-01 00:00:00+02:00    0.7402294438967199
+# 2023-06-01 00:00:00+02:00    0.7977566032048398
+# 2023-07-01 00:00:00+02:00    0.8313065233261596
+# 2023-08-01 00:00:00+02:00    0.8271321090968647
+# 2023-09-01 00:00:00+02:00    0.7841339384580529
+# 2023-10-01 00:00:00+02:00    0.7226482354294849
+# 2023-11-01 00:00:00+01:00    0.6755733891337624
+# 2023-12-01 00:00:00+01:00    0.6173544145698892
+# Freq: MS, Name: fraction, dtype: pint[]
+
+
+# The unsourced volume is valued using the forward price curve. Let's see the prices that are used:
 pfs.unsourcedprice
 # PfLine object with price information.
 # . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
@@ -245,21 +318,55 @@ pfs.unsourcedprice
 # 2023-12-31 23:30:00 +0100      108.31
 # 2023-12-31 23:45:00 +0100       88.68
 
-# Or the hedge fraction, on a quarter level:
-pfs.changefreq("QS").hedgefraction
+# And let's turn these into 'peak' and 'offpeak' values with the `.po()` function. For
+# example, the month prices:
+pfs.unsourcedprice.po("MS")
+#                               peak              offpeak
+#                           duration         p   duration         p
 # ts_left
-# 2023-01-01 00:00:00+01:00    0.5973314694274244
-# 2023-04-01 00:00:00+02:00    0.7105400540378203
-# 2023-07-01 00:00:00+02:00    0.7762408103086229
-# 2023-10-01 00:00:00+02:00    0.6497044002532851
-# Freq: QS-JAN, Name: fraction, dtype: pint[]
+# 2023-01-01 00:00:00+01:00    312.0    229.55      432.0    158.20
+# 2023-02-01 00:00:00+01:00    288.0    238.54      384.0    161.91
+# 2023-03-01 00:00:00+01:00    324.0    208.38      419.0    144.71
+# 2023-04-01 00:00:00+02:00    300.0    132.99      420.0    104.27
+# 2023-05-01 00:00:00+02:00    324.0    129.61      420.0     99.45
+# 2023-06-01 00:00:00+02:00    312.0    142.09      408.0    105.46
+# 2023-07-01 00:00:00+02:00    312.0    130.97      432.0    103.71
+# 2023-08-01 00:00:00+02:00    324.0    127.74      420.0     99.81
+# 2023-09-01 00:00:00+02:00    312.0    144.89      408.0    111.01
+# 2023-10-01 00:00:00+02:00    312.0    171.35      433.0    116.55
+# 2023-11-01 00:00:00+01:00    312.0    198.45      408.0    125.48
+# 2023-12-01 00:00:00+01:00    312.0    187.20      432.0    116.03
 
-# %% RISK CALCULATIONS
 
-# Now, let's do some rudimentary risk calculations.
+# %% HEDGING
 
-# We start with the `PfState` object from above.
-# Here is the expected procurement price on a monthly level:
+# Let's calculate how much we'd need to buy to fully hedge the portfolio on a year level.
+to_buy = pfs.hedge_of_unsourced("val", freq="AS")  #'val' for value hedge
+# Let's store the portfolio state, in case we actually did this, in a new variable:
+pfs2 = pfs.add_sourced(to_buy)
+
+# Let's verify that the sourced fraction of this portfolio is indeed close to 100%:
+pfs2.changefreq("MS").sourcedfraction
+# ts_left
+# 2023-01-01 00:00:00+01:00    0.8380803170717684
+# 2023-02-01 00:00:00+01:00    0.8704356381443035
+# 2023-03-01 00:00:00+01:00    0.9428999890953694
+# 2023-04-01 00:00:00+02:00     1.022450401567433
+# 2023-05-01 00:00:00+02:00    1.1435182441538607
+# 2023-06-01 00:00:00+02:00    1.2317504743889172
+# 2023-07-01 00:00:00+02:00    1.2792165659814116
+# 2023-08-01 00:00:00+02:00    1.2777668665794024
+# 2023-09-01 00:00:00+02:00    1.2082834450683304
+# 2023-10-01 00:00:00+02:00    1.1141274222467106
+# 2023-11-01 00:00:00+01:00    1.0430974049065562
+# 2023-12-01 00:00:00+01:00    0.9499865236709002
+# Freq: MS, Name: fraction, dtype: pint[]
+
+# %% PORTFOLIO PRICES
+
+# We use with the `PfState` objects `pfs` and `pfs2` from above.
+
+# Here is the expected procurement price on a monthly level for the first portfolio:
 pfs.changefreq("MS").pnl_cost
 # PfLine object with price and volume information.
 # . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
@@ -269,28 +376,71 @@ pfs.changefreq("MS").pnl_cost
 #                                      w           q           p             r
 #                                     MW         MWh     Eur/MWh           Eur
 #
-# 2023-01-01 00:00:00 +0100        139.6     103 833      138.50    14 381 219
-# 2023-02-01 00:00:00 +0100        134.3      90 275      139.28    12 573 881
-# 2023-03-01 00:00:00 +0100        124.6      92 551      125.05    11 573 857
-# 2023-04-01 00:00:00 +0200        113.7      81 861       95.17     7 790 727
-# 2023-05-01 00:00:00 +0200        102.7      76 380       92.51     7 065 694
-# 2023-06-01 00:00:00 +0200         95.1      68 447       92.78     6 350 629
-# 2023-07-01 00:00:00 +0200         90.7      67 490       89.59     6 046 138
-# 2023-08-01 00:00:00 +0200         91.4      68 024       89.35     6 077 868
-# 2023-09-01 00:00:00 +0200         96.1      69 201       94.31     6 526 163
-# 2023-10-01 00:00:00 +0200        104.2      77 648      102.55     7 962 727
-# 2023-11-01 00:00:00 +0100        111.6      80 373      113.23     9 100 758
-# 2023-12-01 00:00:00 +0100        121.5      90 406      110.81    10 017 900
+# 2023-01-01 00:00:00 +0100        113.1      84 116      136.89    11 514 308
+# 2023-02-01 00:00:00 +0100        108.9      73 200      137.59    10 071 445
+# 2023-03-01 00:00:00 +0100        101.0      75 022      122.57     9 195 536
+# 2023-04-01 00:00:00 +0200         92.1      66 310       95.64     6 341 851
+# 2023-05-01 00:00:00 +0200         83.2      61 935       92.58     5 733 831
+# 2023-06-01 00:00:00 +0200         77.2      55 575       92.30     5 129 465
+# 2023-07-01 00:00:00 +0200         73.7      54 852       89.33     4 899 935
+# 2023-08-01 00:00:00 +0200         74.5      55 428       89.15     4 941 483
+# 2023-09-01 00:00:00 +0200         78.3      56 383       93.85     5 291 345
+# 2023-10-01 00:00:00 +0200         85.0      63 351      101.94     6 457 948
+# 2023-11-01 00:00:00 +0100         91.1      65 626      112.22     7 364 833
+# 2023-12-01 00:00:00 +0100         99.3      73 862      110.72     8 178 291
 
 # So, based on current procurement and current forward curve prices, the January volume
 # of 103 833 MWh is expected to cost 14 381 219 Eur, or 138.50 Eur/MWh
 
-# Now, what will happen if the market prices go up by, let's say 50%? In that case, the price
+# For the other portfolio, the monthly values are different due to the procurement of
+# year products. Its values for the individual months are
+pfs2.changefreq("MS").pnl_cost
+# PfLine object with price and volume information.
+# . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
+#                last: 2023-12-01 00:00:00+01:00         freq: <MonthBegin> (12 datapoints)
+# . Children: 'sourced' (price and volume), 'unsourced' (price and volume)
+#
+#                                      w           q           p             r
+#                                     MW         MWh     Eur/MWh           Eur
+#
+# 2023-01-01 00:00:00 +0100        113.1      84 116      122.70    10 320 647
+# 2023-02-01 00:00:00 +0100        108.9      73 200      120.92     8 851 508
+# 2023-03-01 00:00:00 +0100        101.0      75 022      112.15     8 414 043
+# 2023-04-01 00:00:00 +0200         92.1      66 310      104.71     6 943 385
+# 2023-05-01 00:00:00 +0200         83.2      61 935      104.82     6 491 748
+# 2023-06-01 00:00:00 +0200         77.2      55 575      101.46     5 638 629
+# 2023-07-01 00:00:00 +0200         73.7      54 852      101.30     5 556 431
+# 2023-08-01 00:00:00 +0200         74.5      55 428      103.15     5 717 633
+# 2023-09-01 00:00:00 +0200         78.3      56 383      100.89     5 688 496
+# 2023-10-01 00:00:00 +0200         85.0      63 351      102.44     6 489 665
+# 2023-11-01 00:00:00 +0100         91.1      65 626      106.15     6 966 198
+# 2023-12-01 00:00:00 +0100         99.3      73 862      108.88     8 041 890
+
+# In this portfolio, the January volume is of course the same with 103 833 MWh, but the
+# expected price is 122.70 Eur/MWh.
+
+# On a yearly level, they are identical - which they should - with a price of 108.34 Eur/MWh:
+pfs.changefreq("AS").pnl_cost
+pfs2.changefreq("AS").pnl_cost
+# PfLine object with price and volume information.
+# . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
+#                last: 2023-01-01 00:00:00+01:00         freq: <YearBegin: month=1> (1 datapoints)
+# . Children: 'sourced' (price and volume), 'unsourced' (price and volume)
+#
+#                                      w           q           p             r
+#                                     MW         MWh     Eur/MWh           Eur
+#
+# 2023-01-01 00:00:00 +0100         89.7     785 657      108.34    85 120 273
+
+# %% WHAT-IF
+
+# Now, let's do some rudimentary risk calculations.
+# What will happen if the market prices go up by, let's say 50%? In that case, the price
 # of the unsourced volume is affected, while the contracted volume stays equally expensive.
 # The new price of the unsourced volume, i.e., the new forward curve, will be
 new_prices = pfs.unsourcedprice * 1.5
 
-# And the portfolio state, with these new prices, would be
+# Starting with the first portfolio: the portfolio state, with these new prices, would be
 new_pfs = pfs.set_unsourcedprice(new_prices)
 
 # We can again see the monthly expected procurement price in that case:
@@ -303,41 +453,63 @@ new_pfs.changefreq("MS").pnl_cost
 #                                      w           q           p             r
 #                                     MW         MWh     Eur/MWh           Eur
 #
-# 2023-01-01 00:00:00 +0100        139.6     103 833      183.43    19 045 651
-# 2023-02-01 00:00:00 +0100        134.3      90 275      183.65    16 579 118
-# 2023-03-01 00:00:00 +0100        124.6      92 551      160.44    14 848 959
-# 2023-04-01 00:00:00 +0200        113.7      81 861      117.20     9 594 357
-# 2023-05-01 00:00:00 +0200        102.7      76 380      110.46     8 436 835
-# 2023-06-01 00:00:00 +0200         95.1      68 447      108.65     7 436 830
-# 2023-07-01 00:00:00 +0200         90.7      67 490      103.35     6 975 157
-# 2023-08-01 00:00:00 +0200         91.4      68 024      103.16     7 017 129
-# 2023-09-01 00:00:00 +0200         96.1      69 201      112.10     7 757 670
-# 2023-10-01 00:00:00 +0200        104.2      77 648      126.55     9 826 437
-# 2023-11-01 00:00:00 +0100        111.6      80 373      144.28    11 596 589
-# 2023-12-01 00:00:00 +0100        121.5      90 406      142.75    12 905 616
+# 2023-01-01 00:00:00 +0100        113.1      84 116      183.55    15 439 214
+# 2023-02-01 00:00:00 +0100        108.9      73 200      183.76    13 451 513
+# 2023-03-01 00:00:00 +0100        101.0      75 022      159.39    11 957 766
+# 2023-04-01 00:00:00 +0200         92.1      66 310      116.83     7 746 844
+# 2023-05-01 00:00:00 +0200         83.2      61 935      109.19     6 762 911
+# 2023-06-01 00:00:00 +0200         77.2      55 575      106.47     5 917 088
+# 2023-07-01 00:00:00 +0200         73.7      54 852      100.69     5 523 243
+# 2023-08-01 00:00:00 +0200         74.5      55 428      100.57     5 574 389
+# 2023-09-01 00:00:00 +0200         78.3      56 383      109.35     6 165 497
+# 2023-10-01 00:00:00 +0200         85.0      63 351      123.95     7 852 377
+# 2023-11-01 00:00:00 +0100         91.1      65 626      141.26     9 270 140
+# 2023-12-01 00:00:00 +0100         99.3      73 862      141.36    10 440 777
 
-# So, while the January volume has remained the same, its price has risen to 183.43 Eur/MWh.
+# So, the January price has risen by almost 50 Eur/MWh.
 
-# We can also compare the before and after portfolio prices
-pfprice_before = pfs.changefreq("MS").pnl_cost.price
-pfprice_after = new_pfs.changefreq("MS").pnl_cost.price
-pricerise = pfprice_after / pfprice_before - 1
+# We can also calculate the price change explicitly:
+new_pfs.changefreq("MS").pnl_cost.p - pfs.changefreq("MS").pnl_cost.p
 # ts_left
-# 2023-01-01 00:00:00+01:00     0.3243
-# 2023-02-01 00:00:00+01:00     0.3185
-# 2023-03-01 00:00:00+01:00     0.2829
-# 2023-04-01 00:00:00+02:00    0.2315
-# 2023-05-01 00:00:00+02:00    0.1940
-# 2023-06-01 00:00:00+02:00    0.1710
-# 2023-07-01 00:00:00+02:00     0.1536
-# 2023-08-01 00:00:00+02:00    0.1545
-# 2023-09-01 00:00:00+02:00    0.1887
-# 2023-10-01 00:00:00+02:00    0.2340
-# 2023-11-01 00:00:00+01:00    0.2742
-# 2023-12-01 00:00:00+01:00    0.2882
-# Freq: MS, Name: fraction, dtype: pint[]
+# 2023-01-01 00:00:00+01:00     46.660
+# 2023-02-01 00:00:00+01:00     46.175
+# 2023-03-01 00:00:00+01:00     36.818
+# 2023-04-01 00:00:00+02:00     21.188
+# 2023-05-01 00:00:00+02:00     16.615
+# 2023-06-01 00:00:00+02:00     14.172
+# 2023-07-01 00:00:00+02:00     11.363
+# 2023-08-01 00:00:00+02:00     11.418
+# 2023-09-01 00:00:00+02:00     15.503
+# 2023-10-01 00:00:00+02:00     22.011
+# 2023-11-01 00:00:00+01:00     29.032
+# 2023-12-01 00:00:00+01:00     30.631
+# Freq: MS, Name: p, dtype: pint[Eur/MWh]
 
-# As expected, the price rise is especially large in the months where the hedge fracion is low.
+# As expected, the price rise is especially large in the months where the sourced fraction
+# is low (e.g. in the winter), and small where it is high (e.g. in the summer) .
+
+
+# Repeating this for the other portfolio, which was fully hedged, we expect a much smaller price
+# increase. Let's verify:
+new_pfs2 = pfs2.set_unsourcedprice(new_prices)
+new_pfs2.changefreq("MS").pnl_cost.p - pfs2.changefreq("MS").pnl_cost.p
+# ts_left
+# 2023-01-01 00:00:00+01:00      18.405
+# 2023-02-01 00:00:00+01:00      15.835
+# 2023-03-01 00:00:00+01:00       7.567
+# 2023-04-01 00:00:00+02:00       0.244
+# 2023-05-01 00:00:00+02:00      -6.415
+# 2023-06-01 00:00:00+02:00     -12.565
+# 2023-07-01 00:00:00+02:00     -14.634
+# 2023-08-01 00:00:00+02:00     -14.153
+# 2023-09-01 00:00:00+02:00     -11.392
+# 2023-10-01 00:00:00+02:00      -5.860
+# 2023-11-01 00:00:00+01:00      -0.526
+# 2023-12-01 00:00:00+01:00       5.955
+# Freq: MS, Name: p, dtype: pint[Eur/MWh]
+
+# The January price has increased only by 20 Eur/MWh, and more importantly, some months
+# have a price increase while others have a price decrease.
 
 
 # %% TEMPERATURE-DEPENDENT LOAD PROFILES

@@ -3,7 +3,7 @@ Test cases to get data from the Belvis API.
 """
 
 from typing import Tuple
-from lichtblyck.belvis import connector, data
+from lichtblyck.belvis import raw, data
 from lichtblyck.testing import testing
 import datetime as dt
 import numpy as np
@@ -19,7 +19,7 @@ def run_before_tests():
     global _didauth
 
     if not _didauth:  # check if authentication (either by session or token) is done.
-        connector.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
+        raw.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
         _didauth = True
 
     yield  # this is where the testing happens

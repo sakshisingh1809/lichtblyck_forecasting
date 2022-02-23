@@ -87,7 +87,7 @@ def _prep_data(value, ref: PfLine) -> Union[pd.Series, PfLine]:
             return value  # has unit, but unknown
 
         if name not in ["p", "q", "w"]:
-            return value  # has know unit, but none from which PfLine can be made
+            return value  # has known unit, but none from which PfLine can be made
 
         return single.SinglePfLine({name: value})
 
@@ -112,16 +112,30 @@ def _flatten(fn):
     return wrapper
 
 
-@_flatten
 def _add_pflines(pfl1: PfLine, pfl2: PfLine):
     """Add two pflines."""
     if pfl1.kind != pfl2.kind:
         raise NotImplementedError("Cannot add portfolio lines of unequal kind.")
 
-    # Get addition and keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
-    dfs = [pfl.df(pfl.summable) for pfl in [pfl1, pfl2]]
-    df = sum(dfs).dropna().resample(pfl1.index.freq).asfreq()
-    return single.SinglePfLine(df)
+    if isinstance(pfl1, multi.MultiPfLine) and isinstance(pfl2, multi.MultiPfLine):
+        # If BOTH are MultiPfLines, collect children and add those with same name.
+        names = set([*pfl1.children.keys(), *pfl2.children.keys()])
+        children = {}
+        for name in names:
+            child1, child2 = pfl1.children.get(name), pfl2.children.get(name)
+            if child1 is not None and child2 is not None:
+                children[name] = child1 + child2
+            elif child1 is not None:
+                children[name] = child1
+            else:
+                children[name] = child2
+        return multi.MultiPfLine(children)
+
+    else:  # at least one of them is a SinglePfLine.
+        # Get addition and keep only common rows, and resample to keep freq (possibly re-adds gaps in middle).
+        dfs = [pfl.df(pfl.summable) for pfl in [pfl1, pfl2]]
+        df = sum(dfs).dropna().resample(pfl1.index.freq).asfreq()
+        return single.SinglePfLine(df)
 
 
 @_flatten  # TODO: Decide if this should return a Single or Multi PfLine

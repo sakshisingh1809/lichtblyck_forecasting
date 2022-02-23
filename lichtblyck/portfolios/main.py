@@ -125,7 +125,7 @@ def _pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
         for pfid in pf_dic["offtake"]["certain"]
     )
     now = pd.Timestamp.now().tz_localize("Europe/Berlin").floor("D")
-    cutoff = now + pd.Timedelta(days=4)
+    cutoff = now + pd.Timedelta(days=40)
     df1 = offtakevolume_100.df()[offtakevolume_100.index < cutoff]
     df2 = offtakevolume_certain.df()[offtakevolume_certain.index >= cutoff]
     offtakevolume = SinglePfLine(pd.concat([df1, df2]).w)

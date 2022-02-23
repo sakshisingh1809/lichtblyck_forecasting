@@ -27,7 +27,7 @@ class PfStateHedging:
         PfLine
             Hedge (volumes and prices) of unsourced volume.
         """
-        return self.unsourced.volume.hedge_width(self.unsourcedprice, how, freq, po)
+        return self.unsourced.volume.hedge_with(self.unsourcedprice, how, freq, po)
 
     def source_unsourced(
         self: PfState, how: str = "val", freq: str = "MS", po: bool = None
