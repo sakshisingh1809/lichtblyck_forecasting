@@ -107,14 +107,14 @@ class MultiPfLine(PfLine):
         # Finally: put all together in big new dataframe.
         return pd.concat(dfs, axis=1)
 
-    def changefreq(self, freq: str = "MS") -> MultiPfLine:
+    def asfreq(self, freq: str = "MS") -> MultiPfLine:
         if self._heterogeneous_children:
             warnings.warn(
                 "This portfolio has its price and volume information stored in distinct child porfolios. The portfolio is flattened before changing its frequency."
             )
-            return self.flatten().changefreq(freq)  #
+            return self.flatten().asfreq(freq)
         return MultiPfLine(
-            {label: child.changefreq(freq) for label, child in self._children.items()}
+            {label: child.asfreq(freq) for label, child in self._children.items()}
         )
 
     @property

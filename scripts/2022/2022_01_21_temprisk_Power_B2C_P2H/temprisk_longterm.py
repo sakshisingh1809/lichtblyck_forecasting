@@ -45,9 +45,9 @@ ref_prices = {
 }
 
 
-m_ref = -ref.changefreq("MS").offtake.volume * ref_prices[pfname]
-q_ref = m_ref.changefreq("QS")
-a_ref = m_ref.changefreq("AS")
+m_ref = -ref.asfreq("MS").offtake.volume * ref_prices[pfname]
+q_ref = m_ref.asfreq("QS")
+a_ref = m_ref.asfreq("AS")
 
 
 # %% Possible future situations: different offtakes (temperature-related) and different prices.
@@ -137,9 +137,9 @@ for quantile_pc in tqdm(np.linspace(0.5 / n, 1 - 0.5 / n, n)):
     pfs_simp = ref.set_unsourcedprice(price)
     for j in tqdm(range(15)):
         offtake = oc()
-        m_sim = pfs_simp.set_offtakevolume(offtake).changefreq("MS").pnl_cost
-        q_sim = m_sim.changefreq("QS")
-        a_sim = q_sim.changefreq("AS")
+        m_sim = pfs_simp.set_offtakevolume(offtake).asfreq("MS").pnl_cost
+        q_sim = m_sim.asfreq("QS")
+        a_sim = q_sim.asfreq("AS")
         m_sims[(quantile_pc, j)] = m_sim.r
         q_sims[(quantile_pc, j)] = q_sim.r
         a_sims[(quantile_pc, j)] = a_sim.r

@@ -269,7 +269,7 @@ sourced = lb.PfLine({"w": data["rh_ws"], "r": data["rh_rs"]}) + lb.PfLine(
 )
 
 # Offtake prices and revenue.
-step0 = lb.PfState(offtakevolume, pu, sourced).changefreq("H")
+step0 = lb.PfState(offtakevolume, pu, sourced).asfreq("H")
 current = pd.DataFrame({("O", "po"): step0.pnl_cost.p.pint.m})
 current[("O", "pu")] = pu
 

@@ -54,9 +54,9 @@ def write_to_excel(pfname, thisyear: bool = True):
         start, end, freq = "2022", "2025", "AS"
     pfs = lb.portfolios.pfstate("power", pfname, start, end)
 
-    df = big_df(pfs.changefreq(freq), pfs.unsourcedprice.po(freq)).tz_localize(None)
+    df = big_df(pfs.asfreq(freq), pfs.unsourcedprice.po(freq)).tz_localize(None)
     if freq == "MS":  # add sum.
-        df2 = big_df(pfs.changefreq("AS"), pfs.unsourcedprice.po("AS"))
+        df2 = big_df(pfs.asfreq("AS"), pfs.unsourcedprice.po("AS"))
         df2.index = ["Yearly Agg."]
         df = pd.concat([df, df2], axis=0)
     df.pint.dequantify().to_excel(writer, sheet_name=pfname)

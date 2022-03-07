@@ -53,7 +53,7 @@ class MultiPfLine(PfLine):
 
     def changefreq(self, freq: str = "MS") -> MultiPfLine:
         return MultiPfLine(
-            {label: child.changefreq(freq) for label, child in self.children.items()}
+            {label: child.asfreq(freq) for label, child in self.children.items()}
         )
 
     @property

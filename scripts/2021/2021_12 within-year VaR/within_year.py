@@ -26,14 +26,14 @@ for name in ("B2C_HH", "B2C_P2H"):
     pfs = lb.portfolios.pfstate("power", name, "2022")
 
     # CURRENT SITUATION.
-    reference = pfs.changefreq("MS")
+    reference = pfs.asfreq("MS")
     portfolio[name]["ref"] = WhatIf(0.5, 1, reference.pnl_cost)
     portfolio[name]["hedgefraction"] = reference.netposition.volume / -reference.offtake
 
     # WHAT IF.
     for label, quantile in {"falling": 0.05, "rising": 0.95}.items():
         factor = lb.analyse.multiplication_factor(vola, 7 / 365, quantile)
-        scenario = pfs.set_unsourcedprice(pfs.unsourcedprice * factor).changefreq("MS")
+        scenario = pfs.set_unsourcedprice(pfs.unsourcedprice * factor).asfreq("MS")
         portfolio[name][label] = WhatIf(quantile, factor, scenario.pnl_cost)
 
 

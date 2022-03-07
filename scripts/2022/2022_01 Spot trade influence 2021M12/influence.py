@@ -34,7 +34,7 @@ qhpfc_L = lb.PfLine(qhpfc_L)
 
 # Get temperatures.
 tempr = pd.read_excel("Temperaturen.xlsx", header=0, names=["t"], usecols=[2])
-tempr.index = pf.changefreq("D").offtake.index
+tempr.index = pf.asfreq("D").offtake.index
 tempr["delta_t"] = tempr.t - tempr.t.mean()
 
 # %% Spot price vs temperature.
@@ -49,7 +49,7 @@ plt.plot(delta_t, delta_p.p, ".b", alpha=0.2)
 
 # %%
 
-d = pf.changefreq("D")
+d = pf.asfreq("D")
 d.to_clipboard()
 
 # %%

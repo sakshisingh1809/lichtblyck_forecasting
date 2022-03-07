@@ -177,7 +177,7 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
     def add_sourced(self, add_sourced: PfLine) -> PfState:
         return self.set_sourced(self.sourced + add_sourced)
 
-    def changefreq(self, freq: str = "MS") -> PfState:
+    def asfreq(self, freq: str = "MS") -> PfState:
         """Resample the Portfolio to a new frequency.
 
         Parameters
@@ -192,9 +192,9 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
             Resampled at wanted frequency.
         """
         # pu resampling is most important, so that prices are correctly weighted.
-        offtakevolume = self.offtake.changefreq(freq).volume
-        unsourcedprice = self.unsourced.changefreq(freq).price  # ensures weighted avg
-        sourced = self.sourced.changefreq(freq)
+        offtakevolume = self.offtake.asfreq(freq).volume
+        unsourcedprice = self.unsourced.asfreq(freq).price  # ensures weighted avg
+        sourced = self.sourced.asfreq(freq)
         return PfState(offtakevolume, unsourcedprice, sourced)
 
     # Dunder methods.

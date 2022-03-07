@@ -89,7 +89,7 @@ class SinglePfLine(PfLine):
             cols = self.available
         return pd.DataFrame({col: self[col] for col in cols})
 
-    def changefreq(self, freq: str = "MS") -> SinglePfLine:
+    def asfreq(self, freq: str = "MS") -> SinglePfLine:
         return SinglePfLine(changefreq_sum(self.df(self.summable), freq))
 
     @property

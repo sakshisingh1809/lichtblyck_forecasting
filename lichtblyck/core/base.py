@@ -38,7 +38,7 @@ class NDFrameLike(ABC):
         ...
 
     @abstractmethod
-    def changefreq(self, freq: str = "MS") -> NDFrameLike:
+    def asfreq(self, freq: str = "MS") -> NDFrameLike:
         """Resample the instance to a new frequency.
 
         Parameters

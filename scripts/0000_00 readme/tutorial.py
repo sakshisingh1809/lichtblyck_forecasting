@@ -75,8 +75,8 @@ offtake
 # 2023-12-31 23:45:00 +0100        -70.6         -18
 
 # The object has many methods to manipulate it. For example, to change its frequency from
-# 15 minutes to months or quarters, we can use the `.changefreq` method:
-offtake.changefreq("MS")
+# 15 minutes to months or quarters, we can use the `.asfreq` method:
+offtake.asfreq("MS")
 # PfLine object with volume information.
 # . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
 #                last: 2023-12-01 00:00:00+01:00         freq: <MonthBegin> (12 datapoints)
@@ -99,12 +99,12 @@ offtake.changefreq("MS")
 # 2023-12-01 00:00:00 +0100        -97.0     -72 166
 
 # We can also store the quarterly information to a variable, so we can reuse it:
-quarters = offtake.changefreq("MS")
+quarters = offtake.asfreq("MS")
 
 # Let's see what other methods we have.
 # (The ones starting with an underscore I left out)
 dir(offtake)
-# ['available', 'changefreq', 'children', 'df', 'flatten', 'hedge_with', 'index', 'items',
+# ['asfreq', 'available', 'children', 'df', 'flatten', 'hedge_with', 'index', 'items',
 # 'keys', 'kind', 'loc', 'p', 'plot', 'plot_to_ax', 'po', 'price', 'print', 'q', 'r', 'set_p',
 # 'set_price', 'set_q', 'set_r', 'set_volume', 'set_w', 'summable', 'to_clipboard', 'to_excel',
 # 'values', 'volume', 'w']
@@ -130,7 +130,7 @@ offtake.plot()
 # (plots a figure of the offtake in the original 15 min resolution)
 
 # We can also chain the methods. So, we can first turn the data into monthly values, and then plot these:
-offtake.changefreq("MS").plot()
+offtake.asfreq("MS").plot()
 # (plots a figure of the offtake in the monthly resolution)
 
 # And if we want to do more analyses in Excel, we can copy-paste the data into excel with:
@@ -238,9 +238,9 @@ pfs
 #            2023-12-31 23:30:00 +0100         20.5           5      110.82           567
 #            2023-12-31 23:45:00 +0100         14.4           4       90.27
 
-# We can aggregate the values to other time resolutions using `.changefreq()`. For
+# We can aggregate the values to other time resolutions using `.asfreq()`. For
 # example, in quarters:
-pfs.changefreq("QS")
+pfs.asfreq("QS")
 # PfState object.
 # . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
 #                last: 2023-10-01 00:00:00+02:00         freq: <QuarterBegin: startingMonth=1> (4 datapoints)
@@ -283,7 +283,7 @@ pfs.changefreq("QS")
 # There is still unsourced volume. We can see how much volume is sourced, as a fraction of
 # the offtake volume, using the `.sourcedfraction` property. On a 15-minute resolution, this
 # makes little sense, so let's do in on month level:
-pfs.changefreq("MS").sourcedfraction
+pfs.asfreq("MS").sourcedfraction
 # ts_left
 # 2023-01-01 00:00:00+01:00    0.5435665353270686
 # 2023-02-01 00:00:00+01:00    0.5643945482052004
@@ -346,7 +346,7 @@ to_buy = pfs.hedge_of_unsourced("val", freq="AS")  #'val' for value hedge
 pfs2 = pfs.add_sourced(to_buy)
 
 # Let's verify that the sourced fraction of this portfolio is indeed close to 100%:
-pfs2.changefreq("MS").sourcedfraction
+pfs2.asfreq("MS").sourcedfraction
 # ts_left
 # 2023-01-01 00:00:00+01:00    0.8380803170717684
 # 2023-02-01 00:00:00+01:00    0.8704356381443035
@@ -367,7 +367,7 @@ pfs2.changefreq("MS").sourcedfraction
 # We use with the `PfState` objects `pfs` and `pfs2` from above.
 
 # Here is the expected procurement price on a monthly level for the first portfolio:
-pfs.changefreq("MS").pnl_cost
+pfs.asfreq("MS").pnl_cost
 # PfLine object with price and volume information.
 # . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
 #                last: 2023-12-01 00:00:00+01:00         freq: <MonthBegin> (12 datapoints)
@@ -394,7 +394,7 @@ pfs.changefreq("MS").pnl_cost
 
 # For the other portfolio, the monthly values are different due to the procurement of
 # year products. Its values for the individual months are
-pfs2.changefreq("MS").pnl_cost
+pfs2.asfreq("MS").pnl_cost
 # PfLine object with price and volume information.
 # . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
 #                last: 2023-12-01 00:00:00+01:00         freq: <MonthBegin> (12 datapoints)
@@ -420,8 +420,8 @@ pfs2.changefreq("MS").pnl_cost
 # expected price is 122.70 Eur/MWh.
 
 # On a yearly level, they are identical - which they should - with a price of 108.34 Eur/MWh:
-pfs.changefreq("AS").pnl_cost
-pfs2.changefreq("AS").pnl_cost
+pfs.asfreq("AS").pnl_cost
+pfs2.asfreq("AS").pnl_cost
 # PfLine object with price and volume information.
 # . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
 #                last: 2023-01-01 00:00:00+01:00         freq: <YearBegin: month=1> (1 datapoints)
@@ -444,7 +444,7 @@ new_prices = pfs.unsourcedprice * 1.5
 new_pfs = pfs.set_unsourcedprice(new_prices)
 
 # We can again see the monthly expected procurement price in that case:
-new_pfs.changefreq("MS").pnl_cost
+new_pfs.asfreq("MS").pnl_cost
 # PfLine object with price and volume information.
 # . Timestamps: first: 2023-01-01 00:00:00+01:00     timezone: Europe/Berlin
 #                last: 2023-12-01 00:00:00+01:00         freq: <MonthBegin> (12 datapoints)
@@ -469,7 +469,7 @@ new_pfs.changefreq("MS").pnl_cost
 # So, the January price has risen by almost 50 Eur/MWh.
 
 # We can also calculate the price change explicitly:
-new_pfs.changefreq("MS").pnl_cost.p - pfs.changefreq("MS").pnl_cost.p
+new_pfs.asfreq("MS").pnl_cost.p - pfs.asfreq("MS").pnl_cost.p
 # ts_left
 # 2023-01-01 00:00:00+01:00     46.660
 # 2023-02-01 00:00:00+01:00     46.175
@@ -492,7 +492,7 @@ new_pfs.changefreq("MS").pnl_cost.p - pfs.changefreq("MS").pnl_cost.p
 # Repeating this for the other portfolio, which was fully hedged, we expect a much smaller price
 # increase. Let's verify:
 new_pfs2 = pfs2.set_unsourcedprice(new_prices)
-new_pfs2.changefreq("MS").pnl_cost.p - pfs2.changefreq("MS").pnl_cost.p
+new_pfs2.asfreq("MS").pnl_cost.p - pfs2.asfreq("MS").pnl_cost.p
 # ts_left
 # 2023-01-01 00:00:00+01:00      18.405
 # 2023-02-01 00:00:00+01:00      15.835
@@ -594,8 +594,10 @@ offtake = lb.PfLine(offtake_in_MW)
 
 # To make the data a bit more handlable and reduce the number of datapoints (there are > 1 million
 # quarterhours between 1990 and 2020), we can aggregate to daily, monthly, quarterly or yearly values:
-yearly = offtake.changefreq("AS")
+yearly = offtake.asfreq("AS")
 
 # Which we can then again plot, for example as bars. 1996 and 2010 have extremely high consumption
 # due to their low temperatures.
 yearly.q.plot(kind="bar")
+
+#%%

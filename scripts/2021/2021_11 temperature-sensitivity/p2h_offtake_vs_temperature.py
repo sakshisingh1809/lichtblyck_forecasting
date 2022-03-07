@@ -37,7 +37,7 @@ for pf, details in {
     tlp = lb.tlp.power.fromsource(details["source"], spec=details["spec"])
     # Hypothetic offtake at various deltas from the historic temperatures.
     for delta_t in tqdm(range(-10, 11)):
-        offtake_permonth = lb.PfLine({"w": tlp(t_act + delta_t)}).changefreq("MS")
+        offtake_permonth = lb.PfLine({"w": tlp(t_act + delta_t)}).asfreq("MS")
         offtake_percalmonth = (
             offtake_permonth.q.groupby(lambda ts: ts.month)
             .apply(np.mean)

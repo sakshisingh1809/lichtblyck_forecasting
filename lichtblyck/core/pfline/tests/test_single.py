@@ -81,11 +81,11 @@ def test_singlepfline_access(columns):
             test_series_equal(col, df.na.rename(col))
 
 
-# . check correct working of attributes .changefreq().
+# . check correct working of attributes .asfreq().
 @pytest.mark.parametrize("freq", ["H", "D", "MS", "QS", "AS"])  # not do all (many!)
 @pytest.mark.parametrize("newfreq", ["H", "D", "MS", "QS", "AS"])  # not do all (many!)
 @pytest.mark.parametrize("columns", ["pr", "qr", "pq", "wp", "wr"])
-def test_singlepfline_changefreqpossible(freq, newfreq, columns):
+def test_singlepfline_asfreqpossible(freq, newfreq, columns):
     """Test if changing frequency is done correctly (when it's possible)"""
 
     # Includes at 2 full years
@@ -97,7 +97,7 @@ def test_singlepfline_changefreqpossible(freq, newfreq, columns):
     i = pd.date_range(start, end, freq=freq, tz="Europe/Berlin")
     df = dev.get_dataframe(i, columns)
     pfl1 = SinglePfLine(df)
-    pfl2 = pfl1.changefreq(newfreq)
+    pfl2 = pfl1.asfreq(newfreq)
 
     # Compare the dataframes, only keep time intervals that are in both objects.
     summable = pfl1.summable
@@ -115,14 +115,14 @@ def test_singlepfline_changefreqpossible(freq, newfreq, columns):
 @pytest.mark.parametrize("freq", ["15T", "H", "D"])
 @pytest.mark.parametrize("newfreq", ["MS", "QS", "AS"])
 @pytest.mark.parametrize("kind", ["p", "q", "all"])
-def test_singlepfline_changefreqimpossible(freq, newfreq, kind):
+def test_singlepfline_asfreqimpossible(freq, newfreq, kind):
     """Test if changing frequency raises error if it's impossible."""
 
     periods = {"H": 200, "15T": 2000, "D": 20}[freq]
     i = pd.date_range("2020-04-06", freq=freq, periods=periods, tz="Europe/Berlin")
     pfl = dev.get_singlepfline(i, kind)
     with pytest.raises(ValueError):
-        _ = pfl.changefreq(newfreq)
+        _ = pfl.asfreq(newfreq)
 
 
 @pytest.mark.parametrize("kind", ["p", "q", "all"])

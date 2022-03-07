@@ -65,7 +65,7 @@ for label, pf in pfs.items():
     for key, t in (("act", t_act), ("exp", t_exp)):
         s = pf.tlp(t)
         pfl = lb.PfLine({"w": s.astype("pint[MW]")})
-        pf.offtake[key] = pfl.changefreq("MS")
+        pf.offtake[key] = pfl.asfreq("MS")
     # deviation.
     fraction = pf.offtake["act"].q / pf.offtake["exp"].q
     pf.deviation = fraction.dropna() - 1

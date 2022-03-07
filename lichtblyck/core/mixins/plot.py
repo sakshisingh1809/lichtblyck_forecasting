@@ -136,7 +136,7 @@ class PfStatePlot:
         )
 
         fig.set_size_inches(20, 10)
-        pf = self.changefreq(freq)
+        pf = self.asfreq(freq)
 
         axes[0, 0].axis("off")
         axes[1, 0].axis("off")
@@ -205,7 +205,7 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     After this we extract and only work with the common part of all the pfstates."""
 
     for i in range(1, len(axes), 2):
-        pfs = pfstates[j].changefreq(freq)
+        pfs = pfstates[j].asfreq(freq)
 
         axes[i - 1, 0].axis("off")
         axes[i, 0].axis("off")
