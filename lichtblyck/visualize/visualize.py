@@ -3,7 +3,6 @@ Visualize portfolio lines, etc.
 """
 
 from ..tools.stamps import freq_shortest
-from ..tools import nits
 from typing import Dict, List, Optional, Iterable
 from collections import namedtuple
 from matplotlib import pyplot as plt
@@ -100,8 +99,8 @@ cat : bool, optional
     If False, plots x-axis as timeline with timestamps spaced according to their 
     duration. If True, plots x-axis categorically, with timestamps spaced equally. 
     Disregarded if `ax` already has values (then: use whatever is already set). 
-    Otherwise, if missing, use True if `s` has a monthly frequency or longer, False
-    if the frequency is shorter than monthly.
+    Default: use True if `s` has a monthly frequency or longer, False if the frequency
+    is shorter than monthly.
 **kwargs : any formatting are passed to the Axes plot method being used."""
 
 
@@ -136,7 +135,7 @@ def plot_timeseries_as_bar(
 
     else:
         x = s.index + 0.5 * (s.index.ts_right - s.index)
-        width = (s.index.duration.median() / nits.Q_(24, "h")).magnitude * 0.8
+        width = s.index.duration.median().to("h").magnitude * 0.8
         ax.bar(x.values, s.values, width, **kwargs)
 
 
@@ -175,8 +174,8 @@ def plot_timeseries_as_step(
 def plot_timeseries(
     ax: plt.Axes, s: pd.Series, cat: bool = None, how: str = "hline", **kwargs
 ) -> None:
-    """Plot timeseries `s` to axis `ax`, as (`how`) 'hline' (default), 'step', 'line', 
-    or 'bar'. 
+    """Plot timeseries `s` to axis `ax`, as (`how`) 'hline' (default), 'step', 'line',
+    or 'bar'.
     """
     if how == "line":
         plot_timeseries_as_line(ax, s, cat, **kwargs)
