@@ -56,7 +56,11 @@ def get_series(i=None, name="w", has_unit: bool = True) -> pd.Series:
         return pd.Series(100 + 100 * np.random.rand(len(i)), i, name=name)
 
 
-def get_dataframe(i=None, columns="wp", has_unit: bool = True,) -> pd.DataFrame:
+def get_dataframe(
+    i=None,
+    columns="wp",
+    has_unit: bool = True,
+) -> pd.DataFrame:
     """Get DataFrame with index `i` and columns `columns`. Columns (e.g. `q` and `w`)
     are not made consistent."""
     if i is None:
@@ -94,7 +98,7 @@ def get_pfline(
     if i is None:
         i = get_index()
     nlevels = np.random.randint(0, max_nlevels)
-    # Create single PfLine
+    # Create single PfLine.
     if nlevels == 0:
         return get_singlepfline(i, kind)
     # Gather information.
@@ -113,17 +117,26 @@ def get_pfline(
 # Portfolio state.
 
 
-def get_pfstate(i=None) -> PfState:
+def get_pfstate(i=None, avg=None) -> PfState:
     """Get portfolio state."""
     if i is None:
         i = get_index()
-    wo = -get_singlepfline(i, "q")
-    pu = get_singlepfline(i, "p")
+    if avg is None:
+        avg = 200 ** np.random.rand()  # between 1 and 200
+    wo = -1 * mockup.w_offtake(i, avg)
+    pu = mockup.p_marketprices(i)
     ws, ps = mockup.wp_sourced(wo)
     return PfState.from_series(wo=wo, pu=pu, ws=ws, ps=ps)
 
 
-def get_pfstates(num=3, i=None) -> Dict[str, PfState]:
+def get_pfstates(i=None, num=3) -> Dict[str, PfState]:
     """Get dictionary of portfolio states."""
-    sample = ["Ludwig", "P2Heat", "B2B", "B2C Legacy", "Spot procurement", "B2B New"]
+    sample = [
+        "Ludwig",
+        "Power P2H WP",
+        "B2B",
+        "B2C Legacy",
+        "Spot procurement",
+        "B2B New",
+    ]
     return {name: get_pfstate(i if i else get_index()) for name in sample[:num]}
