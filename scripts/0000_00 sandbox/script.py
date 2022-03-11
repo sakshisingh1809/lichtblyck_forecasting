@@ -3,8 +3,20 @@ from matplotlib import pyplot as plt
 import lichtblyck as lb
 import pandas as pd
 
-#%%
-# lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
+
+# %%
+
+
+o6 = lb.belvis.data.offtakevolume("gas", "SBK6_G", "2022")
+s6 = lb.belvis.data.sourced("gas", "SBK6_G", "2022")
+o1 = lb.belvis.data.offtakevolume("gas", "SBK1_G", "2022")
+s1 = lb.belvis.data.sourced("gas", "SBK1_G", "2022")
+pfs1 = lb.portfolios.pfstate("gas", "SBK1", "2022")
+pfs6 = lb.portfolios.pfstate("gas", "SBK6", "2022")
+pfs = lb.portfolios.pfstate("gas", "B2C_LEGACY", "2022")
+
+# %%
 i = pd.date_range("2020", "2020-05", freq="H", closed="left", tz="Europe/Berlin")
 u = lb.dev.get_pfstate(i)
 u.plot()

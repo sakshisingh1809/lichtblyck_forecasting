@@ -1,5 +1,6 @@
 """Module that uses connection to Belvis to generate PfLine and PfState objects."""
 
+import numpy as np
 from . import raw
 from ..tools import stamps, frames
 from ..core.pfline import PfLine, SinglePfLine, MultiPfLine
@@ -9,29 +10,55 @@ import functools
 import datetime as dt
 import pandas as pd
 
-# commodity [power/gas] : part [offtake/forward/spot] : col [w/q/r/p] : tsname or tsnames
+# commodity [power/gas] : part [offtake/sourced] : ... : col [w/q/r/p] : tsname or tsnames
 DEFAULT = {
     "power": {
         "offtake": {"w": "#LB FRM Offtake - MW - incl subpf"},
-        "forward": {
-            "w": "#LB FRM Procurement/Forward - MW - incl subpf",
-            "r": "#LB FRM Procurement/Forward - EUR (contract) - incl subpf",
-        },
-        "spot": {
-            "w": (
-                "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
-                "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
-            ),
-            "r": (
-                "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
-                "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
-            ),
+        "sourced": {
+            "forward": {
+                "w": "#LB FRM Procurement/Forward - MW - incl subpf",
+                "r": "#LB FRM Procurement/Forward - EUR (contract) - incl subpf",
+            },
+            "spot": {
+                "w": (
+                    "#LB FRM Procurement/SPOT/DA - MW - incl subpf",
+                    "#LB FRM Procurement/SPOT/ID - MW - incl subpf",
+                ),
+                "r": (
+                    "#LB FRM Procurement/SPOT/DA - EUR (contract) - incl subpf",
+                    "#LB FRM Procurement/SPOT/ID - EUR (contract) - incl subpf",
+                ),
+            },
         },
     },
     "gas": {
         "offtake": {"w": ""},
-        "forward": {"w": "", "r": ""},
-        "spot": {"w": "", "r": ""},
+        "sourced": {
+            "forward": {
+                "w": "#LB RM Saldo Menge Anteil Termin",
+                "r": "#LB RM Kostensumme Anteil Termin",
+            },
+            "spot": {
+                "w": "#LB RM Saldo Menge Anteil Spot",
+                "r": "#LB RM Kostensumme Anteil Spot",
+            },
+            "conversion": {
+                "w": "#LB RM Saldo Menge Anteil Konvertierung",
+                "r": "#LB RM Kostensumme Anteil Konvertierung",
+            },
+            "storage": {
+                "w": "#LB RM Saldo Menge Anteil Speicher",
+                "r": "#LB RM Kostensumme Anteil Speicher",
+            },
+            "tempr": {
+                "w": "#LB RM Saldo Menge Anteil Temperatur",
+                "r": "#LB RM Kostensumme Anteil Temperatur",
+            },
+            "top": {
+                "w": "#LB RM Saldo Menge Anteil ToP",
+                "r": "#LB RM Kostensumme Anteil ToP",
+            },
+        },
     },
 }
 
@@ -60,8 +87,28 @@ SPECIFICS = {
         "SBSG": {},
     },
     "gas": {
-        "SBK1_G": {"offtake": {"w": "#LB PFMG Absatz SBK1 Gesamt"}},
-        "SBK6_G": {"offtake": {"w": "#LB PFMG Absatz SBK6 Gesamt"}},
+        "SBK1_G": {
+            "offtake": {"w": "#LB PFMG Absatz SBK1 Gesamt"},
+            "sourced": {
+                "transfer": {
+                    "w": "#LB RM Saldo Menge Anteil SBK6",
+                    "r": "#LB RM Kostensumme Anteil SBK6",
+                },
+            },
+        },
+        "SBK6_G": {
+            "offtake": {"w": "#LB PFMG Absatz SBK6 Gesamt"},
+            "sourced": {
+                "transfer": {
+                    "w": "#LB RM Saldo Menge Anteil SBK6",
+                    "r": "#LB RM Kostensumme Anteil SBK6",
+                },
+                "biogas": {
+                    "w": "#LB RM Saldo Menge Anteil Biogas",
+                    "r": "#LB RM Kostensumme Anteil Biogas",
+                },
+            },
+        },
         "SBK9_G": {"offtake": {"w": "#LB PFMG Absatz SBK9 Gesamt"}},
     },
 }
@@ -77,31 +124,34 @@ def _print_status(msg: str):
 
 
 def _tsnamedict(commodity: str, pfid: str, part: str) -> Dict:
-    """Lookup function to create dictionary that can be used as input to create a SinglePfLine instance."""
+    """Lookup function to create dictionary that can be used as input to create a SinglePfLine instance.
+    ``part``: {'offtake' or 'sourced'}."""
 
-    # Get default part dictionary.
-    partdict1 = DEFAULT.get(commodity)
-    if partdict1 is None:
-        raise ValueError("Parameter ``commodity`` must be one of {'power', 'gas'}.")
-
-    # Get part dictionary that is specific for this portfolio.
-    partdict2 = SPECIFICS.get(commodity).get(pfid)
-    if partdict2 is None:
+    if commodity not in ["power", "gas"]:
         raise ValueError(
-            f"Parameter ``pfid`` must be one of {', '.join(SPECIFICS.get(commodity).keys())}; got '{pfid}'."
+            f"Parameter ``commodity`` must be one of 'power', 'gas'; got '{commodity}'."
+        )
+    if part not in ["offtake", "sourced"]:
+        raise ValueError(
+            f"Parameter ``part`` must be one of 'offtake', 'sourced'; got '{part}'."
+        )
+    if pfid not in SPECIFICS[commodity]:
+        raise ValueError(
+            f"Parameter ``pfid`` must be one of {', '.join(SPECIFICS[commodity].keys())}; got '{pfid}'."
         )
 
-    # Merge the two and get the correct part.
-    tsnamedict = {**partdict1, **partdict2}.get(part)
-    if tsnamedict is None:
-        raise ValueError(
-            f"Parameter ``part`` must be one of {','.join(DEFAULT[commodity].keys())}; got '{part}'."
-        )
+    # Get default dictionary for this part.
+    dic1 = DEFAULT[commodity][part]
 
-    return tsnamedict
+    # Get dictionary for this part, that is specific for this portfolio (if any specified).
+    dic2 = SPECIFICS[commodity][pfid].get(part, {})
+
+    # Merge the two.
+    # Result: dictionary with 'w' (and possibly 'r') as keys, or nested dict with (eventually) 'w' (and possibly 'r') as keys.
+    return {**dic1, **dic2}
 
 
-def _pftsid_unsourced(commodity: str) -> Tuple[str]:
+def _pfidtsname_unsourced(commodity: str) -> Tuple[str]:
     if commodity not in UNSOURCEDPRICE:
         raise ValueError("Parameter ``commodity`` must be one of {'power', 'gas'}.")
     return UNSOURCEDPRICE[commodity]
@@ -115,23 +165,34 @@ def _series(commodity, pfid, tsnames, ts_left, ts_right):
         _print_status(f". {tsname}")
         tsid = raw.find_tsid(commodity, pfid, tsname, strict=True)
         series.append(raw.series(commodity, tsid, ts_left, ts_right))
-    return frames.set_ts_index(sum(series), bound="right")
+    return sum(series)
 
 
-def _singlepfline(commodity, pfid, part, ts_left, ts_right):
+def _pfline(commodity, pfid, part, ts_left, ts_right) -> PfLine:
+    """Get portfolio line for certain commodity (power, gas), pfid (LUD, WP) and part (offtake, sourced)."""
     # Fix timestamps (if necessary).
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
     if not (ts_left < ts_right):
         raise ValueError("Left timestamp must be strictly before right timestamp.")
-    # Get timeseries names.
-    tsnamedict = _tsnamedict(commodity, pfid, part)
-    # Collect data.
-    data = {}
-    for col, tsnames in tsnamedict.items():
-        _print_status(f"{commodity} | {pfid} | {ts_left} (incl) - {ts_right} (excl)")
-        data[col] = _series(commodity, pfid, tsnames, ts_left, ts_right)
-    # Create SinglePfLine.
-    return SinglePfLine(data)
+    # Status.
+    _print_status(f"{commodity} | {pfid} | {ts_left} (incl) - {ts_right} (excl)")
+
+    def tsnamedict2pfline(tsnamedict) -> PfLine:
+        data = {}
+        if "w" in tsnamedict:  # Bottom level: create SinglePfLine.
+            for col, tsnames in tsnamedict.items():
+                s = _series(commodity, pfid, tsnames, ts_left, ts_right)
+                # Correction for bad Belvis implementation: turn right-bound into left-bound timestamps.
+                data[col] = frames.set_ts_index(s, bound="right")
+            return SinglePfLine(data)
+        else:  # Higher level: create MultiPfLine.
+            for name, subdict in tsnamedict.items():
+                if pfl := tsnamedict2pfline(subdict):
+                    data[name] = pfl  # only add if relevant information.
+            return MultiPfLine(data)
+
+    # Get timeseries names and data, and construct pfline.
+    return tsnamedict2pfline(_tsnamedict(commodity, pfid, part))
 
 
 def offtakevolume(
@@ -156,57 +217,7 @@ def offtakevolume(
     -------
     PfLine
     """
-    return _singlepfline(commodity, pfid, "offtake", ts_left, ts_right)
-
-
-def forward(
-    commodity: str,
-    pfid: str,
-    ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
-    ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
-) -> SinglePfLine:
-    """Get sourced forward/futures (volume and price) for a certain portfolio from Belvis.
-
-    Parameters
-    ----------
-    commodity : {'power', 'gas'}
-    pfid : str
-        Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
-    ts_left : Union[str, dt.datetime, pd.Timestamp], optional
-        Start of delivery period.
-    ts_right : Union[str, dt.datetime, pd.Timestamp], optional
-        End of delivery period.
-
-    Returns
-    -------
-    PfLine
-    """
-    return _singlepfline(commodity, pfid, "forward", ts_left, ts_right)
-
-
-def spot(
-    commodity: str,
-    pfid: str,
-    ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
-    ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
-) -> SinglePfLine:
-    """Get sourced spot (volume and price) for a certain portfolio from Belvis.
-
-    Parameters
-    ----------
-    commodity : {'power', 'gas'}
-    pfid : str
-        Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
-    ts_left : Union[str, dt.datetime, pd.Timestamp], optional
-        Start of delivery period.
-    ts_right : Union[str, dt.datetime, pd.Timestamp], optional
-        End of delivery period.
-
-    Returns
-    -------
-    PfLine
-    """
-    return _singlepfline(commodity, pfid, "spot", ts_left, ts_right)
+    return _pfline(commodity, pfid, "offtake", ts_left, ts_right)
 
 
 def sourced(
@@ -214,7 +225,7 @@ def sourced(
     pfid: str,
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
-) -> MultiPfLine:
+) -> PfLine:
     """Get sourced volume and price for a certain portfolio from Belvis.
 
     Parameters
@@ -231,11 +242,7 @@ def sourced(
     -------
     PfLine
     """
-    data = {
-        "forward": forward(commodity, pfid, ts_left, ts_right),
-        "spot": spot(commodity, pfid, ts_left, ts_right),
-    }
-    return MultiPfLine(data)
+    return _pfline(commodity, pfid, "sourced", ts_left, ts_right)
 
 
 @functools.lru_cache()  # memoization
@@ -261,48 +268,18 @@ def unsourcedprice(
     # Fix timestamps (if necessary).
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
     # Where to find this data.
-    pfid, tsname = _pftsid_unsourced(commodity)
+    pfid, tsname = _pfidtsname_unsourced(commodity)
     # Get the data.
-    data = {"p": _series(commodity, pfid, tsname, ts_left, ts_right)}
+    s = _series(commodity, pfid, tsname, ts_left, ts_right)
+    if commodity == "power":
+        # Correction for bad Belvis implementation: turn right-bound into left-bound timestamps.
+        data = {"p": frames.set_ts_index(s, bound="right")}
+    else:
+        # Correction for bad Belvis implementation: gas DFC is not DST-adjusted.
+        s = s.tz_convert("+01:00").tz_localize(None).tz_localize("Europe/Berlin")
+        data = {"p": frames.set_ts_index(s, bound="left")}
     return SinglePfLine(data)
 
-
-def pfstate(
-    commodity: str,
-    pfid: str,
-    ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
-    ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
-) -> PfState:
-    """Get state of portfolio from Belvis.
-
-    Parameters
-    ----------
-    commodity : {'power', 'gas'}
-    pfid : str
-        Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
-    ts_left : Union[str, dt.datetime, pd.Timestamp], optional
-        Start of the delivery period. If none provided, use start of coming year.
-    ts_right : Union[str, dt.datetime, pd.Timestamp], optional
-        End of the delivery period. If none provided, use end of year of `ts_left`.
-
-    Returns
-    -------
-    PfState
-    """
-    # Get portfolio lines.
-    pfl_offtakevolume = offtakevolume(commodity, pfid, ts_left, ts_right)
-    pfl_sourced = sourced(commodity, pfid, ts_left, ts_right)
-    pfl_unsourcedprice = unsourcedprice(commodity, ts_left, ts_right)
-    # Create portfolio state.
-    pfstate = PfState(pfl_offtakevolume, pfl_unsourcedprice, pfl_sourced)
-    return pfstate
-
-
-# future goal
-# def givemepfstate(
-#     pf="LUD", viewon="2021-04-01", deliveryperiod=["2022-01-01", "2022-02-01"]
-# ) -> PfState:
-#     pass
 
 # Add constructors to the objects directly. --> Done directly now, below.
 # factory.register_pfline_source("from_belvis_offtakevolume", offtakevolume)
@@ -310,9 +287,6 @@ def pfstate(
 # factory.register_pfline_source("from_belvis_forwardpricecurve", unsourcedprice)
 # factory.register_pfstate_source("from_belvis", pfstate)
 # TODO: ADD AS CLASSMETHOD.
-PfState.from_belvis = pfstate
 PfLine.from_belvis_offtakevolume = offtakevolume
 PfLine.from_belvis_sourced = sourced
-PfLine.from_belvis_sourcedspot = spot
-PfLine.from_belvis_sourcedforward = forward
 PfLine.from_belvis_forwardpricecurve = unsourcedprice

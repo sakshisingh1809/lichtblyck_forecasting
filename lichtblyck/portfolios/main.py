@@ -64,7 +64,7 @@ GAS_ORIGINAL = {"SBK1": "SBK1_G", "SBK6": "SBK6_G"}
 #   GAS_SYNTHETIC:
 #       pf-name: Iterable
 #   The iterable elements are pf-names in GAS_ORIGINAL
-GAS_SYNTHETIC = {"B2C_Legacy": ("SBK1", "SBK6")}
+GAS_SYNTHETIC = {"B2C_LEGACY": ("SBK1", "SBK6")}
 
 PFNAMES = {
     "power": [*POWER_ORIGINAL.keys(), *POWER_SYNTHETIC.keys()],
@@ -150,3 +150,15 @@ def _pfstate_gas(pfname: str, ts_left, ts_right) -> PfState:
     # Portfolio is sum of several portfolios.
     if pfnames := GAS_SYNTHETIC.get(pfname):
         return sum(_pfstate_gas(pfn, ts_left, ts_right) for pfn in pfnames)
+
+    # Portfolio is original portfolio.
+    pfid = GAS_ORIGINAL[pfname]
+
+    # No changes necessary - offtake etc. correct in Belvis.
+    offtakevolume = belvis.data.offtakevolume("gas", pfid, ts_left, ts_right)
+    sourced = belvis.data.sourced("gas", pfid, ts_left, ts_right)
+    unsourcedprice = belvis.data.unsourcedprice("gas", ts_left, ts_right)
+    # Market prices are in daily frequency; adjust other data as well.
+    offtakevolume = offtakevolume.asfreq("D")
+    sourced = sourced.asfreq("D")
+    return PfState(offtakevolume, unsourcedprice, sourced)
