@@ -126,6 +126,10 @@ class MultiPfLine(PfLine):
             return False
         return self._children == other._children
 
+    def __bool__(self) -> bool:
+        # True if any of the children are true.
+        return any(self._children.keys())
+
     # Additional methods, unique to this class.
 
     @property

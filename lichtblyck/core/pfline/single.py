@@ -101,6 +101,18 @@ class SinglePfLine(PfLine):
             return False
         return self._df.equals(other._df)
 
+    def __bool__(self) -> bool:
+        # False if all relevant timeseries are 0.
+        if self.kind == "p":
+            return not np.allclose(self.p.pint.magnitude, 0)
+        elif self.kind == "q":
+            return not np.allclose(self.w.pint.magnitude, 0)
+        else:  # kind == 'all'
+            return not (
+                np.allclose(self.w.pint.magnitude, 0)
+                and np.allclose(self.r.pint.magnitude, 0)
+            )
+
     # Additional methods, unique to this class.
 
     # (none)
