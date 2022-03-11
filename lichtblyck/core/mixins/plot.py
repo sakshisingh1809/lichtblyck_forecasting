@@ -234,7 +234,7 @@ def plot_pfstates(dic: Dict[str, PfState], freq: str = "MS") -> plt.Figure:
     """
 
     gridspec = {"width_ratios": [0.3, 1, 1], "height_ratios": [4, 1] * len(dic)}
-    figsize = (15, 6 * len(dic))
+    figsize = (15, 5 * len(dic))
     fig, axes = plt.subplots(len(dic) * 2, 3, gridspec_kw=gridspec, figsize=figsize)
     axesgroups = axes.flatten().reshape((len(dic), 6))
 
