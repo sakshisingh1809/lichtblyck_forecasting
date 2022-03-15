@@ -89,8 +89,8 @@ class MultiPfLine(PfLine):
             return "all"
         return next(iter(self._children.values())).kind
 
-    def df(self, cols: Iterable[str] = None, flat: bool = True) -> pd.DataFrame:
-        if flat:
+    def df(self, cols: Iterable[str] = None, flatten: bool = True) -> pd.DataFrame:
+        if flatten:
             cols = self.available if cols is None else cols
             return pd.DataFrame({col: self[col] for col in cols})
         # One big dataframe. First: collect constituent dataframes.

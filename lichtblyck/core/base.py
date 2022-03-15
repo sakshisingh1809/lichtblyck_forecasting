@@ -19,14 +19,14 @@ class NDFrameLike(ABC):
         ...
 
     @abstractmethod
-    def df(self, cols: Iterable[str] = None, flat: bool = True) -> pd.DataFrame:
+    def df(self, cols: Iterable[str] = None, flatten: bool = True) -> pd.DataFrame:
         """DataFrame for this object.
 
         Parameters
         ----------
         cols : str, optional (default: all that are available)
             The columns to include in the dataframe.
-        flat : bool, optional (default: True)
+        flatten : bool, optional (default: True)
             - If True, include only aggregated timeseries (4 or less; 1 per dimension).
             - If False, include all timerseries and their (intermediate and final)
               aggregations.
