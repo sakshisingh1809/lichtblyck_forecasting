@@ -157,14 +157,14 @@ def _pfidtsname_unsourced(commodity: str) -> Tuple[str]:
     return UNSOURCEDPRICE[commodity]
 
 
-def _series(commodity, pfid, tsnames, ts_left, ts_right):
+def _series(commodity, pfid, tsnames, ts_left, ts_right, *args, **kwargs):
     if isinstance(tsnames, str):
         tsnames = (tsnames,)  # turn into (1-element-) iterable
     series = []
     for tsname in tsnames:
-        _print_status(f". {tsname}")
         tsid = raw.find_tsid(commodity, pfid, tsname, strict=True)
-        series.append(raw.series(commodity, tsid, ts_left, ts_right))
+        _print_status(f". {tsid}: {tsname}")
+        series.append(raw.series(commodity, tsid, ts_left, ts_right, *args, **kwargs))
     return sum(series)
 
 
@@ -270,12 +270,15 @@ def unsourcedprice(
     # Where to find this data.
     pfid, tsname = _pfidtsname_unsourced(commodity)
     # Get the data.
-    s = _series(commodity, pfid, tsname, ts_left, ts_right)
     if commodity == "power":
         # Correction for bad Belvis implementation: turn right-bound into left-bound timestamps.
+        s = _series(commodity, pfid, tsname, ts_left, ts_right)
         data = {"p": frames.set_ts_index(s, bound="right")}
     else:
         # Correction for bad Belvis implementation: gas DFC is not DST-adjusted.
+        s = _series(
+            commodity, pfid, tsname, ts_left, ts_right, "inclusive", "exclusive"
+        )
         s = s.tz_convert("+01:00").tz_localize(None).tz_localize("Europe/Berlin")
         data = {"p": frames.set_ts_index(s, bound="left")}
     return SinglePfLine(data)
