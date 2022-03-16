@@ -80,10 +80,8 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
     commodity : {'power', 'gas'}
     pfname : str
         Portfolio name. See .PFNAMES for allowed values.
-    ts_left : Union[str, dt.datetime, pd.Timestamp], optional
-        Start of delivery period.
-    ts_right : Union[str, dt.datetime, pd.Timestamp], optional
-        End of delivery period.
+    ts_left, ts_right : Union[str, dt.datetime, pd.Timestamp], optional
+        Start and end of delivery period (left-closed).
 
     Returns
     -------
@@ -106,8 +104,6 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
 
 
 def _pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
-    commodity = "power"
-
     # Portfolio is sum of several portfolios.
     if pfnames := POWER_SYNTHETIC.get(pfname):
         return sum(_pfstate_power(pfn, ts_left, ts_right) for pfn in pfnames)
@@ -117,11 +113,11 @@ def _pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
 
     # Offtake: combine two curves.
     offtakevolume_100 = sum(
-        belvis.data.offtakevolume(commodity, pfid, ts_left, ts_right)
+        belvis.data.offtakevolume("power", pfid, ts_left, ts_right)
         for pfid in pf_dic["offtake"]["100%"]
     )
     offtakevolume_certain = sum(
-        belvis.data.offtakevolume(commodity, pfid, ts_left, ts_right)
+        belvis.data.offtakevolume("power", pfid, ts_left, ts_right)
         for pfid in pf_dic["offtake"]["certain"]
     )
     now = pd.Timestamp.now().tz_localize("Europe/Berlin").floor("D")
@@ -131,22 +127,19 @@ def _pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
     offtakevolume = SinglePfLine(pd.concat([df1, df2]).w)
 
     # Sourced: add forward and spot from individual components.
-    data = {"forward": None, "spot": None}
-    for pfid in pf_dic["sourced"]:
-        data["forward"] += belvis.data.forward(commodity, pfid, ts_left, ts_right)
-        data["spot"] += belvis.data.spot(commodity, pfid, ts_left, ts_right)
-    sourced = MultiPfLine(data)
+    sourced = sum(
+        belvis.data.sourced("power", pfid, ts_left, ts_right)
+        for pfid in pf_dic["sourced"]
+    )
 
     # Unsourcedprice.
-    unsourcedprice = belvis.data.unsourcedprice(commodity, ts_left, ts_right)
+    unsourcedprice = belvis.data.unsourcedprice("power", ts_left, ts_right)
 
     # Combine.
     return PfState(offtakevolume, unsourcedprice, sourced)
 
 
 def _pfstate_gas(pfname: str, ts_left, ts_right) -> PfState:
-    commodity = "gas"
-
     # Portfolio is sum of several portfolios.
     if pfnames := GAS_SYNTHETIC.get(pfname):
         return sum(_pfstate_gas(pfn, ts_left, ts_right) for pfn in pfnames)
@@ -158,7 +151,8 @@ def _pfstate_gas(pfname: str, ts_left, ts_right) -> PfState:
     offtakevolume = belvis.data.offtakevolume("gas", pfid, ts_left, ts_right)
     sourced = belvis.data.sourced("gas", pfid, ts_left, ts_right)
     unsourcedprice = belvis.data.unsourcedprice("gas", ts_left, ts_right)
-    # Market prices are in daily frequency; adjust other data as well.
+
+    # Market prices are in daily frequency; make sure other data is also in daily frequency.
     offtakevolume = offtakevolume.asfreq("D")
     sourced = sourced.asfreq("D")
     return PfState(offtakevolume, unsourcedprice, sourced)
