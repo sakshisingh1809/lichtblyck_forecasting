@@ -30,3 +30,13 @@ pr.print_stats(sort="tottime")
 #%%
 result = cProfile.run("pfs.print()")
 result2 = cProfile.run("pfs.print()", sort=1)
+
+# %%
+
+import lichtblyck as lb
+
+# %%
+lb.belvis.auth_with_passwordfile("cred.txt")
+
+u = lb.belvis.sourced("power", "LUD_Stg", "2023")
+# %%

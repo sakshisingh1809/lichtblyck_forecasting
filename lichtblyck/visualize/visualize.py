@@ -2,9 +2,10 @@
 Visualize portfolio lines, etc.
 """
 
+import pint
 from ..tools import stamps, nits
 
-from typing import List, Optional, Iterable
+from typing import List, Optional, Iterable, Tuple
 from collections import namedtuple
 from matplotlib import pyplot as plt
 import matplotlib as mpl
@@ -17,43 +18,42 @@ mpl.style.use("seaborn")
 # Plotting philosophy for timeseries:
 # Not all plot types (bar, line, step, etc.) are suitable for all quantities.
 #
-# Data character vs plot type
-# ---------------------------
+# Data dimensionality vs plot type
+# --------------------------------
 #
-# For data that represents an *aggregated* value for each period, like [MWh], [Eur], it 
+# For data that represents an *aggregated* value for each period, like [MWh], [Eur], it
 # makes sense to plot the x-axis as *categories*, i.e., without taking the duration of
-# each period into consideration. Jan and Feb have distinct durations, but are shown 
+# each period into consideration. Jan and Feb have distinct durations, but are shown
 # identically. This data is best plotted as bars, but markers (e.g. short horizontal lines)
 # are also possible.
-#  
+#
 # For data that can be integrated over time (like [MW]), it makes sense to plot the
 # x-axis as a *timeline*, with each datapoint having its correct duration. E.g., for monthly
-# values: Jan taking up more x-space than Feb. This data can be plotted as a hline, step, 
+# values: Jan taking up more x-space than Feb. This data can be plotted as a hline, step,
 # or area graph. The area graph underlines that the area under the curve has a meaning;
-# in this case, MWh. 
+# in this case, MWh.
 #
 # For data that is neither (like [Eur/MWh]), both categorical and timeline plots can be
 # used, though the area graph does not make much sense.
 #
-#  
+#
 # Frequency vs plot type
 # ----------------------
 #
-# A categorical x-axis loses its meaning if there are many datapoints. We are most 
-# commonly dealing with timeseries spanning at least a quarter. If this data is plotted 
+# A categorical x-axis loses its clarity if there are many datapoints. We are most
+# commonly dealing with timeseries spanning at least a quarter. If this data is plotted
 # with a frequency of daily or shorter, the number of datapoints is very high, and we should
-# try to use timeline x-axis. This means that we cannot (easily) plot [MWh] and [Eur] values, 
+# try to use timeline x-axis. This means that we cannot (easily) plot [MWh] and [Eur] values,
 # and by default we should only plot [MW] and [Eur/MWh] values.
 # If the data is plotted with a frequency of monthly or longer, we usually want to see
-# aggregated values and must therefore plot on categorical x-axes. This means we cannot 
+# aggregated values and must therefore plot on categorical x-axes. This means we cannot
 # (easily) plot [MW] values, and by default we should only plot [MWh] and [Eur/MWh] values.
-# 
-# 
+#
+#
 # This module is able to plot all graph types on both timeline x-axis and on categorical
-# x-axis, and add the data labels if there are not too many.
-#  
-
-
+# x-axis, and add the data labels if there are not too many. It is up to the caller to
+# pick the correct graph type.
+#
 
 
 class Color(namedtuple("RGB", ["r", "g", "b"])):
@@ -99,7 +99,6 @@ class Colors:
         q = Color(*mpl.colors.to_rgb("#0E524F"))
         r = Color(*mpl.colors.to_rgb("#8B7557"))
         p = Color(*mpl.colors.to_rgb("#E53454"))
-        
 
 
 def _index2labels(index: pd.DatetimeIndex) -> List[str]:
@@ -167,11 +166,7 @@ def plot_timeseries_as_jagged(
 ) -> None:
     """Plot timeseries ``s`` to axis ``ax``, as jagged line and/or as markers. Use kwargs
     ``linestyle`` and ``marker`` to specify line style and/or marker style. (Default: line only)."""
-    # Prepare data.
-    try:
-        s = s.pint.to_base_units()
-    except AttributeError:
-        pass
+    s = prepare_ax_and_s(ax, s)  # ensure unit compatibility (if possible)
 
     # Plot.
     categories = _categories(ax, s, cat)
@@ -181,24 +176,18 @@ def plot_timeseries_as_jagged(
         xx = s.index
     ax.plot(xx, s.values, **kwargs)
 
-    # Add labels and other adjustments.
-    add_labels(ax, xx, s.values, labelfmt, False)
-    fix_ylabel(ax)
+    add_labels(ax, xx, s.values, labelfmt, False)  # add labels to datapoints
 
 
 @append_to_doc(docstringliteral_plotparameters)
 def plot_timeseries_as_bar(
     ax: plt.Axes, s: pd.Series, labelfmt: str = "", cat: bool = None, **kwargs
 ) -> None:
-    """Plot timeseries ``s`` to axis ``ax``, as bars. Ideally, only used for plots with 
+    """Plot timeseries ``s`` to axis ``ax``, as bars. Ideally, only used for plots with
     categorical (i.e, non-time) x-axis."""
-    # Prepare data.
-    try:
-        s = s.pint.to_base_units()
-    except AttributeError:
-        pass
+    s = prepare_ax_and_s(ax, s)  # ensure unit compatibility (if possible)
 
-    # Plot and add labels.
+    # Plot and add labels to datapoints.
     categories = _categories(ax, s, cat)
     if categories:
 
@@ -221,9 +210,6 @@ def plot_timeseries_as_bar(
 
         add_labels(ax, s.index + 0.5 * delta, s.values, labelfmt, True)
 
-    # Other adjustments.
-    fix_ylabel(ax)
-
 
 @append_to_doc(docstringliteral_plotparameters)
 def plot_timeseries_as_area(
@@ -231,33 +217,28 @@ def plot_timeseries_as_area(
 ) -> None:
     """Plot timeseries ``s`` to axis ``ax``, as stepped area between 0 and value. Ideally,
     only used for plots with time (i.e., non-categorical) axis."""
-    # Prepare data.
-    try:
-        s = s.pint.to_base_units()
-    except AttributeError:
-        pass
+    s = prepare_ax_and_s(ax, s)  # ensure unit compatibility (if possible)
 
-    splot = s.copy() # modified with additional (repeated) datapoint
+    splot = s.copy()  # modified with additional (repeated) datapoint
     splot[splot.index.ts_right[-1]] = splot.values[-1]
-    
-    # Plot and add labels.
+
+    # Plot and add labels to datapoints.
     categories = _categories(ax, s, cat)
     if categories:  # Bad combination: area graph on categorical axis. But allow anyway.
 
         xplot = np.arange(len(categories) + 1)
-        ax.fill_between(xplot - 0.5, 0, splot.values, step="post", **kwargs)  # center around x-tick
+        ax.fill_between(
+            xplot - 0.5, 0, splot.values, step="post", **kwargs
+        )  # center around x-tick
         ax.set_xticks(xplot)
-        ax.set_xticklabels([*categories, ''])
+        ax.set_xticklabels([*categories, ""])
         add_labels(ax, range(len(s)), s.values, labelfmt, True)
-    
+
     else:
 
         ax.fill_between(splot.index, 0, splot.values, step="post", **kwargs)
         delta = s.index.ts_right - s.index
         add_labels(ax, s.index + 0.5 * delta, s.values, labelfmt, True)
-
-    # Other adjustments.
-    fix_ylabel(ax)
 
 
 @append_to_doc(docstringliteral_plotparameters)
@@ -266,33 +247,28 @@ def plot_timeseries_as_step(
 ) -> None:
     """Plot timeseries ``s`` to axis ``ax``, as stepped line (horizontal and vertical lines).
     Ideally, only used for plots with time (i.e., non-categorical) axis."""
-    # Prepare data.
-    try:
-        s = s.pint.to_base_units()
-    except AttributeError:
-        pass
+    s = prepare_ax_and_s(ax, s)  # ensure unit compatibility (if possible)
 
-    splot = s.copy() # modified with additional (repeated) datapoint
+    splot = s.copy()  # modified with additional (repeated) datapoint
     splot[splot.index.ts_right[-1]] = splot.values[-1]
-    
-    # Plot and add labels.
+
+    # Plot add labels to datapoints
     categories = _categories(ax, s, cat)
     if categories:  # Bad combination: step graph on categorical axis. But allow anyway.
-        
+
         xplot = np.arange(len(categories) + 1)
-        ax.step(xplot - 0.5, splot.values, where="post", **kwargs)  # center around x-tick
+        ax.step(
+            xplot - 0.5, splot.values, where="post", **kwargs
+        )  # center around x-tick
         ax.set_xticks(xplot)
-        ax.set_xticklabels([*categories, ''])
+        ax.set_xticklabels([*categories, ""])
         add_labels(ax, range(len(s)), s.values, labelfmt, True)
-    
+
     else:
-        
+
         ax.step(splot.index, splot.values, where="post", **kwargs)
         delta = s.index.ts_right - s.index
         add_labels(ax, s.index + 0.5 * delta, s.values, labelfmt, True)
-
-    # Other adjustments.
-    fix_ylabel(ax)
 
 
 @append_to_doc(docstringliteral_plotparameters)
@@ -301,30 +277,25 @@ def plot_timeseries_as_hline(
 ) -> None:
     """Plot timeseries ``s`` to axis ``ax``, as horizontal lines. Ideally, only used for
     plots with time (i.e., non-categorical) axis."""
-    # Prepare data.
-    try:
-        s = s.pint.to_base_units()
-    except AttributeError:
-        pass
+    s = prepare_ax_and_s(ax, s)  # ensure unit compatibility (if possible)
 
-    # Plot and add labels.
+    # Plot and add labels to datapoints
     categories = _categories(ax, s, cat)
-    if categories:  # Bad combination: hline graph on categorical axis. But allow anyway.
+    if (
+        categories
+    ):  # Bad combination: hline graph on categorical axis. But allow anyway.
 
         x = np.arange(len(categories))
         ax.hlines(s.values, x - 0.5, x + 0.5, **kwargs)
         ax.set_xticks(x)
         ax.set_xticklabels(categories)
         add_labels(ax, x, s.values, labelfmt, False)
-    
+
     else:
 
         delta = s.index.ts_right - s.index
         ax.hlines(s.values, s.index, s.index.ts_right, **kwargs)
         add_labels(ax, s.index + 0.5 * delta, s.values, labelfmt, False)
-
-    # Other adjustments.
-    fix_ylabel(ax)
 
 
 def plot_timeseries(
@@ -366,6 +337,52 @@ def plot_timeseries(
         )
 
 
+def prepare_ax_and_s(ax: plt.Axes, s: pd.Series, unit=None) -> pd.Series:
+    """Ensure axes ``ax`` has unit associated with it and checks compatibility with series
+    ``s``. Also sets y label as unit abbreviation.
+
+    Notes
+    -----
+    - If axes already has unit, convert series to same unit. If not, convert series to pint
+    base units and set that as axis unit. Assumes that series with float or int values is
+    dimensionless.
+    - Changes ``ax`` in-place.
+    - In order to plot in not-base-units, provide a custom value for the ``unit`` parameter
+    when calling this function for the first time for a given ``ax``. Ignored on subsequent
+    calls and a unit is already associated with the axes.
+    """
+    # Make sure series has pint unit.
+    if s.dtype == float or s.dtype == int:
+        s = s.astype("pint[1]")
+    # Find preexisting unit.
+    axunit = getattr(ax, "_unit", None)
+
+    # Axes already has unit. Convert series to that unit; ignore any supplied custom unit.
+    if axunit is not None:
+        if axunit.dimensionality != s.pint.dimensionality:  # check compatibilty
+            raise ValueError(
+                f"Cannot plot series with units {s.pint.units} on axes with units {axunit}."
+            )
+        return s.astype(axunit)
+
+    # Axes does not have unit.
+    if unit is not None:
+        # Custom unit is provided. Convert series to that unit.
+        if unit.dimensionality != s.pint.dimensionality:  # check compatibility
+            raise ValueError(
+                f"Cannot convert series with units {s.pint.units} to units {unit}."
+            )
+        s = s.astype(unit)
+        setattr(ax, "_unit", unit)
+    else:
+        # No custom unit provided. Convert series to base units.
+        s = s.pint.to_base_units()
+        setattr(ax, "_unit", s.pint.units)
+
+    ax.set_ylabel(f"{ax._unit:~P}")
+    return s
+
+
 def add_labels(
     ax: plt.Axes, xx, yy, labelfmt, outside: bool = False, maxcount: int = 24
 ):
@@ -392,11 +409,3 @@ def add_labels(
     if not np.isclose(ylim[1], 0) and ylim[1] > 0:
         ylim[1] *= 1.1
     ax.set_ylim(*ylim)
-
-
-def fix_ylabel(ax):
-    currentlabel = ax.get_ylabel()
-    unit = nits.ureg(currentlabel).units
-    abbr = f'{unit:~P}'
-    ax.set_ylabel(abbr)
-        

@@ -1,6 +1,6 @@
 from lichtblyck.core.pfline import PfLine
 from lichtblyck.tools.nits import Q_
-from lichtblyck.core import dev
+from lichtblyck.core.develop import dev
 import pandas as pd
 import numpy as np
 import pytest

@@ -11,7 +11,11 @@ import pandas as pd
 import numpy as np
 
 
-def _hedge(df: pd.DataFrame, how: str, po: bool,) -> pd.Series:
+def _hedge(
+    df: pd.DataFrame,
+    how: str,
+    po: bool,
+) -> pd.Series:
     """
     Make value hedge of power timeseries, for given price timeseries.
 
@@ -27,7 +31,7 @@ def _hedge(df: pd.DataFrame, how: str, po: bool,) -> pd.Series:
 
     Returns
     -------
-    pd.Series 
+    pd.Series
         With float values or quantities.
         If bpo==False, Series with index ['w', 'p'] (power and price in entire period).
         If bpo==True, Series with multiindex ['peak', 'offpeak'] x ['w', 'p'] (power and
@@ -35,7 +39,7 @@ def _hedge(df: pd.DataFrame, how: str, po: bool,) -> pd.Series:
 
     Notes
     -----
-    If the index of `df` doesn't have a .duration attribute, all rows are assumed to be 
+    If the index of `df` doesn't have a .duration attribute, all rows are assumed to be
     of equal duration.
     """
 
@@ -63,7 +67,11 @@ def _hedge(df: pd.DataFrame, how: str, po: bool,) -> pd.Series:
 
 
 def hedge(
-    w: pd.Series, p: pd.Series, how: str = "val", freq: str = "MS", po: bool = None,
+    w: pd.Series,
+    p: pd.Series,
+    how: str = "val",
+    freq: str = "MS",
+    po: bool = None,
 ) -> Tuple[pd.Series]:
     """
     Make hedge of power timeseries, for given price timeseries.
@@ -79,7 +87,7 @@ def hedge(
     freq : {'D' (days), 'MS' (months, default), 'QS' (quarters), 'AS' (years)}
         Frequency of hedging products. E.g. 'QS' to hedge with quarter products.
     po : bool, optional
-        Type of hedging products. Set to True to split hedge into peak and offpeak. 
+        Type of hedging products. Set to True to split hedge into peak and offpeak.
         (Default: split if volume timeseries has hourly values or shorter and hedging
         products have monthly frequency or longer.)
 
@@ -117,15 +125,14 @@ def hedge(
     group_f = group_function(freq, po)
     vals = df.groupby(group_f).apply(lambda df: _hedge(df, how, False))
     vals.index = pd.MultiIndex.from_tuples(vals.index)
-    for c in ['w', 'p']:
+    for c in ["w", "p"]:
         df[c] = df[c].groupby(group_f).transform(lambda gr: vals.loc[gr.name, c])
 
     # Handle possible units.
     if wunits or punits:
-        df = df.astype({'w': f'pint[{wunits}]', 'p': f'pint[{punits}]'})
-    
-    return df['w'], df['p']
+        df = df.astype({"w": f"pint[{wunits}]", "p": f"pint[{punits}]"})
 
+    return df["w"], df["p"]
 
 
 def vola(

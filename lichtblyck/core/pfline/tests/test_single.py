@@ -81,12 +81,40 @@ def test_singlepfline_access(columns):
             test_series_equal(col, df.na.rename(col))
 
 
+idx = [
+    pd.date_range("2020", "2020-04", freq=freq, closed="left", tz="Europe/Berlin")
+    for freq in ["MS", "D", "15T"]
+]
+pp = [pd.Series(50, i) for i in idx]
+ww = [pd.Series(20, i) for i in idx]
+qq = [w * w.index.duration for w in ww]
+rr = [p * q for p, q in zip(pp, qq)]
+
+
+@pytest.mark.parametrize(
+    "pfls",
+    [
+        (SinglePfLine({"w": w}) for w in ww),
+        (SinglePfLine({"q": q}) for q in qq),
+        (SinglePfLine({"p": p}) for p in pp),
+        (SinglePfLine({"p": p, "w": w}) for w, p in zip(ww, pp)),
+        (SinglePfLine({"w": w, "r": r}) for w, r in zip(ww, rr)),
+    ],
+)
+def test_singlepfline_asfreqcorrect1(pfls):
+    """Test if changing frequency is done correctly (when it's possible), for uniform pflines."""
+    for pfl_in in pfls:
+        for expected_out in pfls:
+            pfl_out = pfl_in.asfreq(expected_out.index.freq)
+            assert pfl_out == expected_out
+
+
 # . check correct working of attributes .asfreq().
 @pytest.mark.parametrize("freq", ["H", "D", "MS", "QS", "AS"])  # not do all (many!)
 @pytest.mark.parametrize("newfreq", ["H", "D", "MS", "QS", "AS"])  # not do all (many!)
 @pytest.mark.parametrize("columns", ["pr", "qr", "pq", "wp", "wr"])
-def test_singlepfline_asfreqpossible(freq, newfreq, columns):
-    """Test if changing frequency is done correctly (when it's possible)"""
+def test_singlepfline_asfreqcorrect2(freq, newfreq, columns):
+    """Test if changing frequency is done correctly (when it's possible)."""
 
     # Includes at 2 full years
     a, m, d = np.array([2016, 1, 1]) + np.random.randint(0, 12, 3)  # each + 0..11
@@ -100,8 +128,14 @@ def test_singlepfline_asfreqpossible(freq, newfreq, columns):
     pfl2 = pfl1.asfreq(newfreq)
 
     # Compare the dataframes, only keep time intervals that are in both objects.
-    summable = pfl1.summable
-    df1, df2 = pfl1.df(summable), pfl2.df(summable)
+    if pfl1.kind == "p":
+        df1, df2 = pfl1.p * pfl1.index.duration, pfl2.p * pfl2.index.duration
+    else:
+        cols = ["q"]
+        if pfl1.kind == "all":
+            cols.append("r")
+        df1, df2 = pfl1.df()[cols], pfl2.df()[cols]
+
     mask1 = (df1.index >= df2.index[0]) & (df1.index.ts_right <= df2.index.ts_right[-1])
     mask2 = (df2.index >= df1.index[0]) & (df2.index.ts_right <= df1.index.ts_right[-1])
     df1, df2 = df1[mask1], df2[mask2]
