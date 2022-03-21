@@ -166,10 +166,10 @@ def test_init_3(levels):  # init multipf with multipf
 @pytest.mark.parametrize("freq", np.random.choice(OK_FREQ, 3, False))
 @pytest.mark.parametrize("newfreq", np.random.choice(OK_FREQ, 3, False))
 @pytest.mark.parametrize("columns", np.random.choice(OK_COL_COMBOS, 3, False))
-def test_change_freq(freq, newfreq, columns):
+def test_asfreq(freq, newfreq, columns):
     df = get_dataframe(get_index(freq, "Europe/Berlin"), columns)
     spf1 = SinglePf(df, name="test")
-    spf2 = spf1.changefreq(newfreq)
+    spf2 = spf1.asfreq(newfreq)
     # Compare the dataframes.
     # To compare, only keep time intervals that are in both objects.
     df1, df2 = spf1.df("qr"), spf2.df("qr")
@@ -195,7 +195,7 @@ def test_addition_1(columns1, columns2):  # singlepf +- singlepf
     else:
         assert sp_sum.r.isna().all()
         assert sp_sum.p.isna().all()
-    
+
     sp_diff = sp1 - sp2
     pd.testing.assert_series_equal(sp_diff.q, sp1.q - sp2.q, check_names=False)
     pd.testing.assert_series_equal(sp_diff.w, sp1.w - sp2.w, check_names=False)
@@ -205,16 +205,17 @@ def test_addition_1(columns1, columns2):  # singlepf +- singlepf
         assert sp_diff.r.isna().all()
         assert sp_diff.p.isna().all()
 
+
 def test_addition_2(levels1, levels2):  # multipf +- multipf
     i = get_index()
     mp1 = get_multipf_standardcase(i, levels1)
     mp2 = get_multipf_standardcase(i, levels2)
-    
+
     sp_sum = mp1 + mp2
     pd.testing.assert_series_equal(sp_sum.q, mp1.q + mp2.q, check_names=False)
     pd.testing.assert_series_equal(sp_sum.w, mp1.w + mp2.w, check_names=False)
     pd.testing.assert_series_equal(sp_sum.r, mp1.r + mp2.r, check_names=False)
-    
+
     sp_diff = mp1 - mp2
     pd.testing.assert_series_equal(sp_diff.q, mp1.q - mp2.q, check_names=False)
     pd.testing.assert_series_equal(sp_diff.w, mp1.w - mp2.w, check_names=False)
@@ -234,7 +235,7 @@ def test_addition_3(columns, levels):  # singlepf +- multipf
         else:
             assert sp_sum.r.isna().all()
             assert sp_sum.p.isna().all()
-    
+
     sp_diff = sp - mp
     pd.testing.assert_series_equal(sp_diff.q, sp.q - mp.q, check_names=False)
     pd.testing.assert_series_equal(sp_diff.w, sp.w - mp.w, check_names=False)
@@ -257,8 +258,10 @@ def test_addition_3(columns, levels):  # singlepf +- multipf
 def test_addition_distinctindices():
     pass
 
+
 def test_multiplication():
     pass
+
 
 def test_value():
     pass

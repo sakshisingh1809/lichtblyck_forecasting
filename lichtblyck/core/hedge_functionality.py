@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from ..prices import convert, hedge
 from ..prices.utils import duration_bpo
-from typing import List, Callable, Dict, Tuple, TYPE_CHECKING
+from typing import List, Dict, Tuple, TYPE_CHECKING
 import pandas as pd
 
 

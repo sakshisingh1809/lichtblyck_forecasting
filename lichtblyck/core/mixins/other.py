@@ -13,7 +13,7 @@ if TYPE_CHECKING:  # needed to avoid circular imports
 
 
 def _prepare_df(pfl_or_pfs: Union[PfLine, PfState]) -> pd.DataFrame:
-    return pfl_or_pfs.df(flat=False).pint.dequantify().tz_localize(None)
+    return pfl_or_pfs.df(flatten=False).pint.dequantify().tz_localize(None)
 
 
 class OtherOutput:  # for both PfLine and PfState

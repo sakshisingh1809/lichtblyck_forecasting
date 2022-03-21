@@ -132,7 +132,7 @@ salesprice = lb.PfLine(
 
 
 def pnl(delta_t, delta_p):
-    pfs = lb.PfState(offtakevolume(delta_t), qhpfc(delta_p), sourced).changefreq("MS")
+    pfs = lb.PfState(offtakevolume(delta_t), qhpfc(delta_p), sourced).asfreq("MS")
     offtake = -1 * pfs.offtake.volume
     cost = pfs.pnl_cost
     income = offtake * salesprice

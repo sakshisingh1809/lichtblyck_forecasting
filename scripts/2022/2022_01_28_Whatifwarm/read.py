@@ -24,7 +24,7 @@ pfs = lb.portfolios.pfstate("power", "B2C_P2H_LEGACY", "2022", "2023")
 # %%
 
 
-current_costs = pfs.changefreq("MS").pnl_cost
+current_costs = pfs.asfreq("MS").pnl_cost
 current_offtake = pfs.offtake.volume
 
 
@@ -34,9 +34,9 @@ factorseries = pd.Series(
     current_offtake.index,
 )
 warmer_offtake = current_offtake * factorseries
-warmer_costs = pfs.set_offtakevolume(warmer_offtake).changefreq("MS").pnl_cost
+warmer_costs = pfs.set_offtakevolume(warmer_offtake).asfreq("MS").pnl_cost
 
-warmer_income = (pfs.pnl_cost.price * -warmer_offtake).changefreq("MS")
+warmer_income = (pfs.pnl_cost.price * -warmer_offtake).asfreq("MS")
 
 # Change in PNL:
 change_in_profit = warmer_income - warmer_costs

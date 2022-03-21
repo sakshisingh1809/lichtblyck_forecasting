@@ -28,7 +28,7 @@ normofftake = lb.PfLine({"q": pd.concat([nov, octdec], axis=0)})
 
 # A) As-is: no additional hedging
 pfs_0h = pfs
-result_0h = pfs_0h.changefreq("MS")
+result_0h = pfs_0h.asfreq("MS")
 
 # B) As-should 'months': additional hedging of months in may
 # volumes as predicted in may and prices as predicted in may
@@ -37,7 +37,7 @@ to_buy = pfs_may_before.hedge_of_unsourced("val", "MS")
 pfs_may_afterm = pfs_may_before.add_sourced(to_buy)
 # resulting situation in december with actual volumes and actual prices
 pfs_mh = lb.PfState(pfs.offtake, pfs.unsourcedprice, pfs_may_afterm.sourced)
-result_mh = pfs_mh.changefreq("MS")
+result_mh = pfs_mh.asfreq("MS")
 
 # C) As-should 'quarters': additional hedging of the quarter, in may
 # volumes as predicted in may and prices as predicted in may
@@ -46,17 +46,17 @@ to_buy = pfs_may_before.hedge_of_unsourced("val", "QS")
 pfs_may_afterq = pfs_may_before.add_sourced(to_buy)
 # resulting situation in december with actual volumes and actual prices
 pfs_qh = lb.PfState(pfs.offtake, pfs.unsourcedprice, pfs_may_afterq.sourced)
-result_qh = pfs_qh.changefreq("MS")
+result_qh = pfs_qh.asfreq("MS")
 
 
 # %% what-if norm temperatures
 
 pfs_0h_ifnorm = pfs_0h.set_offtakevolume(normofftake)
-result_0h_ifnorm = pfs_0h_ifnorm.changefreq("MS")
+result_0h_ifnorm = pfs_0h_ifnorm.asfreq("MS")
 pfs_mh_ifnorm = pfs_mh.set_offtakevolume(normofftake)
-result_mh_ifnorm = pfs_mh_ifnorm.changefreq("MS")
+result_mh_ifnorm = pfs_mh_ifnorm.asfreq("MS")
 pfs_qh_ifnorm = pfs_qh.set_offtakevolume(normofftake)
-result_qh_ifnorm = pfs_qh_ifnorm.changefreq("MS")
+result_qh_ifnorm = pfs_qh_ifnorm.asfreq("MS")
 
 # %% what-if only parallel price change since may
 
@@ -65,11 +65,11 @@ avg_actual = pfs.unsourcedprice.p.mean()
 prices_parallel = mayprices * float(avg_actual / avg_may)
 
 pfs_0h_ifparallel = pfs_0h.set_unsourcedprice(prices_parallel)
-result_0h_ifparallel = pfs_0h_ifparallel.changefreq("MS")
+result_0h_ifparallel = pfs_0h_ifparallel.asfreq("MS")
 pfs_mh_ifparallel = pfs_mh.set_unsourcedprice(prices_parallel)
-result_mh_ifparallel = pfs_mh_ifparallel.changefreq("MS")
+result_mh_ifparallel = pfs_mh_ifparallel.asfreq("MS")
 pfs_qh_ifparallel = pfs_qh.set_unsourcedprice(prices_parallel)
-result_qh_ifparallel = pfs_qh_ifparallel.changefreq("MS")
+result_qh_ifparallel = pfs_qh_ifparallel.asfreq("MS")
 
 
 # %% add all to excel file

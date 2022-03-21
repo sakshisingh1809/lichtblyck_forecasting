@@ -11,10 +11,21 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 climate_zone = "t_3"  # t_3 = hamburg, t_4 = potsdamm, t_5 = essen, t_12 = mannheim
+tlp_typ = "gas"
 
 # %% HISTORIC DATA.
 hist = lb.tmpr.hist.tmpr(True)[climate_zone]
 t = pd.DataFrame({"hist": hist})
+
+if tlp_typ == "power":
+    details = {"bayernwerk_nsp": 900, "bayernwerk_wp": 100}
+    tlps = [lb.tlp.power.fromsource(name, spec=spec) for name, spec in details.items()]
+else:
+    details = {"D14": 50}
+    tlps = [lb.tlp.gas.fromsource(name, kw=spec) for name, spec in details.items()]
+tlp = lambda t: sum([prof(t) for prof in tlps])
+tlp_label = f"{tlp_typ} {' '.join([f'{key}_{val}' for key, val in details.items()])}"
+
 
 # %% ADD MODELS.
 
@@ -25,7 +36,7 @@ ti0 = pd.Timestamp("2000-01-01", tz="Europe/Berlin")
 tau = (ti - ti0).total_seconds() / 3600 / 24 / 365.24  # years since ti0
 
 models = {}
-hiddenname = True  # if True, use 'A', 'B', 'C' instead of real names.
+hiddenname = False  # if True, use 'A', 'B', 'C' instead of real names.
 
 # linear + cos
 name = "A" if hiddenname else "simple"
@@ -73,55 +84,23 @@ for n, (a, o) in enumerate(((a2, a3), (a4, a5), (a6, a7), (a8, a9))):
     values += a * np.cos((n + 1) * 2 * np.pi * (tau - o))
 models[name] = pd.Series(values, ti)
 
-# polynomial (from Jan)
-name = "C" if hiddenname else "polynome"
-parameters = {
-    "t_3": (
-        2.87276085717235,
-        -0.039674511701999,
-        0.00108024791646852,
-        1.31044768994608e-06,
-        -2.49759991779024e-08,
-        -3.66950769755497e-12,
-        2.02635998500888e-13,
-        -1.02658805564416e-16,
-        -6.17637771654661e-19,
-        6.10516790492718e-22,
-        3.48105849488361e-25,
-        -4.3412094191766e-28,
-    ),
-    "t_4": (
-        1.7746456546555,
-        -0.0326854208697564,
-        0.00129470990902978,
-        8.65649579299504e-07,
-        -2.96626641968435e-08,
-        5.15186237699272e-12,
-        2.35734006253894e-13,
-        -1.75938753298615e-16,
-        -6.75324721679763e-19,
-        8.31059708652118e-22,
-        2.08650681652274e-25,
-        -4.24430582241011e-28,
-    ),
-}
-a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11 = parameters[climate_zone]
-# most important variation.
-values = 0
-dayofyear = (tau % 1) * 365.24
-for n, a in enumerate((a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)):
-    values += a * dayofyear ** n
-# add linear temperature increase
-yearsince2023 = (tau // 1) - 123
-incperyear = {"t_3": 0.033, "t_4": 0.055}[climate_zone]
-values += incperyear * yearsince2023
-models[name] = pd.Series(values, ti)
-
 t = pd.concat([t, pd.DataFrame(models)], axis=1)
+
+# %% CREATE SOURCE DATAFRAMES.
 
 t = t.dropna()
 tavg = t.groupby(lambda ts: (ts.year, ts.month)).mean()
 tavg.index = pd.MultiIndex.from_tuples(tavg.index, names=("year", "month"))
+
+tlim = 17
+h = tlim - t
+h = h.mask(h < 0, 0)
+hsum = h.groupby(lambda ts: (ts.year, ts.month)).sum()
+hsum.index = pd.MultiIndex.from_tuples(hsum.index, names=("year", "month"))
+
+o = pd.DataFrame({col: tlp(s) for col, s in t.items()})
+osum = o.groupby(lambda ts: (ts.year, ts.month)).sum() * 0.25
+osum.index = pd.MultiIndex.from_tuples(osum.index, names=("year", "month"))
 
 # %% COMPARE ABSOLUTE VALUES.
 
@@ -134,7 +113,6 @@ colors = {
     "A": "orange",
     "B": "green",
     "C": "purple",
-    "B2": "blue",
 }
 
 # Daily values, in one long graph.
@@ -155,6 +133,33 @@ title = f"{climate_zone} - Monthly temperature averages"
 fig, axes = plt.subplots(3, 4, sharey=False, figsize=(15, 10))
 fig.suptitle(title)
 for (m, df), ax in zip(tavg.groupby("month"), axes.flatten()):
+    ax.set_title(f"Month: {m}")
+    for name, s in df.droplevel(1).items():
+        ax.plot(s, c=colors.get(name, "gray"), label=name)
+    if m == 1:
+        ax.legend()
+fig.savefig(f"{title}.png")
+
+
+# Heating degree days per month.
+
+title = f"{climate_zone} - Monthly HDDs"
+fig, axes = plt.subplots(3, 4, sharey=False, figsize=(15, 10))
+fig.suptitle(title)
+for (m, df), ax in zip(hsum.groupby("month"), axes.flatten()):
+    ax.set_title(f"Month: {m}")
+    for name, s in df.droplevel(1).items():
+        ax.plot(s, c=colors.get(name, "gray"), label=name)
+    if m == 1:
+        ax.legend()
+fig.savefig(f"{title}.png")
+
+# Offtake per month.
+
+title = f"{climate_zone} - Monthly Offtake [MWh] {tlp_label}"
+fig, axes = plt.subplots(3, 4, sharey=False, figsize=(15, 10))
+fig.suptitle(title)
+for (m, df), ax in zip(osum.groupby("month"), axes.flatten()):
     ax.set_title(f"Month: {m}")
     for name, s in df.droplevel(1).items():
         ax.plot(s, c=colors.get(name, "gray"), label=name)

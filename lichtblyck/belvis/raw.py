@@ -8,7 +8,7 @@
 # 7 how to connect
 
 from .connect import BelvisConnection
-from typing import Tuple, Dict, Union, Iterable
+from typing import Tuple, Dict, Union
 from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
@@ -323,30 +323,13 @@ def find_tsid(
     return next(iter(hits.keys()))  # return only the tsid of the (only) hit.
 
 
-def records(
-    commodity: str,
-    tsid: int,
-    ts_left: Union[pd.Timestamp, dt.datetime],
-    ts_right: Union[pd.Timestamp, dt.datetime],
-) -> Iterable[Dict]:
-    """Return values from timeseries with id `id` in given delivery time interval.
-
-    See also
-    --------
-    .series
-    """
-    return _source(commodity).connection.query_timeseries(
-        f"/{tsid}/values",
-        f"timeRange={ts_left.isoformat()}--{ts_right.isoformat()}",
-        "timeRangeType=exclusive-inclusive",
-    )  # exclusive-inclusive because timestamps in belvis are right-bound for some reason
-
-
 def series(
     commodity: str,
     tsid: int,
     ts_left: Union[pd.Timestamp, dt.datetime],
     ts_right: Union[pd.Timestamp, dt.datetime],
+    leftrange: str = "exclusive",
+    rightrange: str = "inclusive",
     missing2zero: bool = True,
 ) -> pd.Series:
     """Return series from timeseries with id `id` in given delivery time interval.
@@ -358,6 +341,12 @@ def series(
         Timeseries id.
     ts_left : Union[pd.Timestamp, dt.datetime]
     ts_right : Union[pd.Timestamp, dt.datetime]
+    leftrange : str, optional (default: 'exclusive')
+        'inclusive' ('exclusive') to get values with timestamp that is >= (>) ts_left.
+        Default: 'exclusive' because timestamps in Belvis are *usually* right-bound.
+    rightrange : str, optional (default: 'inclusive')
+        'inclusive' ('exclusive') to get values with timestamp that is <= (<) ts_right.
+        Default: 'inclusive' because timestamps in Belvis are *usually* right-bound.
     missing2zero : bool, optional (default: True)
         What to do with values that are flagged as 'missing'. True to replace with 0,
         False to replace with nan.
@@ -372,8 +361,14 @@ def series(
     Returns series with data as found in Belvis; no correction (e.g. for right-bounded
     timestamps) done.
     """
-    vals = records(commodity, tsid, ts_left, ts_right)
-    df = pd.DataFrame.from_records(vals)
+    # Default: left=exclusive, right=inclusive, because timestamps in belvis are
+    # *usually* right-bound, for some reason.
+    records = _source(commodity).connection.query_timeseries(
+        f"/{tsid}/values",
+        f"timeRange={ts_left.isoformat()}--{ts_right.isoformat()}",
+        f"timeRangeType={leftrange}-{rightrange}",
+    )
+    df = pd.DataFrame.from_records(records)
     mask = df["pf"] == "missing"
     df.loc[mask, "v"] = 0 if missing2zero else np.na
     s = pd.Series(

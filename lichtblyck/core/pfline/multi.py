@@ -89,8 +89,8 @@ class MultiPfLine(PfLine):
             return "all"
         return next(iter(self._children.values())).kind
 
-    def df(self, cols: Iterable[str] = None, flat: bool = True) -> pd.DataFrame:
-        if flat:
+    def df(self, cols: Iterable[str] = None, flatten: bool = True) -> pd.DataFrame:
+        if flatten:
             cols = self.available if cols is None else cols
             return pd.DataFrame({col: self[col] for col in cols})
         # One big dataframe. First: collect constituent dataframes.
@@ -107,14 +107,14 @@ class MultiPfLine(PfLine):
         # Finally: put all together in big new dataframe.
         return pd.concat(dfs, axis=1)
 
-    def changefreq(self, freq: str = "MS") -> MultiPfLine:
+    def asfreq(self, freq: str = "MS") -> MultiPfLine:
         if self._heterogeneous_children:
             warnings.warn(
                 "This portfolio has its price and volume information stored in distinct child porfolios. The portfolio is flattened before changing its frequency."
             )
-            return self.flatten().changefreq(freq)  #
+            return self.flatten().asfreq(freq)
         return MultiPfLine(
-            {label: child.changefreq(freq) for label, child in self._children.items()}
+            {label: child.asfreq(freq) for label, child in self._children.items()}
         )
 
     @property
@@ -125,6 +125,10 @@ class MultiPfLine(PfLine):
         if not isinstance(other, self.__class__):
             return False
         return self._children == other._children
+
+    def __bool__(self) -> bool:
+        # True if any of the children are true.
+        return any(self._children.keys())
 
     # Additional methods, unique to this class.
 

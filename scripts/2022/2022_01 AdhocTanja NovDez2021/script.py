@@ -4,7 +4,7 @@ import pandas as pd
 lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
 pfl = lb.portfolios.pfstate("power", "B2C_P2H", "2021-10", "2022")
-pfl.changefreq("D").to_excel("data2.xlsx")
+pfl.asfreq("D").to_excel("data2.xlsx")
 
 # %% December sensititivy for p2h.
 
@@ -26,7 +26,7 @@ for change_tmpr_degC in (0, -1, -2, -3):
     for change_price_fraction in (0, 0.25, 0.5, 1, 2, 4):
         price_factor = 1 + change_price_fraction
         pfl3 = pfl2.set_unsourcedprice(pfl.unsourcedprice * price_factor)
-        df = pfl3.changefreq("QS").df()
+        df = pfl3.asfreq("QS").df()
         df.index = df.index.tz_localize(None)
         dfs[(change_tmpr_degC, change_price_fraction)] = df
 result = pd.concat(dfs).pint.dequantify()

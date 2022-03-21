@@ -144,10 +144,10 @@ def wp_sourced(
         Sourced volume timeseries and sourced price timeseries.
     """
     # Prepare series for resampling.
-    if hasattr(w_offtake, "pint"):
+    try:
         w_unit = w_offtake.pint.units
         sin = -1 * w_offtake.pint.magnitude
-    else:
+    except AttributeError:
         w_unit = None
         sin = -1 * w_offtake
 

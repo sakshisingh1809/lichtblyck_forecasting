@@ -1,32 +1,43 @@
+#%%
+from matplotlib import pyplot as plt
+import lichtblyck as lb
 import pandas as pd
-import pint
-import pint_pandas
 
-ureg = pint_pandas.PintType.ureg = pint.UnitRegistry()
-ureg.default_format = "~L"
+lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
 
-df = pd.DataFrame({"a": [1000, 2000], "b": [3, 5]}).astype(
-    {"a": "pint[meter/s]", "b": "pint[km/day]"}
-)
-q = f"{ureg('1000 meter/second')}"
-
-df.pint.dequantify()
+# %%
 
 
-class A:
+o6 = lb.belvis.data.offtakevolume("gas", "SBK6_G", "2022")
+s6 = lb.belvis.data.sourced("gas", "SBK6_G", "2022")
+o1 = lb.belvis.data.offtakevolume("gas", "SBK1_G", "2022")
+s1 = lb.belvis.data.sourced("gas", "SBK1_G", "2022")
+u = lb.belvis.data.unsourcedprice("gas", "2022")
+pfs1 = lb.portfolios.pfstate("gas", "SBK1", "2022")
+pfs6 = lb.portfolios.pfstate("gas", "SBK6", "2022")
+pfs = lb.portfolios.pfstate("gas", "B2C_LEGACY", "2022")
 
-    def __init__(self, val):
-        self.val = val
+# %%
+i = pd.date_range("2020", "2020-05", freq="H", closed="left", tz="Europe/Berlin")
+u = lb.dev.get_pfstate(i)
+u.plot()
+fig = u.asfreq("MS").plot()
+#%%
+fig, ax = plt.subplots(2, 5, figsize=(20, 10))
+offtake = u.offtake + lb.tools.nits.Q_(120, "MW")
+for i, how in enumerate(["jagged", "bar", "area", "step", "hline"]):
+    lb.visualize.visualize.plot_timeseries(
+        ax[0, i], offtake.asfreq("MS").w, how, "{:.1f}", True
+    )
+    lb.visualize.visualize.plot_timeseries(
+        ax[1, i], offtake.asfreq("MS").w, how, "{:.1f}", False
+    )
+# %%
 
-    def __add__(self, other):
-        return A(self.val + other)
+d = lb.dev.get_pfstates()
+lb.plot_pfstates(d)
+d2 = {k: v.asfreq("MS") for k, v in d.items()}
+lb.plot_pfstates(d2)
 
-    __radd__ = __add__
-    def __sub__(self, other):
-        return A(self.val - other)
 
-    __rsub__ = __sub__
-
-    def __repr__(self):
-        return str(self.val)
-
+# %%

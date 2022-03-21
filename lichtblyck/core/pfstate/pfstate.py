@@ -7,6 +7,7 @@ from __future__ import annotations
 
 
 from .pfstate_helper import make_pflines
+from .. import utils
 from ..base import NDFrameLike
 from ..pfline import PfLine, SinglePfLine, MultiPfLine
 from ..mixins import PfStateText, PfStatePlot, OtherOutput
@@ -144,18 +145,19 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
     def unsourcedfraction(self) -> pd.Series:
         return 1 - self.sourcedfraction
 
-    def df(self, *args, **kwargs) -> pd.DataFrame:
+    def df(self, flatten: bool = False, *args, **kwargs) -> pd.DataFrame:
         """DataFrame for this PfState.
 
         Returns
         -------
         pd.DataFrame
         """
-        dfdict = {
-            part: self[part].df()
-            for part in ("offtake", "pnl_cost", "sourced", "unsourced")
-        }
-        return pd.concat(dfdict, axis=1)
+        dfs = []
+        for part in ("offtake", "pnl_cost", "sourced", "unsourced"):
+            fl = True if part == "pnl_cost" else flatten  # always flatten pnl_cost
+            dfin = self[part].df(flatten=fl)
+            dfs.append(utils.add_header(dfin, part))
+        return utils.concat(dfs, axis=1)
 
     # Methods that return new class instance.
 
@@ -177,7 +179,7 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
     def add_sourced(self, add_sourced: PfLine) -> PfState:
         return self.set_sourced(self.sourced + add_sourced)
 
-    def changefreq(self, freq: str = "MS") -> PfState:
+    def asfreq(self, freq: str = "MS") -> PfState:
         """Resample the Portfolio to a new frequency.
 
         Parameters
@@ -192,9 +194,9 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
             Resampled at wanted frequency.
         """
         # pu resampling is most important, so that prices are correctly weighted.
-        offtakevolume = self.offtake.changefreq(freq).volume
-        unsourcedprice = self.unsourced.changefreq(freq).price  # ensures weighted avg
-        sourced = self.sourced.changefreq(freq)
+        offtakevolume = self.offtake.asfreq(freq).volume
+        unsourcedprice = self.unsourced.asfreq(freq).price  # ensures weighted avg
+        sourced = self.sourced.asfreq(freq)
         return PfState(offtakevolume, unsourcedprice, sourced)
 
     # Dunder methods.

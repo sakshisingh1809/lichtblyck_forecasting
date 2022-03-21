@@ -66,7 +66,7 @@ def _intersect_indices(children: Dict[str, PfLine]) -> Dict[str, PfLine]:
     """Keep only the overlapping part of each PfLine's index."""
 
     if len(children) < 2:
-        return  # No index errors if only 1 child.
+        return children  # No index errors if only 1 child.
 
     indices = [child.index for child in children.values()]
 

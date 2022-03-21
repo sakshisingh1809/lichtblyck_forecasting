@@ -15,7 +15,7 @@ from scipy.stats import norm
 ts_left = lb.tools.stamps.ceil_ts(pd.Timestamp.now(), "AS", 0)
 lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 pfs = lb.portfolios.pfstate("power", "B2C_P2H", ts_left)
-unsourced_current = pfs.changefreq("MS").unsourced
+unsourced_current = pfs.asfreq("MS").unsourced
 
 #%% Value at risk.
 u = pfs.hedge_of_unsourced("MS", "val", True)

@@ -65,7 +65,7 @@ class BelvisConnection(ABC):
             self.authenticate()
             return self.query_general(path, *queryparts)  # retry.
         else:
-            return RuntimeError(response)
+            raise RuntimeError(response)
 
     def query_timeseries(
         self, remainingpath: str, *queryparts: str

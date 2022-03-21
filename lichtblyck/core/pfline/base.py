@@ -105,6 +105,10 @@ class PfLine(base.NDFrameLike, Mapping, PfLineText, PfLinePlot, OtherOutput):
         """
         ...
 
+    def __bool__(self) -> bool:
+        """Return True if object (i.e., its children) contains any non-zero data."""
+        ...
+
     # Implemented directly here.
 
     @property
@@ -260,10 +264,6 @@ class PfLine(base.NDFrameLike, Mapping, PfLineText, PfLinePlot, OtherOutput):
         if name in self.children:
             return self.children[name]
         raise AttributeError(f"No such attribute '{name}'.")
-
-    def __bool__(self):
-        # To ensure True even if no .children and therefore len()==0
-        return True
 
 
 # Must be at end, because they depend on PfLine existing.
