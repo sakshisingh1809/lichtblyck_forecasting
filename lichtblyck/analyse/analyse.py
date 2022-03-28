@@ -4,6 +4,9 @@ Module to analyse scenario data
 
 from scipy.stats import norm
 import math
+from typing import Union
+import pandas as pd
+import numpy as np
 
 
 def expected_shortfall(
@@ -52,6 +55,33 @@ def multiplication_factor(vola: float, time: float, quantile: float) -> float:
         Ratio between future price and current price.
     """
     sigma = vola * math.sqrt(time)  # as fraction
-    mu = -0.5 * sigma ** 2  # as fraction
+    mu = -0.5 * sigma**2  # as fraction
     exponent = norm(mu, sigma).ppf(quantile)
     return math.exp(exponent)
+
+
+def vola(
+    df: Union[pd.Series, pd.DataFrame], window: int = 100
+) -> Union[pd.Series, pd.DataFrame]:
+    """
+    Calculate volatility in [fraction/year] from price time series/dataframe.
+
+    Parameters
+    ----------
+        df: Series or Dataframe with price values indexed by (trading day) timestamps.
+        window: number of observations for volatility estimate.
+
+    Returns
+    -------
+        Series or Dataframe with volatility calculated with rolling window.
+    """
+    df = df.apply(np.log).diff()  # change as fraction
+    volas = df.rolling(window).std()  # volatility per average timedelta
+    av_years = df.rolling(window).apply(
+        lambda s: ((s.index[-1] - s.index[0]) / window).total_seconds()
+        / 3600
+        / 24
+        / 365.24
+    )
+    volas /= av_years.apply(np.sqrt)  # volatility per year
+    return volas.dropna()
