@@ -1,26 +1,14 @@
+"""
+Analyze and plot historic temperatures, yearly as well as monthly for better understanding of dataset. 
+"""
+
 import lichtblyck as lb
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
+from pathlib import Path
+import os
 
-
-def explolatoryDataAnalysis():
-
-    t = lb.temperatures.historic.tmpr()
-    complete_tmpr = lb.temperatures.historic.fill_gaps(t)
-
-    # plot yearly data with missing values
-    yearly_plot(t, "Yearly temperatures with missing gaps")
-
-    # plot yearly data after filling the missing values with multiple Linear regression
-    yearly_plot(complete_tmpr, "Yearly temperatures after filling missing gaps")
-
-    # plot montly data with complete data
-    monthly_plot(complete_tmpr, "Monthly temperature averages for all climatezones")
-
-    return
+ANALYSISDATAFOLDER = Path(__file__).parent / "Data Analysis"
 
 
 def yearly_plot(tmpr: pd.DataFrame, title: str):
@@ -72,29 +60,10 @@ def yearly_plot(tmpr: pd.DataFrame, title: str):
         for j in range(4):
             axes[i, j].axes.get_xaxis().set_visible(False)
     plt.show()
-    fig.savefig(f"{title}.png")
+    fig.savefig(os.path.join(ANALYSISDATAFOLDER, f"{title}.png"))
 
 
-def monthly_plot(t: pd.DataFrame, title: str):
-
-    colors = {
-        "t_1": "gray",
-        "t_2": "orange",
-        "t_3": "green",
-        "t_4": "purple",
-        "t_5": "red",
-        "t_6": "blue",
-        "t_7": "black",
-        "t_8": "violet",
-        "t_9": "olive",
-        "t_10": "lavender",
-        "t_11": "pink",
-        "t_12": "yellow",
-        "t_13": "white",
-        "t_14": "red",
-        "t_15": "purple",
-    }
-
+def monthly_plots(t: pd.DataFrame, title: str):
     t = t.dropna()
     tavg = t.groupby(lambda ts: (ts.year, ts.month)).mean()
     tavg.index = pd.MultiIndex.from_tuples(tavg.index, names=("year", "month"))
@@ -104,24 +73,42 @@ def monthly_plot(t: pd.DataFrame, title: str):
     for (m, df), ax in zip(tavg.groupby("month"), axes.flatten()):
         ax.set_title(f"Month: {m}")
         for name, s in df.droplevel(1).items():
-            ax.plot(s, c=colors.get(name, "gray"), label=name)
+            ax.plot(s, label=name)
     ax.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
     fig.tight_layout()
-    fig.savefig(f"{title}.png")
+    fig.savefig(os.path.join(ANALYSISDATAFOLDER, f"{title}.png"))
 
 
-def regression():
+def single_monthly_plot(t: pd.DataFrame, title: str):
+    t = t.dropna()
+    tavg = t.groupby(lambda ts: (ts.year, ts.month)).mean()
+    tavg.index = pd.MultiIndex.from_tuples(tavg.index, names=("year", "month"))
 
-    t = lb.temperatures.historic.fill_gaps(lb.temperatures.historic.tmpr())
-    t = t.resample(rule="MS")
-    xtrain, xtest = train_test_split(t, test_size=0.30, random_state=42)
+    fig, axes = plt.subplots(3, 4, sharey=False, figsize=(15, 10))
+    fig.suptitle(title)
+    for (m, df), ax in zip(tavg.groupby("month"), axes.flatten()):
+        ax.set_title(f"Month: {m}")
+        ax.plot(df.values)
+    ax.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
+    fig.tight_layout()
+    fig.savefig(os.path.join(ANALYSISDATAFOLDER, f"{title}.png"))
 
-    ytrain = xtrain["t_3"]
-    ytest = xtest["t_3"]
-    xtrain = xtrain.index
-    xtest = xtest.index
-    print(xtrain.shape)
-    print(xtest.shape)
 
-    lin_reg = LinearRegression()
-    lin_reg.fit(xtrain, ytrain)
+if __name__ == "__main__":
+
+    t = lb.temperatures.historic.tmpr()
+    complete_tmpr = lb.temperatures.historic.fill_gaps(t)
+
+    # plot yearly data with missing values
+    yearly_plot(t, "Yearly temperatures with missing gaps")
+
+    # plot yearly data after filling the missing values with multiple Linear regression
+    yearly_plot(complete_tmpr, "Yearly temperatures after filling missing gaps")
+
+    # plot montly data with complete data
+    monthly_plots(complete_tmpr, "Monthly temperature averages for all climatezones")
+
+    # plot montly data for t_3 (Hamburg) climate zone
+    single_monthly_plot(
+        complete_tmpr["t_3"], "t_3 - Monthly temperature averages",
+    )
