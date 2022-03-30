@@ -12,7 +12,7 @@ from typing import Union, Any, Callable
 
 CLIMATEZONEFILE = Path(__file__).parent / "climate_zones.csv"
 HISTORICDATAFOLDER = Path(__file__).parent / "historic"
-FUTUREDATAFOLDER = Path(__file__).parent / "future"
+FUTUREFOURIERFILE = Path(__file__).parent / "future" / "fouriercoefficients.xlsx"
 
 
 def info(climate_zone: int, info: str = "name") -> Union[pd.Series, Any]:
@@ -72,42 +72,18 @@ def historicdata(climate_zone: Union[int, Path]) -> bytes:
     return bytes_data
 
 
-def futuredata(climate_zone: int) -> Path:
-    """Return reference to file of future climate data for
-    specified climate zone."""
-    # Find the coordinates of the station...
-    sought_loc = info(climate_zone, "latlon")
-    # ...then, find the location with future data that's closest to it...
-    folders = [entry for entry in Path(FUTUREDATAFOLDER).iterdir() if entry.is_dir()]
-    found_locs = [
-        np.array([n[4:10], n[10:]], float) / 10000
-        for n in (folder.name for folder in folders)
-    ]
-    dists = np.array(
-        [great_circle(found_loc, sought_loc).km for found_loc in found_locs]
-    )
-    idx = dists.argmin()
-    if (mindist := dists[idx]) > 10:
-        raise ValueError(f"The nearest station is far away: {mindist:.0f} km.")
-    # ...and find the corresponding file.
-    folder = folders[idx]
-    files = (entry for entry in folder.iterdir() if entry.is_file())
-    for file in files:
-        if "TRY2045" in file.name and "_Jahr" in file.name:
-            break
-    else:
-        raise FileNotFoundError(
-            f"Can't find a file named 'TRY2045..._Jahr...' in {folder.name}."
-        )
-    return file
+def futurefourierdata(climate_zone: int) -> pd.Series:
+    """Return Fourier coefficients to calculate future temperatures for specified climate zone."""
+    # Open file with all the coefficients...
+    df = pd.read_excel(FUTUREFOURIERFILE, "values", index_col=0)
+    # ...and return the coefficients for this climate zone.
+    return df[f"t_{climate_zone}"]
 
 
 def forallzones(function: Callable[[int], pd.Series]) -> pd.DataFrame:
     """Execute 'function' for each climate zone and return in single dataframe."""
+    series = []
     for cz in range(1, 16):
         s = function(cz)
-        if cz == 1:
-            df = pd.DataFrame(s.rename(s.name + f"_{cz}"))
-        else:
-            df = df.join(s.rename(s.name + f"_{cz}"), how="outer")
-    return df
+        series.append(s.rename(s.name + f"_{cz}"))
+    return pd.concat(series, axis=1)

@@ -10,7 +10,7 @@ def test_auth_usrpwd(tenant: str, direct: bool, correct: bool):
     """Test if authentication with username and password works as expected."""
 
     if direct:
-        klass = connect.Connection_From_UsrPwd
+        klass = connect.BelvisConnection_From_UsrPwd
     else:
         klass = connect.BelvisConnection.from_usrpwd
 
@@ -31,7 +31,7 @@ def test_auth_token(tenant: str, direct: bool, correct: bool):
     """Test if authentication with token works as expected."""
 
     if direct:
-        klass = connect.Connection_From_Token
+        klass = connect.BelvisConnection_From_Token
     else:
         klass = connect.BelvisConnection.from_token
 

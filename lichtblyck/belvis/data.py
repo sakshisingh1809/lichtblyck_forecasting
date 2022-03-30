@@ -1,10 +1,8 @@
 """Module that uses connection to Belvis to generate PfLine and PfState objects."""
 
-import numpy as np
 from . import raw
 from ..tools import stamps, frames
 from ..core.pfline import PfLine, SinglePfLine, MultiPfLine
-from ..core.pfstate import PfState
 from typing import Dict, Union, Tuple
 import functools
 import datetime as dt
@@ -157,18 +155,18 @@ def _pfidtsname_unsourced(commodity: str) -> Tuple[str]:
     return UNSOURCEDPRICE[commodity]
 
 
-def _series(commodity, pfid, tsnames, ts_left, ts_right, *args, **kwargs):
+def _series(commodity, pfid, tsnames, ts_left, ts_right, blocking):
     if isinstance(tsnames, str):
         tsnames = (tsnames,)  # turn into (1-element-) iterable
     series = []
     for tsname in tsnames:
         tsid = raw.find_tsid(commodity, pfid, tsname, strict=True)
         _print_status(f". {tsid}: {tsname}")
-        series.append(raw.series(commodity, tsid, ts_left, ts_right, *args, **kwargs))
+        series.append(raw.series(commodity, tsid, ts_left, ts_right, blocking))
     return sum(series)
 
 
-def _pfline(commodity, pfid, part, ts_left, ts_right) -> PfLine:
+def _pfline(commodity, pfid, part, ts_left, ts_right, blocking) -> PfLine:
     """Get portfolio line for certain commodity (power, gas), pfid (LUD, WP) and part (offtake, sourced)."""
     # Fix timestamps (if necessary).
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
@@ -181,7 +179,7 @@ def _pfline(commodity, pfid, part, ts_left, ts_right) -> PfLine:
         data = {}
         if "w" in tsnamedict:  # Bottom level: create SinglePfLine.
             for col, tsnames in tsnamedict.items():
-                s = _series(commodity, pfid, tsnames, ts_left, ts_right)
+                s = _series(commodity, pfid, tsnames, ts_left, ts_right, blocking)
                 # Correction for bad Belvis implementation: turn right-bound into left-bound timestamps.
                 data[col] = frames.set_ts_index(s, bound="right")
             return SinglePfLine(data)
@@ -200,6 +198,7 @@ def offtakevolume(
     pfid: str,
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
+    blocking: bool = True,
 ) -> SinglePfLine:
     """Get offtake (volume) for a certain portfolio from Belvis.
 
@@ -212,12 +211,15 @@ def offtakevolume(
         Start of delivery period.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
         End of delivery period.
+    blocking : bool, optional (default: True)
+        If True, recalculate data that is not up-to-date. If False, return most up-to-
+        date data.
 
     Returns
     -------
     PfLine
     """
-    return _pfline(commodity, pfid, "offtake", ts_left, ts_right)
+    return _pfline(commodity, pfid, "offtake", ts_left, ts_right, blocking)
 
 
 def sourced(
@@ -225,6 +227,7 @@ def sourced(
     pfid: str,
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
+    blocking: bool = True,
 ) -> PfLine:
     """Get sourced volume and price for a certain portfolio from Belvis.
 
@@ -237,17 +240,20 @@ def sourced(
         Start of delivery period.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
         End of delivery period.
+    blocking : bool, optional (default: True)
+        If True, recalculate data that is not up-to-date. If False, return most up-to-
+        date data.
 
     Returns
     -------
     PfLine
     """
-    return _pfline(commodity, pfid, "sourced", ts_left, ts_right)
+    return _pfline(commodity, pfid, "sourced", ts_left, ts_right, blocking)
 
 
 @functools.lru_cache()  # memoization
 def unsourcedprice(
-    commodity: str = "power",
+    commodity: str,
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
 ) -> PfLine:

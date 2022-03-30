@@ -331,6 +331,7 @@ def series(
     leftrange: str = "exclusive",
     rightrange: str = "inclusive",
     missing2zero: bool = True,
+    blocking: bool = True,
 ) -> pd.Series:
     """Return series from timeseries with id `id` in given delivery time interval.
 
@@ -350,6 +351,10 @@ def series(
     missing2zero : bool, optional (default: True)
         What to do with values that are flagged as 'missing'. True to replace with 0,
         False to replace with nan.
+    blocking : bool, optional (default: True)
+        If True, recalculates data that is not up-to-date before returning; might take
+        long time or result in internal-server-error. If False, return most up-to-date
+        data that is available without recalculating.
 
     Returns
     -------
@@ -367,6 +372,7 @@ def series(
         f"/{tsid}/values",
         f"timeRange={ts_left.isoformat()}--{ts_right.isoformat()}",
         f"timeRangeType={leftrange}-{rightrange}",
+        f"blocking={str(blocking).lower()}",
     )
     df = pd.DataFrame.from_records(records)
     mask = df["pf"] == "missing"

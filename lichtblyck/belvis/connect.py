@@ -17,11 +17,11 @@ class BelvisConnection(ABC):
 
     @classmethod
     def from_usrpwd(cls, tenant, usr, pwd):
-        return Connection_From_UsrPwd(tenant, usr, pwd)
+        return BelvisConnection_From_UsrPwd(tenant, usr, pwd)
 
     @classmethod
     def from_token(cls, tenant, usr):
-        return Connection_From_Token(tenant, usr)
+        return BelvisConnection_From_Token(tenant, usr)
 
     def __init__(self, tenant: str):
         self._tenant = tenant
@@ -75,7 +75,7 @@ class BelvisConnection(ABC):
         return self.query_general(path, *queryparts)
 
 
-class Connection_From_UsrPwd(BelvisConnection):
+class BelvisConnection_From_UsrPwd(BelvisConnection):
     def __init__(self, tenant: str, usr: str, pwd: str):
         super().__init__(tenant)
         self.__usr = usr
@@ -96,7 +96,7 @@ class Connection_From_UsrPwd(BelvisConnection):
         return self._session.get(url)
 
 
-class Connection_From_Token(BelvisConnection):
+class BelvisConnection_From_Token(BelvisConnection):
 
     _AUTHFOLDER = Path(__file__).parent / "auth"
 

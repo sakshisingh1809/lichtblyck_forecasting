@@ -47,9 +47,11 @@ def _tmpr(climate_zone: int) -> pd.Series:
     """
     Return the daily temperatures for the specified climate zone.
 
-    Returns:
-        Series with daily temperature values. Index: timestamp (daily). Values:
-            average temperature at corresponding day in degC.
+    Returns
+    -------
+    Series
+        With daily temperature values. Index: timestamp (daily). Values: average
+        temperature at corresponding day in degC.
     """
     df = climate_data(climate_zone)
     s = df["TMK"].rename("t")
