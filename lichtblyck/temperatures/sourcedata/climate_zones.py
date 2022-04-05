@@ -3,16 +3,14 @@ Module handle climate zones and return correct (future or historic) data.
 """
 
 import pandas as pd
-import numpy as np
 from pathlib import Path
 from zipfile import ZipFile
-from geopy.distance import great_circle
 from typing import Union, Any, Callable
 
 
 CLIMATEZONEFILE = Path(__file__).parent / "climate_zones.csv"
 HISTORICDATAFOLDER = Path(__file__).parent / "historic"
-FUTUREFOURIERFILE = Path(__file__).parent / "future" / "fouriercoefficients.xlsx"
+NORMFOURIERFILE = Path(__file__).parent / "norm" / "fouriercoefficients.xlsx"
 
 
 def info(climate_zone: int, info: str = "name") -> Union[pd.Series, Any]:
@@ -72,10 +70,10 @@ def historicdata(climate_zone: Union[int, Path]) -> bytes:
     return bytes_data
 
 
-def futurefourierdata(climate_zone: int) -> pd.Series:
-    """Return Fourier coefficients to calculate future temperatures for specified climate zone."""
+def norm_fourier_coefficients(climate_zone: int) -> pd.Series:
+    """Return Fourier coefficients to calculate norm temperatures for specified climate zone."""
     # Open file with all the coefficients...
-    df = pd.read_excel(FUTUREFOURIERFILE, "values", index_col=0)
+    df = pd.read_excel(NORMFOURIERFILE, "values", index_col=0)
     # ...and return the coefficients for this climate zone.
     return df[f"t_{climate_zone}"]
 

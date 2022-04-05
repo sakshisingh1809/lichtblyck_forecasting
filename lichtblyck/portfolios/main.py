@@ -1,9 +1,11 @@
 """Module to set up the portfolios as they are used and reported."""
 
-from lichtblyck.core.pfline.multi import MultiPfLine
+
 from ..core.pfstate import PfState
 from ..core.pfline.single import SinglePfLine
 from .. import belvis  # to add functionality to pfline and pfstate
+from typing import Union
+import datetime as dt
 import pandas as pd
 
 # Mapping of belvis portfolios onto 'useful' portfolios with 'arbitrary' names.
@@ -72,7 +74,14 @@ PFNAMES = {
 }
 
 
-def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState:
+def pfstate(
+    commodity: str,
+    pfname: str,
+    ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
+    ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
+    *,
+    recalc: bool = True,
+) -> PfState:
     """Get sourced volume and price for a certain portfolio.
 
     Parameters
@@ -82,6 +91,9 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
         Portfolio name. See .PFNAMES for allowed values.
     ts_left, ts_right : Union[str, dt.datetime, pd.Timestamp], optional
         Start and end of delivery period (left-closed).
+    recalc : bool, optional (default: True)
+        If True, recalculate data that is not up-to-date. If False, return data without
+        recalculating.
 
     Returns
     -------
@@ -98,26 +110,28 @@ def pfstate(commodity: str, pfname: str, ts_left=None, ts_right=None) -> PfState
         )
 
     if commodity == "power":
-        return _pfstate_power(pfname, ts_left, ts_right)
+        return _pfstate_power(pfname, ts_left, ts_right, recalc=recalc)
     else:
-        return _pfstate_gas(pfname, ts_left, ts_right)
+        return _pfstate_gas(pfname, ts_left, ts_right, recalc=recalc)
 
 
-def _pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
+def _pfstate_power(pfname: str, ts_left, ts_right, *, recalc) -> PfState:
     # Portfolio is sum of several portfolios.
     if pfnames := POWER_SYNTHETIC.get(pfname):
-        return sum(_pfstate_power(pfn, ts_left, ts_right) for pfn in pfnames)
+        return sum(
+            _pfstate_power(pfn, ts_left, ts_right, recalc=recalc) for pfn in pfnames
+        )
 
     # Portfolio is original portfolio.
     pf_dic = POWER_ORIGINAL[pfname]
 
     # Offtake: combine two curves.
     offtakevolume_100 = sum(
-        belvis.data.offtakevolume("power", pfid, ts_left, ts_right)
+        belvis.data.offtakevolume("power", pfid, ts_left, ts_right, recalc=recalc)
         for pfid in pf_dic["offtake"]["100%"]
     )
     offtakevolume_certain = sum(
-        belvis.data.offtakevolume("power", pfid, ts_left, ts_right)
+        belvis.data.offtakevolume("power", pfid, ts_left, ts_right, recalc=recalc)
         for pfid in pf_dic["offtake"]["certain"]
     )
     now = pd.Timestamp.now().tz_localize("Europe/Berlin").floor("D")
@@ -128,7 +142,7 @@ def _pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
 
     # Sourced: add forward and spot from individual components.
     sourced = sum(
-        belvis.data.sourced("power", pfid, ts_left, ts_right)
+        belvis.data.sourced("power", pfid, ts_left, ts_right, recalc=recalc)
         for pfid in pf_dic["sourced"]
     )
 
@@ -139,17 +153,21 @@ def _pfstate_power(pfname: str, ts_left, ts_right) -> PfState:
     return PfState(offtakevolume, unsourcedprice, sourced)
 
 
-def _pfstate_gas(pfname: str, ts_left, ts_right) -> PfState:
+def _pfstate_gas(pfname: str, ts_left, ts_right, *, recalc) -> PfState:
     # Portfolio is sum of several portfolios.
     if pfnames := GAS_SYNTHETIC.get(pfname):
-        return sum(_pfstate_gas(pfn, ts_left, ts_right) for pfn in pfnames)
+        return sum(
+            _pfstate_gas(pfn, ts_left, ts_right, recalc=recalc) for pfn in pfnames
+        )
 
     # Portfolio is original portfolio.
     pfid = GAS_ORIGINAL[pfname]
 
     # No changes necessary - offtake etc. correct in Belvis.
-    offtakevolume = belvis.data.offtakevolume("gas", pfid, ts_left, ts_right)
-    sourced = belvis.data.sourced("gas", pfid, ts_left, ts_right)
+    offtakevolume = belvis.data.offtakevolume(
+        "gas", pfid, ts_left, ts_right, recalc=recalc
+    )
+    sourced = belvis.data.sourced("gas", pfid, ts_left, ts_right, recalc=recalc)
     unsourcedprice = belvis.data.unsourcedprice("gas", ts_left, ts_right)
 
     # Market prices are in daily frequency; make sure other data is also in daily frequency.

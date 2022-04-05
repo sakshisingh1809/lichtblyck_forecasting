@@ -155,18 +155,20 @@ def _pfidtsname_unsourced(commodity: str) -> Tuple[str]:
     return UNSOURCEDPRICE[commodity]
 
 
-def _series(commodity, pfid, tsnames, ts_left, ts_right, blocking):
+def _series(commodity, pfid, tsnames, ts_left, ts_right, *, recalc, **kwargs):
     if isinstance(tsnames, str):
         tsnames = (tsnames,)  # turn into (1-element-) iterable
     series = []
     for tsname in tsnames:
         tsid = raw.find_tsid(commodity, pfid, tsname, strict=True)
         _print_status(f". {tsid}: {tsname}")
-        series.append(raw.series(commodity, tsid, ts_left, ts_right, blocking))
+        series.append(
+            raw.series(commodity, tsid, ts_left, ts_right, blocking=recalc, **kwargs)
+        )
     return sum(series)
 
 
-def _pfline(commodity, pfid, part, ts_left, ts_right, blocking) -> PfLine:
+def _pfline(commodity, pfid, part, ts_left, ts_right, *, recalc) -> PfLine:
     """Get portfolio line for certain commodity (power, gas), pfid (LUD, WP) and part (offtake, sourced)."""
     # Fix timestamps (if necessary).
     ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
@@ -179,7 +181,7 @@ def _pfline(commodity, pfid, part, ts_left, ts_right, blocking) -> PfLine:
         data = {}
         if "w" in tsnamedict:  # Bottom level: create SinglePfLine.
             for col, tsnames in tsnamedict.items():
-                s = _series(commodity, pfid, tsnames, ts_left, ts_right, blocking)
+                s = _series(commodity, pfid, tsnames, ts_left, ts_right, recalc=recalc)
                 # Correction for bad Belvis implementation: turn right-bound into left-bound timestamps.
                 data[col] = frames.set_ts_index(s, bound="right")
             return SinglePfLine(data)
@@ -198,7 +200,8 @@ def offtakevolume(
     pfid: str,
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
-    blocking: bool = True,
+    *,
+    recalc: bool = True,
 ) -> SinglePfLine:
     """Get offtake (volume) for a certain portfolio from Belvis.
 
@@ -211,15 +214,15 @@ def offtakevolume(
         Start of delivery period.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
         End of delivery period.
-    blocking : bool, optional (default: True)
-        If True, recalculate data that is not up-to-date. If False, return most up-to-
-        date data.
+    recalc : bool, optional (default: True)
+        If True, recalculate data that is not up-to-date. If False, return data without
+        recalculating.
 
     Returns
     -------
     PfLine
     """
-    return _pfline(commodity, pfid, "offtake", ts_left, ts_right, blocking)
+    return _pfline(commodity, pfid, "offtake", ts_left, ts_right, recalc=recalc)
 
 
 def sourced(
@@ -227,7 +230,8 @@ def sourced(
     pfid: str,
     ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
     ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
-    blocking: bool = True,
+    *,
+    recalc: bool = True,
 ) -> PfLine:
     """Get sourced volume and price for a certain portfolio from Belvis.
 
@@ -240,15 +244,15 @@ def sourced(
         Start of delivery period.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
         End of delivery period.
-    blocking : bool, optional (default: True)
-        If True, recalculate data that is not up-to-date. If False, return most up-to-
-        date data.
+    recalc : bool, optional (default: True)
+        If True, recalculate data that is not up-to-date. If False, return data without
+        recalculating.
 
     Returns
     -------
     PfLine
     """
-    return _pfline(commodity, pfid, "sourced", ts_left, ts_right, blocking)
+    return _pfline(commodity, pfid, "sourced", ts_left, ts_right, recalc=recalc)
 
 
 @functools.lru_cache()  # memoization
@@ -278,12 +282,19 @@ def unsourcedprice(
     # Get the data.
     if commodity == "power":
         # Correction for bad Belvis implementation: turn right-bound into left-bound timestamps.
-        s = _series(commodity, pfid, tsname, ts_left, ts_right)
+        s = _series(commodity, pfid, tsname, ts_left, ts_right, recalc=True)
         data = {"p": frames.set_ts_index(s, bound="right")}
     else:
         # Correction for bad Belvis implementation: gas DFC is not DST-adjusted.
         s = _series(
-            commodity, pfid, tsname, ts_left, ts_right, "inclusive", "exclusive"
+            commodity,
+            pfid,
+            tsname,
+            ts_left,
+            ts_right,
+            leftrange="inclusive",
+            rightrange="exclusive",
+            recalc=True,
         )
         s = s.tz_convert("+01:00").tz_localize(None).tz_localize("Europe/Berlin")
         data = {"p": frames.set_ts_index(s, bound="left")}

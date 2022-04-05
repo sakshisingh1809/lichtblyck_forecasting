@@ -8,24 +8,24 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 """
 
 from .sourcedata.climate_zones import historicdata, forallzones
-from ..core import basics
 from ..tools.frames import set_ts_index
+from ..tools import stamps, frames
 from sklearn.linear_model import LinearRegression
 from typing import Callable, Union
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-import lichtblyck as lb
 import pandas as pd
 import numpy as np
-from matplotlib import markers, pyplot as plt
+import datetime as dt
 
 
 def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
     """Return dataframe with historic daily climate data for specified climate zone (if
     int) or from specified file (if path). Values before 1917 are dropped. Index is
     gapless with missing values filled with np.nan. Column names not standardized but
-    rather as found in source file."""
+    rather as found in source file. Index is timezone-agnostic, because UTC-offset of
+    old values is not same as UTC-offset of modern values."""
 
     # Get file content and turn into dataframe...
     bytes_data = historicdata(climate_zone)
@@ -38,14 +38,15 @@ def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
     df["MESS_DATUM"] = pd.to_datetime(df["MESS_DATUM"], format="%Y%m%d")
     df = df[df["MESS_DATUM"] >= "1917"]  # Problems with earlier data.
     # ...and set correct index and make gapless.
-    df = set_ts_index(df, "MESS_DATUM", "left", continuous=False)
+    df = set_ts_index(df, "MESS_DATUM", "left", continuous=False).tz_localize(None)
     df = df.resample("D").asfreq()  # add na-values for missing rows.
     return df
 
 
-def _tmpr(climate_zone: int) -> pd.Series:
-    """
-    Return the daily temperatures for the specified climate zone.
+def _tmpr(climate_zone: int, ts_left, ts_right) -> pd.Series:
+    """Return timeseries with historic daily climate data for specified climate zone,
+    from ``ts_left`` (inclusive) to ``ts_right`` (exclusive). The timeseries has the
+    same timezone as ``ts_left`` and ``ts_right``.
 
     Returns
     -------
@@ -55,17 +56,23 @@ def _tmpr(climate_zone: int) -> pd.Series:
     """
     df = climate_data(climate_zone)
     s = df["TMK"].rename("t")
-    return s
+    if s.index.tz != ts_left.tz:
+        s = s.tz_localize(ts_left.tz)
+    mask = (s.index >= ts_left) & (s.index < ts_right)
+    return s[mask]
 
 
-def tmpr(fill_gaps: bool = True) -> pd.DataFrame:
+def tmpr(
+    ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
+    ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
+) -> pd.DataFrame:
     """
     Return the daily temperatures for each climate zone.
 
     Parameters
     ----------
-    fill_gaps : bool, optional. Default = True.
-        Try to fill in missing value of a climate zone with the values of the others.
+    ts_left, ts_right : Union[str, dt.datetime, pd.Timestamp], optional
+        Start and end of time period (left-closed).
 
     Returns
     -------
@@ -74,7 +81,9 @@ def tmpr(fill_gaps: bool = True) -> pd.DataFrame:
         (1..15). Values: average temperature for corresponding day and climate zone in
         degC.
     """
-    return forallzones(_tmpr)
+    # Fix timestamps (if necessary).
+    ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
+    return forallzones(lambda cz: _tmpr(cz, ts_left, ts_right))
 
 
 def _tmpr_monthlyavg(climate_zone: int) -> pd.Series:
@@ -221,8 +230,8 @@ def tmpr_struct(
         weights["power"] / weights["power"].sum()
         + weights["gas"] / weights["gas"].sum()
     )
-    yymm["t_germany"] = lb.tools.wavg(yymm, weights, axis=1)
-    mm["t_germany"] = lb.tools.wavg(mm, weights, axis=1)
+    yymm["t_germany"] = frames.wavg(yymm, weights, axis=1)
+    mm["t_germany"] = frames.wavg(mm, weights, axis=1)
     #    3: compare to, for each month, find year with lowest deviation from the long-term average
     yymm["t_delta"] = yymm.apply(
         lambda row: row["t_germany"] - mm["t_germany"][row.name[0]], axis=1

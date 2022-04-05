@@ -1,7 +1,3 @@
-# from .core import pfseries_pfframe  # extend functionalty of pandas
-# from .core.singlepf_multipf import SinglePf, MultiPf
-# from .core.lbpf import LbPf
-
 from .core.pfline import PfLine, SinglePfLine, MultiPfLine
 from .core.pfstate import PfState
 from .core.mixins.plot import plot_pfstates

@@ -328,6 +328,7 @@ def series(
     tsid: int,
     ts_left: Union[pd.Timestamp, dt.datetime],
     ts_right: Union[pd.Timestamp, dt.datetime],
+    *,
     leftrange: str = "exclusive",
     rightrange: str = "inclusive",
     missing2zero: bool = True,
