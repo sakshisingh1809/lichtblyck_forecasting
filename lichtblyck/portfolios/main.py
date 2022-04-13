@@ -59,14 +59,29 @@ POWER_SYNTHETIC = {  # pf-name: (pf-names in POWER_ORIGINAL)
 
 # . For original gas portfolios (as found in Belvis):
 #   GAS_ORIGINAL:
-#       pf-name: {}
-GAS_ORIGINAL = {"SBK1": "SBK1_G", "SBK6": "SBK6_G"}
+#       pf-name: belvispfid
+GAS_ORIGINAL = {
+    "SBK1": "SBK1_G",
+    "SBK6": "SBK6_G",
+    "SBK9": "SBK9_G",
+    "SBK5": "SBK5_G",
+    "SBK8": "SBK8_G",
+    "SBK4": "SBK4_G",
+    "SBK7": "SBK7_G",
+}
 
 # . For synthetic gas portfolios (not found in Belvis):
 #   GAS_SYNTHETIC:
 #       pf-name: Iterable
 #   The iterable elements are pf-names in GAS_ORIGINAL
-GAS_SYNTHETIC = {"B2C_LEGACY": ("SBK1", "SBK6")}
+GAS_SYNTHETIC = {
+    "B2C_LEGACY": ("SBK1", "SBK6"),
+    "B2C_NEW": ("SBK9",),
+    "B2B_BTB": ("SBK5", "SBK8"),
+    "B2B_CONTI": ("SBK4",),
+    "B2B_RLM": ("SBK7",),
+    "B2B": ("SBK5", "SBK8", "SBK4", "SBK7"),
+}
 
 PFNAMES = {
     "power": [*POWER_ORIGINAL.keys(), *POWER_SYNTHETIC.keys()],

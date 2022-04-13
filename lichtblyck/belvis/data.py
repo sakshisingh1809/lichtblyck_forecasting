@@ -44,14 +44,6 @@ DEFAULT = {
                 "w": "#LB RM Saldo Menge Anteil Konvertierung",
                 "r": "#LB RM Kostensumme Anteil Konvertierung",
             },
-            "storage": {
-                "w": "#LB RM Saldo Menge Anteil Speicher",
-                "r": "#LB RM Kostensumme Anteil Speicher",
-            },
-            "tempr": {
-                "w": "#LB RM Saldo Menge Anteil Temperatur",
-                "r": "#LB RM Kostensumme Anteil Temperatur",
-            },
             "top": {
                 "w": "#LB RM Saldo Menge Anteil ToP",
                 "r": "#LB RM Kostensumme Anteil ToP",
@@ -59,7 +51,6 @@ DEFAULT = {
         },
     },
 }
-
 # All allowed portfolios must have a key here.
 # commodity [power/gas] : pfid : part [offtake/forward/spot]: tsname or tsnames
 SPECIFICS = {
@@ -85,12 +76,21 @@ SPECIFICS = {
         "SBSG": {},
     },
     "gas": {
+        # B2C
         "SBK1_G": {
             "offtake": {"w": "#LB PFMG Absatz SBK1 Gesamt"},
             "sourced": {
                 "transfer": {
                     "w": "#LB RM Saldo Menge Anteil SBK6",
                     "r": "#LB RM Kostensumme Anteil SBK6",
+                },
+                "storage": {
+                    "w": "#LB RM Saldo Menge Anteil Speicher",
+                    "r": "#LB RM Kostensumme Anteil Speicher",
+                },
+                "tempr": {
+                    "w": "#LB RM Saldo Menge Anteil Temperatur",
+                    "r": "#LB RM Kostensumme Anteil Temperatur",
                 },
             },
         },
@@ -101,13 +101,79 @@ SPECIFICS = {
                     "w": "#LB RM Saldo Menge Anteil SBK6",
                     "r": "#LB RM Kostensumme Anteil SBK6",
                 },
+                "storage": {
+                    "w": "#LB RM Saldo Menge Anteil Speicher",
+                    "r": "#LB RM Kostensumme Anteil Speicher",
+                },
                 "biogas": {
                     "w": "#LB RM Saldo Menge Anteil Biogas",
                     "r": "#LB RM Kostensumme Anteil Biogas",
                 },
+                "tempr": {
+                    "w": "#LB RM Saldo Menge Anteil Temperatur",
+                    "r": "#LB RM Kostensumme Anteil Temperatur",
+                },
             },
         },
+        # B2C New tariffs
         "SBK9_G": {"offtake": {"w": "#LB PFMG Absatz SBK9 Gesamt"}},
+        # B2B BtB
+        "SBK5_G": {
+            "offtake": {"w": "#LB PFMG Absatz SBK5 Gesamt"},
+            "sourced": {
+                "transfer": {
+                    "w": "#LB RM Saldo Menge Anteil SBK4",
+                    "r": "#LB RM Kostensumme Anteil SBK4",
+                },
+                "tempr": {
+                    "w": "#LB RM Saldo Menge Anteil Temperatur",
+                    "r": "#LB RM Kostensumme Anteil Temperatur",
+                },
+            },
+        },
+        "SBK8_G": {
+            "offtake": {"w": "#LB PFMG Absatz SBK8 Gesamt"},
+            "sourced": {
+                "transfer": {
+                    "w": (
+                        "#LB RM Saldo Menge Anteil SBK6",
+                        "#LB RM Saldo Menge Anteil SBK4",
+                    ),
+                    "r": (
+                        "#LB RM Kostensumme Anteil SBK4",
+                        "#LB RM Kostensumme Anteil SBK6",
+                    ),
+                },
+                "tempr": {
+                    "w": "#LB RM Saldo Menge Anteil Temperatur",
+                    "r": "#LB RM Kostensumme Anteil Temperatur",
+                },
+            },
+        },
+        # B2B Contingent
+        "SBK4_G": {
+            "offtake": {"w": "#LB PFMG Absatz SBK4 Gesamt"},
+            "sourced": {
+                "transfer": {
+                    "w": "#LB RM Saldo Menge Anteil SBK4",
+                    "r": "#LB RM Kostensumme Anteil SBK4",
+                },
+                "tempr": {
+                    "w": "#LB RM Saldo Menge Anteil Temperatur",
+                    "r": "#LB RM Kostensumme Anteil Temperatur",
+                },
+            },
+        },
+        # B2B RLM
+        "SBK7_G": {
+            "offtake": {"w": "#LB PFMG Absatz SBK7 Gesamt"},
+            "sourced": {
+                "transfer": {
+                    "w": "#LB RM Saldo Menge Anteil SBK4",
+                    "r": "#LB RM Kostensumme Anteil SBK4",
+                },
+            },
+        },
     },
 }
 # For unsourced prices: portfolio id and timeseries name.
