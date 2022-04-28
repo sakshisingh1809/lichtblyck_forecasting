@@ -11,7 +11,7 @@ lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 vola = 1.2  # /calyear
 
 
-def var(pfs):
+def var(pfs: lb.PfState) -> pd.DataFrame:
     """Calculate value at risk due to open positions."""
     # Current state.
     volume = pfs.unsourced.q
@@ -27,13 +27,13 @@ def var(pfs):
     for label, quantile in {"fall": 0.05, "rise": 0.95}.items():
         exponent = stats.norm(mu, sigma).ppf(quantile)
         multiplication_factor = math.exp(exponent)
-        change_factor = multiplication_factor - 1
-        unsourced_var = lb.PfLine({"q": volume, "p": price * change_factor})
-        series[label] = unsourced_var.r
+        pfs_q = pfs.set_unsourcedprice(pfs.unsourcedprice * multiplication_factor)
+        series[f"{label}_delta_r"] = pfs_q.pnl_cost.r - pfs.pnl_cost.r
+        series[f"{label}_delta_p"] = pfs_q.pnl_cost.p - pfs.pnl_cost.p
     return pd.DataFrame(series)
 
 
-def big_df(pfs, freq):
+def big_df(pfs, freq) -> pd.DataFrame:
     """Create big dataframe with selected information."""
     aggpfs = pfs.asfreq(freq)
     dfs = {}
@@ -77,6 +77,8 @@ write_to_excel("power", "B2C_P2H_LEGACY", True)
 write_to_excel("power", "B2C_HH_NEW", False)
 write_to_excel("power", "B2C_P2H_NEW", False)
 write_to_excel("gas", "B2C_LEGACY", True)
+write_to_excel("gas", "B2C_NEW", False)
+write_to_excel("gas", "B2B", False)
 
 
 #%%

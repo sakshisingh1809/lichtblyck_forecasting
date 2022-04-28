@@ -8,7 +8,6 @@ import lichtblyck as lb
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 climate_zone = "t_3"  # t_3 = hamburg, t_4 = potsdamm, t_5 = essen, t_12 = mannheim
 tlp_typ = "gas"
