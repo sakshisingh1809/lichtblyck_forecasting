@@ -1,4 +1,6 @@
-#%%
+"""Calculate the value (market and mtm) of long positions in gas portfolio."""
+# %%
+
 
 import lichtblyck as lb
 import numpy as np
@@ -6,35 +8,46 @@ import pandas as pd
 
 lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
-values = {}
 
-for pfname in ("B2C_LEGACY", "B2B_BTB", "B2B_RLM", "B2C_NEW", "B2B_CONTI"):
-    for (start, end, label) in (
-        ("2022-05", "2023", "2022roy"),
-        ("2023", "2026", "2023-2025"),
-    ):
-        ref = lb.portfolios.pfstate("gas", pfname, start, end)
+def openpositions_and_mtmchange(pfname, start, end, freq):
+    pfs = lb.portfolios.pfstate("gas", pfname, start, end)
+    sourced = pfs.asfreq(freq).sourced
 
-        openpos_now = ref.netposition
-        openpos_pricedrop = openpos_now.set_price(ref.unsourcedprice * 0.5)
+    openpos_now = -pfs.hedge_of_unsourced(freq).asfreq(freq)
+    mtm_now = (openpos_now.price - sourced.price) * openpos_now.volume
 
-        openpos_now_cumulvals = openpos_now.df().apply(np.sum)
-        openpos_pricedrop_cumulvals = openpos_pricedrop.df().apply(np.sum)
+    pfs2 = pfs.set_unsourcedprice(pfs.unsourcedprice * 0.5)
+    openpos_fut = -pfs2.hedge_of_unsourced(freq).asfreq(freq)
+    mtm_fut = (openpos_fut.price - sourced.price) * openpos_fut.volume
 
-        openpos_pricedrop_cumulvals - openpos_now_cumulvals
-
-        values[(pfname, label)] = {
-            "now": {"q": openpos_now_cumulvals.q.m, "r": openpos_now_cumulvals.r.m},
-            "pricedrop": {
-                "r": openpos_pricedrop_cumulvals.r.m,
-                "delta": openpos_pricedrop_cumulvals.r.m - openpos_now_cumulvals.r.m,
-            },
+    df = pd.DataFrame(
+        {
+            ("open", "q"): openpos_now.q,
+            ("sourced", "price"): sourced.p,
+            ("now", "marketprice"): openpos_now.p,
+            ("now", "marketvalue"): openpos_now.r,
+            ("now", "mtm"): mtm_now.r,
+            ("fut", "marketprice"): openpos_fut.p,
+            ("fut", "marketvalue"): openpos_fut.r,
+            ("fut", "mtm"): mtm_fut.r,
         }
+    )
 
-# %%
+    return df
 
-df = pd.DataFrame({k1: pd.DataFrame(v1).stack() for k1, v1 in values.items()})
-df = df.T
-df = df.swaplevel(axis=0).sort_index()
-df.to_excel("bla.xlsx")
+
+dfs2022 = {}
+for pfname in ("B2C_LEGACY", "B2C_NEW", "B2B_CONTI", "B2B_BTB", "B2B_RLM"):
+    dfs2022[pfname] = openpositions_and_mtmchange(pfname, "2022-06", "2023", "MS")
+pd.concat(dfs2022).pint.dequantify().tz_localize(None, 0, 1).reorder_levels(
+    [1, 0]
+).sort_index().to_excel("2022roy.xlsx")
+
+dfs2023 = {}
+for pfname in ("B2C_NEW", "B2B_CONTI", "B2B_BTB", "B2B_RLM"):
+    dfs2023[pfname] = openpositions_and_mtmchange(pfname, "2023", "2026", "QS")
+pd.concat(dfs2023).pint.dequantify().tz_localize(None, 0, 1).reorder_levels(
+    [1, 0]
+).sort_index().to_excel("2023-2026.xlsx")
+
 # %%

@@ -140,8 +140,8 @@ SPECIFICS = {
                         "#LB RM Saldo Menge Anteil SBK4",
                     ),
                     "r": (
-                        "#LB RM Kostensumme Anteil SBK4",
                         "#LB RM Kostensumme Anteil SBK6",
+                        "#LB RM Kostensumme Anteil SBK4",
                     ),
                 },
                 "tempr": {
@@ -255,10 +255,13 @@ def _pfline(commodity, pfid, part, ts_left, ts_right, *, recalc) -> PfLine:
             for name, subdict in tsnamedict.items():
                 if pfl := tsnamedict2pfline(subdict):
                     data[name] = pfl  # only add if relevant information.
-            return MultiPfLine(data)
+            return MultiPfLine(data) if data else 0.0
 
     # Get timeseries names and data, and construct pfline.
     return tsnamedict2pfline(_tsnamedict(commodity, pfid, part))
+
+
+","
 
 
 def offtakevolume(

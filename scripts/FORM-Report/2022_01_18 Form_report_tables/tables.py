@@ -8,8 +8,6 @@ from scipy import stats
 
 lb.belvis.auth_with_password("API-User-FRM", "boring!Apfelmexiko85hirsch")
 
-vola = 1.2  # /calyear
-
 
 def var(pfs: lb.PfState) -> pd.DataFrame:
     """Calculate value at risk due to open positions."""
@@ -33,14 +31,22 @@ def var(pfs: lb.PfState) -> pd.DataFrame:
     return pd.DataFrame(series)
 
 
-def big_df(pfs, freq) -> pd.DataFrame:
+def big_df(pfs: lb.PfState, freq) -> pd.DataFrame:
     """Create big dataframe with selected information."""
-    aggpfs = pfs.asfreq(freq)
+    # In total: 2 levels
+
     dfs = {}
+    dfs["mtm"] = (
+        (pfs.sourced.volume * (pfs.unsourcedprice - pfs.sourced.price))
+        .asfreq(freq)
+        .df("pr")
+    )
+    aggpfs = pfs.asfreq(freq)
     dfs["offtake"] = -1 * aggpfs.offtake.df("q")
     dfs["hedged"] = pd.DataFrame(
         {"fraction": aggpfs.sourcedfraction, "p": aggpfs.sourced.p}
     )
+    # market prices
     if pfs.index.freq in ["H", "15T"]:
         market = pfs.unsourcedprice.po(freq)
         dfs["current_market_offpeak"] = market["offpeak"][["p"]]
@@ -57,7 +63,7 @@ def write_to_excel(commodity, pfname, thisyear: bool = True):
     if thisyear:
         start, end, freq = "2022", "2023", "MS"
     else:
-        start, end, freq = "2022", "2025", "AS"
+        start, end, freq = "2022", "2026", "AS"
     pfs = lb.portfolios.pfstate(commodity, pfname, start, end)
 
     df = big_df(pfs, freq).tz_localize(None)
@@ -70,7 +76,9 @@ def write_to_excel(commodity, pfname, thisyear: bool = True):
 
 # %% GET DATA AND WRITE TO EXCEL
 
-writer = pd.ExcelWriter(f"state_on_{dt.date.today()}.xlsx", engine="xlsxwriter")
+vola = 0.5  # /calyear
+
+writer = pd.ExcelWriter(f"state_on_{dt.date.today()}b.xlsx", engine="xlsxwriter")
 
 write_to_excel("power", "B2C_HH_LEGACY", True)
 write_to_excel("power", "B2C_P2H_LEGACY", True)
@@ -85,3 +93,4 @@ write_to_excel("gas", "B2B", False)
 
 writer.save()
 writer.close()  # will give warning ('already closed') but still necessary to open in excel
+# %%

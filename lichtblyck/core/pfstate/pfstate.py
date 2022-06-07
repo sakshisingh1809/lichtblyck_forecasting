@@ -123,7 +123,8 @@ class PfState(NDFrameLike, PfStateText, PfStatePlot, OtherOutput):
 
     @property
     def unsourced(self) -> PfLine:
-        return -(self._offtakevolume + self._sourced.volume) * self._unsourcedprice
+        sourcedvolume = 0 if self._sourced is None else self._sourced.volume
+        return -(self._offtakevolume + sourcedvolume) * self._unsourcedprice
 
     @property
     def unsourcedprice(self) -> PfLine:

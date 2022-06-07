@@ -51,9 +51,10 @@ def make_pflines(offtakevolume, unsourcedprice, sourced) -> Iterable[PfLine]:
         sourced = PfLine(pd.DataFrame({"q": 0, "r": 0}, i))
 
     # Do checks on indices. Lengths may differ, but frequency should be equal.
-    indices = [
-        obj.index for obj in (offtakevolume, unsourcedprice, sourced) if obj is not None
-    ]
+    indices = []
+    for obj in (offtakevolume, unsourcedprice, sourced):
+        if not (isinstance(obj, int) or isinstance(obj, float) or obj is None):
+            indices.append(obj.index)
     if len(set([i.freq for i in indices])) != 1:
         raise ValueError("PfLines have unequal frequency; resample first.")
 

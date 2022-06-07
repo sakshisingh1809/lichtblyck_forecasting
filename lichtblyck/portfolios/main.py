@@ -45,6 +45,7 @@ POWER_ORIGINAL = {
         "offtake": {"100%": ("PK_Neu_WP",), "certain": ("PK_Neu_WP_SiM",)},
         "sourced": ("PK_Neu_WP",),
     },
+    # "B2B_other": {"offtake": ""},
 }
 
 # . For synthetic power portfolios (not found in Belvis):
@@ -160,6 +161,8 @@ def _pfstate_power(pfname: str, ts_left, ts_right, *, recalc) -> PfState:
         belvis.data.sourced("power", pfid, ts_left, ts_right, recalc=recalc)
         for pfid in pf_dic["sourced"]
     )
+    if sourced == 0:  # no sourcing has taken place yet
+        sourced = None
 
     # Unsourcedprice.
     unsourcedprice = belvis.data.unsourcedprice("power", ts_left, ts_right)

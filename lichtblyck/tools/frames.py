@@ -65,10 +65,10 @@ def set_ts_index(
                 return set_ts_index(fr, None, "rightB", tz)
         minutes = (fr.index[1] - fr.index[0]).seconds / 60
         if bound == "rightA":
-            fr.loc[fr.index[0] + pd.Timedelta(minutes=-minutes)] = np.nan
+            fr.loc[fr.index[0] - pd.Timedelta(minutes=minutes)] = np.nan
             fr = pd.concat([fr.iloc[-1:], fr.iloc[:-1]]).shift(-1).dropna()
         if bound == "rightB":
-            fr.index += pd.Timedelta(minutes=-minutes)
+            fr.index -= pd.Timedelta(minutes=minutes)
     else:
         raise ValueError("`bound` must be one of {'left' (default), 'right'}.")
     fr.index.name = "ts_left"

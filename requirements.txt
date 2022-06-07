@@ -10,3 +10,4 @@ pint-pandas
 tqdm
 jwt
 xlsxwriter
+portfolyo
