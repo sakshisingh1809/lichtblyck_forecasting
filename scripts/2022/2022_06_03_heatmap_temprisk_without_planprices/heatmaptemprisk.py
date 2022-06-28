@@ -32,7 +32,7 @@ elif pfname == "B2C_LEGACY":
 else:
     raise ValueError("unexpected pfname")
 
-#%%
+# %%
 
 ref = lb.portfolios.pfstate(commodity, pfname, "2022-06", "2023-04", recalc=False)
 ref = ref.add_sourced(ref.hedge_of_unsourced("MS"))  # fully hedge at today's prices
