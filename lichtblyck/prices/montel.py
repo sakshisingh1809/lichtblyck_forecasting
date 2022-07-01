@@ -17,15 +17,12 @@ PERIOD_TYPES = {"gas": ["a", "s", "q", "m", "d"], "power": ["a", "q", "m", "h"]}
 
 
 def periodtype_to_freq(period_type: str):
-    if period_type == "a":
-        return "AS"
-    elif period_type == "q":
-        return "QS"
-    elif period_type == "m":
-        return "MS"
-    raise ValueError(
-        f"Parameter ``period_type`` must be one of 'a', 's', 'q', 'm'; got {period_type}."
-    )
+    try:
+        return {"a": "AS", "q": "QS", "m": "MS"}[period_type]
+    except KeyError as e:
+        raise ValueError(
+            f"Parameter ``period_type`` must be one of 'a', 'q', 'm'; got {period_type}."
+        ) from e
 
 
 def _excel_gas(
