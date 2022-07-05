@@ -1,0 +1,36 @@
+parameters:
+  - name: stage
+    type: string
+  - name: branch
+    type: string
+
+
+stages:
+  - stage: PUBLISH_${{ upper(parameters.stage) }}_PACKAGE
+    displayName: Publish ${{ upper(parameters.stage) }} package to feed
+    condition: |
+      and(
+        succeeded(),
+        eq(variables['build.sourceBranch'], 'refs/heads/${{ parameters.branch }}')
+      )
+    jobs:
+      - job: build_and_publish_package
+        condition: |
+          and(
+            succeeded(),
+            eq(variables['build.sourceBranch'], 'refs/heads/${{ parameters.branch }}')
+          )
+        steps:
+          - script: |
+              python -m pip install --upgrade wheel twine
+            displayName: 'Install dependencies'
+          - script: |
+              python setup.py sdist bdist_wheel
+            displayName: 'Build package'
+          - task: TwineAuthenticate@1
+            displayName: 'Authenticate Twine'
+            inputs:
+              artifactFeed: FRM/FRM_packages
+          - script: |
+              python -m twine upload -r FRM_packages --config-file $(PYPIRC_PATH) dist/* --verbose
+            displayName: 'Deploy package to feed'
