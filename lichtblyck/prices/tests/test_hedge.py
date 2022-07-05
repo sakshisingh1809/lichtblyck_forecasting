@@ -91,7 +91,7 @@ def get_hedgeresults_short(start, freq, length, tz, bpo, aggfreq):
     if aggfreq is None:
         resultkey = lambda ts: None
     else:  # key is start of delivery period
-        resultkey = lambda ts: putils.ts_leftright(ts, aggfreq.lower()[0], 0)[0]
+        resultkey = lambda ts: putils.delivery_period(ts, aggfreq.lower()[0], 0)[0]
 
     result = {}
     duration = 0.25 if freq == "15T" else 1
@@ -143,7 +143,7 @@ def get_hedgeresults_long(start, freq, length, aggfreq):
     if aggfreq is None:
         resultkey = lambda ts: None
     else:  # key is start of delivery period
-        resultkey = lambda ts: putils.ts_leftright(ts, aggfreq.lower()[0], 0)[0]
+        resultkey = lambda ts: putils.delivery_period(ts, aggfreq.lower()[0], 0)[0]
 
     result = {}
     for ts, w, p, duration in zip(i, w_values, p_values, duration_values):

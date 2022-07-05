@@ -4,7 +4,7 @@ Hedge an offtake profile with a price profile.
 
 from typing import Tuple, Union, Iterable, Dict
 
-from .utils import ts_leftright, is_peak_hour
+from .utils import delivery_period, is_peak_hour
 from .convert import group_function
 from ..tools.frames import trim_frame
 import pandas as pd

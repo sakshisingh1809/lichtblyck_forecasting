@@ -144,11 +144,10 @@ def test_duration_bpo(left, right, tz, add_left, add_middle, add_right):
 def test_ts_leftright(ts_trade, period_type, period_start, tz, expected_left):
     ts_trade = pd.Timestamp(ts_trade, tz=tz)
     expected_left = pd.Timestamp(expected_left, tz=tz)
-    ts_deliv = utils.ts_leftright(ts_trade, period_type, period_start)
+    ts_deliv = utils.delivery_period(ts_trade, period_type, period_start)
     assert ts_deliv[0] == expected_left
     try:
         add = {"m": 1, "q": 3, "s": 6, "a": 12}[period_type]
         assert ts_deliv[1] == expected_left + pd.offsets.MonthBegin(add)
     except KeyError:
         assert ts_deliv[1] == expected_left + dt.timedelta(1)
-

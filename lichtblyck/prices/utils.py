@@ -132,7 +132,7 @@ def duration_bpo(
     )
 
 
-def ts_leftright(
+def delivery_period(
     ts_trade: Stamp, period_type: str = "m", period_start: int = 1
 ) -> Tuple[Stamp]:
     """
@@ -161,7 +161,7 @@ def ts_leftright(
         ts_left = ts_trade.floor("d") + pd.Timedelta(days=period_start)
         ts_right = ts_left + pd.Timedelta(days=1)
     elif period_type == "s":
-        ts_left, ts_right = ts_leftright(ts_trade, "q", period_start * 2 - 1)
+        ts_left, ts_right = delivery_period(ts_trade, "q", period_start * 2 - 1)
         nextq = pd.offsets.QuarterBegin(1, startingMonth=1)
         ts_right = ts_right + nextq  # make 6 months long
         if ts_left.month % 2 == 1:  # season must start on even month
