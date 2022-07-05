@@ -8,18 +8,10 @@ parameters:
 stages:
   - stage: PUBLISH_${{ upper(parameters.stage) }}_PACKAGE
     displayName: Publish ${{ upper(parameters.stage) }} package to feed
-    condition: |
-      and(
-        succeeded(),
-        eq(variables['build.sourceBranch'], 'refs/heads/${{ parameters.branch }}')
-      )
+    condition: eq(variables['build.sourceBranch'], 'refs/heads/${{ parameters.branch }}')
     jobs:
       - job: build_and_publish_package
-        condition: |
-          and(
-            succeeded(),
-            eq(variables['build.sourceBranch'], 'refs/heads/${{ parameters.branch }}')
-          )
+        condition: eq(variables['build.sourceBranch'], 'refs/heads/${{ parameters.branch }}')
         steps:
           - script: |
               python -m pip install --upgrade wheel twine
