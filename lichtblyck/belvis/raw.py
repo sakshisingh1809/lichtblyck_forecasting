@@ -18,8 +18,8 @@ import json
 
 
 _COMMOTEN = {
-    "power": "TESTPFMSTROM",
-    "gas": "TESTPFMGAS",
+    "power": "PFMSTROM",
+    "gas": "PFMGAS",
 }  # commodity: tenant dictionary
 
 
