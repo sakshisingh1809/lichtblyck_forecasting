@@ -42,7 +42,10 @@ POWER_ORIGINAL = [
 #   POWER_SYNTHETIC:
 #       pf-name: Iterable
 #   The iterable elements are pf-names in POWER_ORIGINAL
-POWER_SYNTHETIC = {}  # pf-name: (pf-names in POWER_ORIGINAL)
+POWER_SYNTHETIC = {
+    "P_B2C_P2H_FLEX": ["P_B2C_P2H_HP_FLEX", "P_B2C_P2H_NSH_FLEX"],
+    "P_B2C_P2H_FIX": ["P_B2C_P2H_HP_FIX", "P_B2C_P2H_NSH_FIX"],
+}  # pf-name: (pf-names in POWER_ORIGINAL)
 
 # . For original gas portfolios (as found in Belvis):
 #   GAS_ORIGINAL:
