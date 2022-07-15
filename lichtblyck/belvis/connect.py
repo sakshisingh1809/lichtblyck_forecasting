@@ -13,7 +13,7 @@ import requests
 
 class BelvisConnection(ABC):
 
-    _SERVER = "http://lbbelvis01:8040"
+    _SERVER = "http://lbbelvis01.lichtblick.de:8040"
 
     @classmethod
     def from_usrpwd(cls, tenant, usr, pwd):

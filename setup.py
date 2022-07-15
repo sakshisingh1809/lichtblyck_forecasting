@@ -13,7 +13,7 @@ from setuptools import find_packages
 
 setup(
     name="Lichtblyck",
-    version="0.1.dev04",
+    version="0.1.dev05",
     author="Ruud Wijtvliet",
     zip_safe=False,
     packages=find_packages(exclude=["tests"]),
