@@ -17,15 +17,12 @@ PERIOD_TYPES = {"gas": ["a", "s", "q", "m", "d"], "power": ["a", "q", "m", "h"]}
 
 
 def periodtype_to_freq(period_type: str):
-    if period_type == "a":
-        return "AS"
-    elif period_type == "q":
-        return "QS"
-    elif period_type == "m":
-        return "MS"
-    raise ValueError(
-        f"Parameter ``period_type`` must be one of 'a', 's', 'q', 'm'; got {period_type}."
-    )
+    try:
+        return {"a": "AS", "q": "QS", "m": "MS"}[period_type]
+    except KeyError as e:
+        raise ValueError(
+            f"Parameter ``period_type`` must be one of 'a', 'q', 'm'; got {period_type}."
+        ) from e
 
 
 def _excel_gas(
@@ -263,7 +260,7 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
 
     @functools.lru_cache(1500)
     def calc_deliv(ts):
-        return utils.ts_leftright(ts, period_type, period_start)
+        return utils.delivery_period(ts, period_type, period_start)
 
     df["ts_left"], df["ts_right"] = zip(*df.index.map(calc_deliv))
     df["anticipation"] = df["ts_left"] - df.index
@@ -344,7 +341,7 @@ def _gas_futures(
     # ...add some additional information...
     @functools.lru_cache
     def deliv_f(ts):
-        return utils.ts_leftright(ts, period_type, period_start)
+        return utils.delivery_period(ts, period_type, period_start)
 
     df["ts_left"], df["ts_right"] = zip(*df.index.map(deliv_f))
     df["anticipation"] = df["ts_left"] - df.index
