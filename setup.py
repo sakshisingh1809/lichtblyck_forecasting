@@ -13,9 +13,11 @@ from setuptools import find_packages
 
 setup(
     name="Lichtblyck",
-    version="0.1.dev02",
+    version="0.1.dev03",
+    author="Ruud Wijtvliet",
     zip_safe=False,
     packages=find_packages(exclude=["tests"]),
+    description="Analysing and manipulating timeseries related to power and gas offtake portfolios.",
     install_requires=[line.strip() for line in open("requirements.txt", "r")],
     python_requires=">=3.8",
     include_package_data=True,

@@ -17,7 +17,10 @@ import datetime as dt
 import json
 
 
-_COMMOTEN = {"power": "PFMSTROM", "gas": "PFMGAS"}  # commodity: tenant dictionary
+_COMMOTEN = {
+    "power": "PFMSTROM",
+    "gas": "PFMGAS",
+}  # commodity: tenant dictionary
 
 
 class _Cache:
@@ -162,7 +165,7 @@ def info(commodity: str, id: int) -> Dict:
 
 
 def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str]:
-    """Find portfolios by name.
+    """Find portfolios by name or id.
 
     Parameters
     ----------
@@ -170,8 +173,8 @@ def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str
     name : str
         Name of portfolio.
     strict : bool, optional (default: False)
-        If True, only returns portfolios if the name exactly matches. Otherwise, also
-        return if name partially matches. Always case insensitive.
+        If True, only returns portfolios if the name or pfid exactly matches. Otherwise,
+        also return if name partially matches. Always case insensitive.
 
     Returns
     -------
@@ -193,7 +196,7 @@ def find_pfids(commodity: str, name: str, strict: bool = False) -> Dict[str, str
     hits = {
         pfid: inf["name"]
         for pfid, inf in _source(commodity).pfscache.items()
-        if matchingname(inf["name"])
+        if matchingname(inf["name"]) or matchingname(pfid)
     }
 
     # Raise error if 0 found.
@@ -275,8 +278,8 @@ def find_tsids(
 
         # Filter on timeseries name.
         for tsid in tsids:
-            inf = info(tsid)
-            if matchingname(inf["timeseriesName"]):
+            inf = info(commodity, tsid)
+            if matchingname(inf["timeSeriesName"]):
                 hits[int(inf["id"])] = (inf["instanceToken"], inf["timeSeriesName"])
 
     return hits
