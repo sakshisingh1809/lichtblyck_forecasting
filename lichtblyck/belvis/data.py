@@ -156,11 +156,11 @@ def pfstate(
     -------
     PfState
     """
-    offtakevolume = offtakevolume(commodity, pfid, ts_left, ts_right)
-    unsourcedprice = unsourcedprice(commodity, ts_left, ts_right)
-    sourced = sourced(commodity, pfid, ts_left, ts_right)
+    o = offtakevolume(commodity, pfid, ts_left, ts_right)
+    u = unsourcedprice(commodity, ts_left, ts_right)
+    s = sourced(commodity, pfid, ts_left, ts_right)
 
-    return pf.PfState(offtakevolume, unsourcedprice, sourced)
+    return pf.PfState(o, u, s)
 
 
 create_tenants()

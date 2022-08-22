@@ -2,7 +2,6 @@ from .core.pfline import PfLine, SinglePfLine, MultiPfLine
 from .core.pfstate import PfState
 from .core.mixins.plot import plot_pfstates
 from .core.develop import dev
-from . import portfolios
 
 from .core import basics  # extend functionalty of pandas
 
