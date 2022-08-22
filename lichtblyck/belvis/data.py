@@ -1,3 +1,5 @@
+"""Module to get data from Belvis."""
+
 import datetime as dt
 import os
 import pathlib
@@ -79,7 +81,7 @@ def offtakevolume(
         Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
-        Start and end of delivery period.
+        Start and end of delivery period. Left-closed, right-open.
 
     Returns
     -------
@@ -102,9 +104,8 @@ def sourced(
     pfid : str
         Belvis portfolio abbreviation (e.g. 'LUD' or 'LUD_SIM').
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
-        Start of delivery period.
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
-        End of delivery period.
+        Start and end of delivery period. Left-closed, right-open.
 
     Returns
     -------
@@ -125,7 +126,7 @@ def unsourcedprice(
     commodity : {'power', 'gas'}
     ts_left : Union[str, dt.datetime, pd.Timestamp], optional
     ts_right : Union[str, dt.datetime, pd.Timestamp], optional
-        Start and end of delivery period.
+        Start and end of delivery period. Left-closed, right-open.
 
     Returns
     -------
@@ -133,6 +134,33 @@ def unsourcedprice(
     """
     priceid = {"power": "qhpfc", "gas": "dpfc"}[commodity]
     return tenants[commodity].price_pfl(priceid, ts_left, ts_right)
+
+
+def pfstate(
+    commodity: str,
+    pfid: str,
+    ts_left: Union[str, dt.datetime, pd.Timestamp] = None,
+    ts_right: Union[str, dt.datetime, pd.Timestamp] = None,
+) -> pf.PfState:
+    """Get sourced volume and price for a certain portfolio.
+
+    Parameters
+    ----------
+    commodity : {'power', 'gas'}
+    pfid : str
+        Id (= short name) of portfolio.
+    ts_left, ts_right : Union[str, dt.datetime, pd.Timestamp], optional
+        Start and end of delivery period. Left-closed, right-open.
+
+    Returns
+    -------
+    PfState
+    """
+    offtakevolume = offtakevolume(commodity, pfid, ts_left, ts_right)
+    unsourcedprice = unsourcedprice(commodity, ts_left, ts_right)
+    sourced = sourced(commodity, pfid, ts_left, ts_right)
+
+    return pf.PfState(offtakevolume, unsourcedprice, sourced)
 
 
 create_tenants()
