@@ -11,3 +11,4 @@ tqdm
 jwt
 xlsxwriter
 portfolyo
+belvys
