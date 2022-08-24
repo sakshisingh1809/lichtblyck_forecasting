@@ -18,6 +18,31 @@ def gas_aftercare(s: pd.Series, tsid: int, *args) -> pd.Series:
     return s.tz_convert("+01:00").tz_localize(None) if tsid == 23346575 else s
 
 
+# def precare_factory(tsid: int, pfid: str, tsname: str) -> belvys.Precare:
+
+#     if tsid == 23346575:
+
+#         def precare(ts_left: pd.Timestamp, ts_right: pd.Timestamp):
+#             return ts_left, ts_right, "inclusive", "exclusive"
+
+#         return precare
+
+#     return belvys.precare_store.precare_gas_hourly
+
+
+# def aftercare_factory(tsid: int, pfid: str, tsname: str) -> belvys.Aftercare:
+
+#     if tsid == 23346575:
+
+#         def aftercare(s: pd.Series):
+#             s = s.tz_convert("+01:00").tz_localize(None)
+#             return pf.standardize(s, "aware", "left", "Europe/Berlin")
+
+#         return aftercare
+
+#     return belvys.aftercare_store.aftercare_gas_hourly
+
+
 def create_tenants() -> None:
     """Create tenants"""
     tenant_info = {
@@ -133,6 +158,7 @@ def unsourcedprice(
     PfLine
     """
     priceid = {"power": "qhpfc", "gas": "dpfc"}[commodity]
+    ts_left = pd.Timestamp(ts_left) + dt.timedelta(days=-1)  # workaround gas
     return tenants[commodity].price_pfl(priceid, ts_left, ts_right)
 
 
