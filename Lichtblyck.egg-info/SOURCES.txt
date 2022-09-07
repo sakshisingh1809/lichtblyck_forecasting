@@ -1,7 +1,0 @@
-README.md
-setup.py
-Lichtblyck.egg-info/PKG-INFO
-Lichtblyck.egg-info/SOURCES.txt
-Lichtblyck.egg-info/dependency_links.txt
-Lichtblyck.egg-info/top_level.txt
-lichtblyck/__init__.py

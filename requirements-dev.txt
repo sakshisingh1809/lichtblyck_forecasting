@@ -6,6 +6,8 @@ flake8
 pytest
 sphinx
 black
+twine
+wheel
 # These are dependencies of various sphinx extensions for documentation.
 ipython
 matplotlib

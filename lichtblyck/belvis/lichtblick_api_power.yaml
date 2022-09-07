@@ -1,0 +1,935 @@
+server: http://lbbelvis01:8040
+tenant: PFMSTROM
+cache:
+  Deutschland:
+    '#LB Spot_Mix_15min (real)': 39743724
+    '#LB Spot_Mix_1h (real)': 39743734
+    (1) QHPFC zu HPFC [ 15min->1h]: 23585702
+    (2) Ausrollen der Werte auf 15min [1h->15min]: 23589517
+    AE-Preis_15min: 42765455
+    AE-Preis_Amprion_Unterspeisung_15min: 43358046
+    AE-Preis_Amprion_Überspeisung_15min: 43358042
+    DayAhead_Referenzpreiszeitreihe_15min: 16897451
+    EDG_Power_PK_Heizstrom_Nord_Tracker_Fixed THP: 43642593
+    EDG_Power_PK_Heizstrom_Nord_Tracker_Fixed THP_Monatspreise: 43673921
+    EDG_Power_PK_Heizstrom_Sued_Tracker_Fixed THP: 43642597
+    EDG_Power_PK_Heizstrom_Sued_Tracker_Fixed THP_Monatspreise: 43674088
+    Historische Preise: 41180952
+    Intraday_EPEX_15min: 42729719
+    Intraday_EPEX_15min_ID1-Index: 43587025
+    Intraday_EPEX_1h_ECG_MPM_Kauf: 18380175
+    Intraday_EPEX_1h_ECG_MPM_Verkauf: 18505592
+    Intraday_EPEX_1h_ID1-Index: 43587046
+    Intraday_EPEX_1h_URB_HBK_Kauf: 18382753
+    Intraday_EPEX_1h_URB_HBK_Verkauf: 18505651
+    Intraday_EPEX_1h_URB_MPM_Kauf: 18380698
+    Intraday_EPEX_1h_URB_MPM_Verkauf: 18505627
+    Intraday_LUD_Ompex_15min_Kauf: 43820913
+    Intraday_LUD_Ompex_15min_Verkauf: 43821362
+    Intraday_Ompex_1h: 42729725
+    Intraday_Referenzpreiszeitreihe_15min: 19592882
+    Intraday_Referenzpreiszeitreihe_Kauf_15min: 23309383
+    Intraday_Referenzpreiszeitreihe_Verkauf_15min: 23309396
+    Mix_EXAA_EPEX_Spot_1h (bereinigt): 42616067
+    Mix_EXAA_EPEX_Spot_1h (bereinigt, Fortschreibung): 42616110
+    PFC2022_01_15_15Min: 44789404
+    QHPFC: 40821185
+    Spot (Mix 15min) / QHPFC (aktuell): 42897963
+    Spot_EPEX_15min: 42728418
+    Spot_EPEX_15min (bereinigt): 17577126
+    Spot_EPEX_15min_Fortschreibung (bereinigt): 17577136
+    Spot_EPEX_1h: 2656516
+    Spot_EPEX_1h (bereinigt): 41188287
+    Spot_EPEX_1h_DE: 42728345
+    Spot_EPEX_1h_DEAT: 42728340
+    Spot_EPEX_1h_Fortschreibung (bereinigt): 41188381
+    Spot_EPEX_1h_Fortschreibung (bereinigt) <-LÖSCHEN: 15113506
+    Spot_EXAA_15min: 42728425
+    Spot_EXAA_1h: 42728407
+    TEST_EPEX_Fortschreibung: 43894969
+    Test_HPFC_Stunde: 43001074
+    aktuelle HFC: 42616122
+    aktuelle QHPFC - Zwischenergebnis: 30640007
+  P_B2B:
+    '#LB CPM Sourced forward Cost month': 44742744
+    '#LB CPM Sourced forward Marketvalue month': 44742790
+    '#LB CPM Sourced forward MtM month': 44742794
+    '#LB EET Contracted offtake Marketvalue': 44761286
+    '#LB EET Contracted offtake Volume': 44738164
+    '#LB EET Open position Contracted offtake Marketvalue': 44761290
+    '#LB EET Open position Contracted offtake Volume': 44761277
+    '#LB EET Price exposed offtake Volume': 44738169
+    '#LB General Current offtake Volume': 44738110
+    '#LB General Expected offtake Marketvalue': 44738139
+    '#LB General Expected offtake Volume': 44738115
+    '#LB General Open position Expected offtake Marketvalue': 44738141
+    '#LB General Open position Expected offtake Volume': 44738120
+    '#LB General Sourced forward Cost': 44738148
+    '#LB General Sourced forward Marketvalue': 44738153
+    '#LB General Sourced forward MtM': 44738155
+    '#LB General Sourced forward Volume': 44738124
+    '#LB General Sourced spot Cost': 44738157
+    '#LB General Sourced spot Volume': 44738129
+    '#LB General Sourced total Cost': 44738143
+    '#LB General Sourced total Volume': 44738134
+    '2022_07_19 #LB General Expected offtake Volume': 44771330
+    '2022_07_19 #LB General Sourced total Cost': 44771417
+    '2022_07_19 #LB General Sourced total Volume': 44771332
+    '2022_08_01 #LB General Expected offtake Volume': 44779522
+    '2022_08_01 #LB General Sourced total Cost': 44779592
+    '2022_08_01 #LB General Sourced total Volume': 44779524
+    '2022_08_15 #LB General Expected offtake Volume': 44788598
+    '2022_08_15 #LB General Sourced total Cost': 44788668
+    '2022_08_15 #LB General Sourced total Volume': 44788600
+    Saldo aller Geschäfte: 44716206
+    Saldo aller Geschäfte +UB: 44716212
+    Saldo aller Käufe: 44716218
+    Saldo aller Käufe+UB: 44716224
+    Saldo aller Verkäufe: 44716230
+    Saldo aller Verkäufe+UB: 44716236
+    Saldo best. realer G. +UB: 44716208
+    Saldo best. realer Gesch.: 44716202
+    Saldo best. realer Käufe: 44716214
+    Saldo best. realer Käufe+UB: 44716220
+    Saldo best. realer Verkäufe: 44716226
+    Saldo best. realer Verkäufe+UB: 44716232
+    Saldo realer Geschäfte: 44716204
+    Saldo realer Geschäfte +UB: 44716210
+    Saldo realer Käufe: 44716216
+    Saldo realer Käufe+UB: 44716222
+    Saldo realer Verkäufe: 44716228
+    Saldo realer Verkäufe+UB: 44716234
+  P_B2B_BTB:
+    '#LB CPM Sourced forward Cost month': 44742842
+    '#LB CPM Sourced forward Marketvalue month': 44742838
+    '#LB CPM Sourced forward MtM month': 44742846
+    '#LB EET Contracted offtake Marketvalue': 44761395
+    '#LB EET Contracted offtake Volume': 44738292
+    '#LB EET Open position Contracted offtake Marketvalue': 44761399
+    '#LB EET Open position Contracted offtake Volume': 44761386
+    '#LB EET Price exposed offtake Volume': 44738297
+    '#LB General Current offtake Volume': 44738238
+    '#LB General Expected offtake Marketvalue': 44738267
+    '#LB General Expected offtake Volume': 44738243
+    '#LB General Open position Expected offtake Marketvalue': 44738269
+    '#LB General Open position Expected offtake Volume': 44738248
+    '#LB General Sourced forward Cost': 44738276
+    '#LB General Sourced forward Marketvalue': 44738281
+    '#LB General Sourced forward MtM': 44738283
+    '#LB General Sourced forward Volume': 44738252
+    '#LB General Sourced spot Cost': 44738285
+    '#LB General Sourced spot Volume': 44738257
+    '#LB General Sourced total Cost': 44738271
+    '#LB General Sourced total Volume': 44738262
+    '2022_07_19 #LB General Expected offtake Volume': 44771335
+    '2022_07_19 #LB General Sourced total Cost': 44771420
+    '2022_07_19 #LB General Sourced total Volume': 44771337
+    '2022_08_01 #LB General Expected offtake Volume': 44779526
+    '2022_08_01 #LB General Sourced total Cost': 44779594
+    '2022_08_01 #LB General Sourced total Volume': 44779528
+    '2022_08_15 #LB General Expected offtake Volume': 44788602
+    '2022_08_15 #LB General Sourced total Cost': 44788670
+    '2022_08_15 #LB General Sourced total Volume': 44788604
+    Saldo aller Geschäfte: 44716541
+    Saldo aller Geschäfte +UB: 44716547
+    Saldo aller Käufe: 44716553
+    Saldo aller Käufe+UB: 44716559
+    Saldo aller Verkäufe: 44716565
+    Saldo aller Verkäufe+UB: 44716571
+    Saldo best. realer G. +UB: 44716543
+    Saldo best. realer Gesch.: 44716537
+    Saldo best. realer Käufe: 44716549
+    Saldo best. realer Käufe+UB: 44716555
+    Saldo best. realer Verkäufe: 44716561
+    Saldo best. realer Verkäufe+UB: 44716567
+    Saldo realer Geschäfte: 44716539
+    Saldo realer Geschäfte +UB: 44716545
+    Saldo realer Käufe: 44716551
+    Saldo realer Käufe+UB: 44716557
+    Saldo realer Verkäufe: 44716563
+    Saldo realer Verkäufe+UB: 44716569
+  P_B2B_EXT:
+    '#LB CPM Sourced forward Cost month': 44742946
+    '#LB CPM Sourced forward Marketvalue month': 44742942
+    '#LB CPM Sourced forward MtM month': 44742950
+    '#LB EET Contracted offtake Marketvalue': 44761449
+    '#LB EET Contracted offtake Volume': 44738356
+    '#LB EET Open position Contracted offtake Marketvalue': 44761453
+    '#LB EET Open position Contracted offtake Volume': 44761440
+    '#LB EET Price exposed offtake Volume': 44738361
+    '#LB General Current offtake Volume': 44738302
+    '#LB General Expected offtake Marketvalue': 44738331
+    '#LB General Expected offtake Volume': 44738307
+    '#LB General Open position Expected offtake Marketvalue': 44738333
+    '#LB General Open position Expected offtake Volume': 44738312
+    '#LB General Sourced forward Cost': 44738340
+    '#LB General Sourced forward Marketvalue': 44738345
+    '#LB General Sourced forward MtM': 44738347
+    '#LB General Sourced forward Volume': 44738316
+    '#LB General Sourced spot Cost': 44738349
+    '#LB General Sourced spot Volume': 44738321
+    '#LB General Sourced total Cost': 44738335
+    '#LB General Sourced total Volume': 44738326
+    '2022_07_19 #LB General Expected offtake Volume': 44771345
+    '2022_07_19 #LB General Sourced total Cost': 44771427
+    '2022_07_19 #LB General Sourced total Volume': 44771347
+    '2022_08_01 #LB General Expected offtake Volume': 44779534
+    '2022_08_01 #LB General Sourced total Cost': 44779598
+    '2022_08_01 #LB General Sourced total Volume': 44779536
+    '2022_08_15 #LB General Expected offtake Volume': 44788610
+    '2022_08_15 #LB General Sourced total Cost': 44788674
+    '2022_08_15 #LB General Sourced total Volume': 44788612
+    Saldo aller Geschäfte: 44716652
+    Saldo aller Geschäfte +UB: 44716658
+    Saldo aller Käufe: 44716664
+    Saldo aller Käufe+UB: 44716670
+    Saldo aller Verkäufe: 44716676
+    Saldo aller Verkäufe+UB: 44716682
+    Saldo best. realer G. +UB: 44716654
+    Saldo best. realer Gesch.: 44716648
+    Saldo best. realer Käufe: 44716660
+    Saldo best. realer Käufe+UB: 44716666
+    Saldo best. realer Verkäufe: 44716672
+    Saldo best. realer Verkäufe+UB: 44716678
+    Saldo realer Geschäfte: 44716650
+    Saldo realer Geschäfte +UB: 44716656
+    Saldo realer Käufe: 44716662
+    Saldo realer Käufe+UB: 44716668
+    Saldo realer Verkäufe: 44716674
+    Saldo realer Verkäufe+UB: 44716680
+  P_B2B_SPOT:
+    '#LB CPM Sourced forward Cost month': 44742894
+    '#LB CPM Sourced forward Marketvalue month': 44742890
+    '#LB CPM Sourced forward MtM month': 44742898
+    '#LB EET Contracted offtake Marketvalue': 44761341
+    '#LB EET Contracted offtake Volume': 44738228
+    '#LB EET Open position Contracted offtake Marketvalue': 44761345
+    '#LB EET Open position Contracted offtake Volume': 44761332
+    '#LB EET Price exposed offtake Volume': 44738233
+    '#LB General Current offtake Volume': 44738174
+    '#LB General Expected offtake Marketvalue': 44738203
+    '#LB General Expected offtake Volume': 44738179
+    '#LB General Open position Expected offtake Marketvalue': 44738205
+    '#LB General Open position Expected offtake Volume': 44738184
+    '#LB General Sourced forward Cost': 44738212
+    '#LB General Sourced forward Marketvalue': 44738217
+    '#LB General Sourced forward MtM': 44738219
+    '#LB General Sourced forward Volume': 44738188
+    '#LB General Sourced spot Cost': 44738221
+    '#LB General Sourced spot Volume': 44738193
+    '#LB General Sourced total Cost': 44738207
+    '#LB General Sourced total Volume': 44738198
+    '2022_07_19 #LB General Expected offtake Volume': 44771340
+    '2022_07_19 #LB General Sourced total Cost': 44771424
+    '2022_07_19 #LB General Sourced total Volume': 44771342
+    '2022_08_01 #LB General Expected offtake Volume': 44779530
+    '2022_08_01 #LB General Sourced total Cost': 44779596
+    '2022_08_01 #LB General Sourced total Volume': 44779532
+    '2022_08_15 #LB General Expected offtake Volume': 44788606
+    '2022_08_15 #LB General Sourced total Cost': 44788672
+    '2022_08_15 #LB General Sourced total Volume': 44788608
+    Saldo aller Geschäfte: 44716763
+    Saldo aller Geschäfte +UB: 44716769
+    Saldo aller Käufe: 44716775
+    Saldo aller Käufe+UB: 44716781
+    Saldo aller Verkäufe: 44716787
+    Saldo aller Verkäufe+UB: 44716793
+    Saldo best. realer G. +UB: 44716765
+    Saldo best. realer Gesch.: 44716759
+    Saldo best. realer Käufe: 44716771
+    Saldo best. realer Käufe+UB: 44716777
+    Saldo best. realer Verkäufe: 44716783
+    Saldo best. realer Verkäufe+UB: 44716789
+    Saldo realer Geschäfte: 44716761
+    Saldo realer Geschäfte +UB: 44716767
+    Saldo realer Käufe: 44716773
+    Saldo realer Käufe+UB: 44716779
+    Saldo realer Verkäufe: 44716785
+    Saldo realer Verkäufe+UB: 44716791
+  P_B2B_STR:
+    '#LB CPM Sourced forward Cost month': 44742998
+    '#LB CPM Sourced forward Marketvalue month': 44742994
+    '#LB CPM Sourced forward MtM month': 44743002
+    '#LB EET Contracted offtake Marketvalue': 44761503
+    '#LB EET Contracted offtake Volume': 44738420
+    '#LB EET Open position Contracted offtake Marketvalue': 44761507
+    '#LB EET Open position Contracted offtake Volume': 44761494
+    '#LB EET Price exposed offtake Volume': 44738425
+    '#LB General Current offtake Volume': 44738366
+    '#LB General Expected offtake Marketvalue': 44738395
+    '#LB General Expected offtake Volume': 44738371
+    '#LB General Open position Expected offtake Marketvalue': 44738397
+    '#LB General Open position Expected offtake Volume': 44738376
+    '#LB General Sourced forward Cost': 44738404
+    '#LB General Sourced forward Marketvalue': 44738409
+    '#LB General Sourced forward MtM': 44738411
+    '#LB General Sourced forward Volume': 44738380
+    '#LB General Sourced spot Cost': 44738413
+    '#LB General Sourced spot Volume': 44738385
+    '#LB General Sourced total Cost': 44738399
+    '#LB General Sourced total Volume': 44738390
+    '2022_07_19 #LB General Expected offtake Volume': 44771350
+    '2022_07_19 #LB General Sourced total Cost': 44771430
+    '2022_07_19 #LB General Sourced total Volume': 44771352
+    '2022_08_01 #LB General Expected offtake Volume': 44779538
+    '2022_08_01 #LB General Sourced total Cost': 44779600
+    '2022_08_01 #LB General Sourced total Volume': 44779540
+    '2022_08_15 #LB General Expected offtake Volume': 44788614
+    '2022_08_15 #LB General Sourced total Cost': 44788676
+    '2022_08_15 #LB General Sourced total Volume': 44788616
+    'HIST #LB General Sourced total Cost': 44776535
+    Saldo aller Geschäfte: 44716874
+    Saldo aller Geschäfte +UB: 44716880
+    Saldo aller Käufe: 44716886
+    Saldo aller Käufe+UB: 44716892
+    Saldo aller Verkäufe: 44716898
+    Saldo aller Verkäufe+UB: 44716904
+    Saldo best. realer G. +UB: 44716876
+    Saldo best. realer Gesch.: 44716870
+    Saldo best. realer Käufe: 44716882
+    Saldo best. realer Käufe+UB: 44716888
+    Saldo best. realer Verkäufe: 44716894
+    Saldo best. realer Verkäufe+UB: 44716900
+    Saldo realer Geschäfte: 44716872
+    Saldo realer Geschäfte +UB: 44716878
+    Saldo realer Käufe: 44716884
+    Saldo realer Käufe+UB: 44716890
+    Saldo realer Verkäufe: 44716896
+    Saldo realer Verkäufe+UB: 44716902
+  P_B2C:
+    '#LB CPM Sourced forward Cost month': 44743102
+    '#LB CPM Sourced forward Marketvalue month': 44743098
+    '#LB CPM Sourced forward MtM month': 44743106
+    '#LB EET Contracted offtake Marketvalue': 44761557
+    '#LB EET Contracted offtake Volume': 44738484
+    '#LB EET Open position Contracted offtake Marketvalue': 44761561
+    '#LB EET Open position Contracted offtake Volume': 44761548
+    '#LB EET Price exposed offtake Volume': 44738489
+    '#LB General Current offtake Volume': 44738430
+    '#LB General Expected offtake Marketvalue': 44738459
+    '#LB General Expected offtake Volume': 44738435
+    '#LB General Open position Expected offtake Marketvalue': 44738461
+    '#LB General Open position Expected offtake Volume': 44738440
+    '#LB General Sourced forward Cost': 44738468
+    '#LB General Sourced forward Marketvalue': 44738473
+    '#LB General Sourced forward MtM': 44738475
+    '#LB General Sourced forward Volume': 44738444
+    '#LB General Sourced spot Cost': 44738477
+    '#LB General Sourced spot Volume': 44738449
+    '#LB General Sourced total Cost': 44738463
+    '#LB General Sourced total Volume': 44738454
+    '2022_07_19 #LB General Expected offtake Volume': 44771355
+    '2022_07_19 #LB General Sourced total Cost': 44771433
+    '2022_07_19 #LB General Sourced total Volume': 44771357
+    '2022_08_01 #LB General Expected offtake Volume': 44779542
+    '2022_08_01 #LB General Sourced total Cost': 44779602
+    '2022_08_01 #LB General Sourced total Volume': 44779544
+    '2022_08_15 #LB General Expected offtake Volume': 44788618
+    '2022_08_15 #LB General Sourced total Cost': 44788678
+    '2022_08_15 #LB General Sourced total Volume': 44788620
+    Saldo aller Geschäfte: 44716095
+    Saldo aller Geschäfte +UB: 44716101
+    Saldo aller Käufe: 44716107
+    Saldo aller Käufe+UB: 44716113
+    Saldo aller Verkäufe: 44716119
+    Saldo aller Verkäufe+UB: 44716125
+    Saldo best. realer G. +UB: 44716097
+    Saldo best. realer Gesch.: 44716091
+    Saldo best. realer Käufe: 44716103
+    Saldo best. realer Käufe+UB: 44716109
+    Saldo best. realer Verkäufe: 44716115
+    Saldo best. realer Verkäufe+UB: 44716121
+    Saldo realer Geschäfte: 44716093
+    Saldo realer Geschäfte +UB: 44716099
+    Saldo realer Käufe: 44716105
+    Saldo realer Käufe+UB: 44716111
+    Saldo realer Verkäufe: 44716117
+    Saldo realer Verkäufe+UB: 44716123
+  P_B2C_HH:
+    '#LB CPM Sourced forward Cost month': 44743154
+    '#LB CPM Sourced forward Marketvalue month': 44743150
+    '#LB CPM Sourced forward MtM month': 44743158
+    '#LB EET Contracted offtake Marketvalue': 44761613
+    '#LB EET Contracted offtake Volume': 44738548
+    '#LB EET Open position Contracted offtake Marketvalue': 44761617
+    '#LB EET Open position Contracted offtake Volume': 44761604
+    '#LB EET Price exposed offtake Volume': 44738553
+    '#LB General Current offtake Volume': 44738494
+    '#LB General Expected offtake Marketvalue': 44738523
+    '#LB General Expected offtake Volume': 44738499
+    '#LB General Open position Expected offtake Marketvalue': 44738525
+    '#LB General Open position Expected offtake Volume': 44738504
+    '#LB General Sourced forward Cost': 44738532
+    '#LB General Sourced forward Marketvalue': 44738537
+    '#LB General Sourced forward MtM': 44738539
+    '#LB General Sourced forward Volume': 44738508
+    '#LB General Sourced spot Cost': 44738541
+    '#LB General Sourced spot Volume': 44738513
+    '#LB General Sourced total Cost': 44738527
+    '#LB General Sourced total Volume': 44738518
+    '2022_07_19 #LB General Expected offtake Volume': 44771360
+    '2022_07_19 #LB General Sourced total Cost': 44771436
+    '2022_07_19 #LB General Sourced total Volume': 44771362
+    '2022_08_01 #LB General Expected offtake Volume': 44779546
+    '2022_08_01 #LB General Sourced total Cost': 44779604
+    '2022_08_01 #LB General Sourced total Volume': 44779548
+    '2022_08_15 #LB General Expected offtake Volume': 44788622
+    '2022_08_15 #LB General Sourced total Cost': 44788680
+    '2022_08_15 #LB General Sourced total Volume': 44788624
+    Saldo aller Geschäfte: 44716319
+    Saldo aller Geschäfte +UB: 44716325
+    Saldo aller Käufe: 44716331
+    Saldo aller Käufe+UB: 44716337
+    Saldo aller Verkäufe: 44716343
+    Saldo aller Verkäufe+UB: 44716349
+    Saldo best. realer G. +UB: 44716321
+    Saldo best. realer Gesch.: 44716315
+    Saldo best. realer Käufe: 44716327
+    Saldo best. realer Käufe+UB: 44716333
+    Saldo best. realer Verkäufe: 44716339
+    Saldo best. realer Verkäufe+UB: 44716345
+    Saldo realer Geschäfte: 44716317
+    Saldo realer Geschäfte +UB: 44716323
+    Saldo realer Käufe: 44716329
+    Saldo realer Käufe+UB: 44716335
+    Saldo realer Verkäufe: 44716341
+    Saldo realer Verkäufe+UB: 44716347
+  P_B2C_HH_FIX:
+    '#LB CPM Sourced forward Cost month': 44743206
+    '#LB CPM Sourced forward Marketvalue month': 44743202
+    '#LB CPM Sourced forward MtM month': 44743210
+    '#LB EET Contracted offtake Marketvalue': 44761667
+    '#LB EET Contracted offtake Volume': 44738612
+    '#LB EET Open position Contracted offtake Marketvalue': 44761671
+    '#LB EET Open position Contracted offtake Volume': 44761658
+    '#LB EET Price exposed offtake Volume': 44738617
+    '#LB General Current offtake Volume': 44738558
+    '#LB General Expected offtake Marketvalue': 44738587
+    '#LB General Expected offtake Volume': 44738563
+    '#LB General Open position Expected offtake Marketvalue': 44738589
+    '#LB General Open position Expected offtake Volume': 44738568
+    '#LB General Sourced forward Cost': 44738596
+    '#LB General Sourced forward Marketvalue': 44738601
+    '#LB General Sourced forward MtM': 44738603
+    '#LB General Sourced forward Volume': 44738572
+    '#LB General Sourced spot Cost': 44738605
+    '#LB General Sourced spot Volume': 44738577
+    '#LB General Sourced total Cost': 44738591
+    '#LB General Sourced total Volume': 44738582
+    '2022_07_19 #LB General Expected offtake Volume': 44771365
+    '2022_07_19 #LB General Sourced total Cost': 44771439
+    '2022_07_19 #LB General Sourced total Volume': 44771367
+    '2022_08_01 #LB General Expected offtake Volume': 44779550
+    '2022_08_01 #LB General Sourced total Cost': 44779606
+    '2022_08_01 #LB General Sourced total Volume': 44779552
+    '2022_08_15 #LB General Expected offtake Volume': 44788626
+    '2022_08_15 #LB General Sourced total Cost': 44788682
+    '2022_08_15 #LB General Sourced total Volume': 44788628
+    Saldo aller Geschäfte: 44717097
+    Saldo aller Geschäfte +UB: 44717103
+    Saldo aller Käufe: 44717109
+    Saldo aller Käufe+UB: 44717115
+    Saldo aller Verkäufe: 44717121
+    Saldo aller Verkäufe+UB: 44717127
+    Saldo best. realer G. +UB: 44717099
+    Saldo best. realer Gesch.: 44717093
+    Saldo best. realer Käufe: 44717105
+    Saldo best. realer Käufe+UB: 44717111
+    Saldo best. realer Verkäufe: 44717117
+    Saldo best. realer Verkäufe+UB: 44717123
+    Saldo realer Geschäfte: 44717095
+    Saldo realer Geschäfte +UB: 44717101
+    Saldo realer Käufe: 44717107
+    Saldo realer Käufe+UB: 44717113
+    Saldo realer Verkäufe: 44717119
+    Saldo realer Verkäufe+UB: 44717125
+  P_B2C_HH_FLEX:
+    '#LB CPM Sourced forward Cost month': 44743258
+    '#LB CPM Sourced forward Marketvalue month': 44743254
+    '#LB CPM Sourced forward MtM month': 44743262
+    '#LB EET Contracted offtake Marketvalue': 44761722
+    '#LB EET Contracted offtake Volume': 44738676
+    '#LB EET Open position Contracted offtake Marketvalue': 44761726
+    '#LB EET Open position Contracted offtake Volume': 44761713
+    '#LB EET Price exposed offtake Volume': 44738681
+    '#LB General Current offtake Volume': 44738622
+    '#LB General Expected offtake Marketvalue': 44738651
+    '#LB General Expected offtake Volume': 44738627
+    '#LB General Open position Expected offtake Marketvalue': 44738653
+    '#LB General Open position Expected offtake Volume': 44738632
+    '#LB General Sourced forward Cost': 44738660
+    '#LB General Sourced forward Marketvalue': 44738665
+    '#LB General Sourced forward MtM': 44738667
+    '#LB General Sourced forward Volume': 44738636
+    '#LB General Sourced spot Cost': 44738669
+    '#LB General Sourced spot Volume': 44738641
+    '#LB General Sourced total Cost': 44738655
+    '#LB General Sourced total Volume': 44738646
+    '2022_07_19 #LB General Expected offtake Volume': 44771370
+    '2022_07_19 #LB General Sourced total Cost': 44771444
+    '2022_07_19 #LB General Sourced total Volume': 44771372
+    '2022_08_01 #LB General Expected offtake Volume': 44779554
+    '2022_08_01 #LB General Sourced total Cost': 44779611
+    '2022_08_01 #LB General Sourced total Volume': 44779556
+    '2022_08_15 #LB General Expected offtake Volume': 44788630
+    '2022_08_15 #LB General Sourced total Cost': 44788686
+    '2022_08_15 #LB General Sourced total Volume': 44788632
+    Saldo aller Geschäfte: 44716986
+    Saldo aller Geschäfte +UB: 44716992
+    Saldo aller Käufe: 44716998
+    Saldo aller Käufe+UB: 44717004
+    Saldo aller Verkäufe: 44717010
+    Saldo aller Verkäufe+UB: 44717016
+    Saldo best. realer G. +UB: 44716988
+    Saldo best. realer Gesch.: 44716982
+    Saldo best. realer Käufe: 44716994
+    Saldo best. realer Käufe+UB: 44717000
+    Saldo best. realer Verkäufe: 44717006
+    Saldo best. realer Verkäufe+UB: 44717012
+    Saldo realer Geschäfte: 44716984
+    Saldo realer Geschäfte +UB: 44716990
+    Saldo realer Käufe: 44716996
+    Saldo realer Käufe+UB: 44717002
+    Saldo realer Verkäufe: 44717008
+    Saldo realer Verkäufe+UB: 44717014
+  P_B2C_HH_SPOT:
+    '#LB CPM Sourced forward Cost month': 44743310
+    '#LB CPM Sourced forward Marketvalue month': 44743306
+    '#LB CPM Sourced forward MtM month': 44743314
+    '#LB EET Contracted offtake Marketvalue': 44761776
+    '#LB EET Contracted offtake Volume': 44738740
+    '#LB EET Open position Contracted offtake Marketvalue': 44761780
+    '#LB EET Open position Contracted offtake Volume': 44761767
+    '#LB EET Price exposed offtake Volume': 44738745
+    '#LB General Current offtake Volume': 44738686
+    '#LB General Expected offtake Marketvalue': 44738715
+    '#LB General Expected offtake Volume': 44738691
+    '#LB General Open position Expected offtake Marketvalue': 44738717
+    '#LB General Open position Expected offtake Volume': 44738696
+    '#LB General Sourced forward Cost': 44738724
+    '#LB General Sourced forward Marketvalue': 44738729
+    '#LB General Sourced forward MtM': 44738731
+    '#LB General Sourced forward Volume': 44738700
+    '#LB General Sourced spot Cost': 44738733
+    '#LB General Sourced spot Volume': 44738705
+    '#LB General Sourced total Cost': 44738719
+    '#LB General Sourced total Volume': 44738710
+    '2022_07_19 #LB General Expected offtake Volume': 44771375
+    '2022_07_19 #LB General Sourced total Cost': 44771447
+    '2022_07_19 #LB General Sourced total Volume': 44771377
+    '2022_08_01 #LB General Expected offtake Volume': 44779558
+    '2022_08_01 #LB General Sourced total Cost': 44779618
+    '2022_08_01 #LB General Sourced total Volume': 44779560
+    '2022_08_15 #LB General Expected offtake Volume': 44788634
+    '2022_08_15 #LB General Sourced total Cost': 44788693
+    '2022_08_15 #LB General Sourced total Volume': 44788636
+    Saldo aller Geschäfte: 44717208
+    Saldo aller Geschäfte +UB: 44717214
+    Saldo aller Käufe: 44717220
+    Saldo aller Käufe+UB: 44717226
+    Saldo aller Verkäufe: 44717232
+    Saldo aller Verkäufe+UB: 44717238
+    Saldo best. realer G. +UB: 44717210
+    Saldo best. realer Gesch.: 44717204
+    Saldo best. realer Käufe: 44717216
+    Saldo best. realer Käufe+UB: 44717222
+    Saldo best. realer Verkäufe: 44717228
+    Saldo best. realer Verkäufe+UB: 44717234
+    Saldo realer Geschäfte: 44717206
+    Saldo realer Geschäfte +UB: 44717212
+    Saldo realer Käufe: 44717218
+    Saldo realer Käufe+UB: 44717224
+    Saldo realer Verkäufe: 44717230
+    Saldo realer Verkäufe+UB: 44717236
+  P_B2C_P2H:
+    '#LB CPM Sourced forward Cost month': 44743050
+    '#LB CPM Sourced forward Marketvalue month': 44743046
+    '#LB CPM Sourced forward MtM month': 44743054
+    '#LB EET Contracted offtake Marketvalue': 44761830
+    '#LB EET Contracted offtake Volume': 44738804
+    '#LB EET Open position Contracted offtake Marketvalue': 44761834
+    '#LB EET Open position Contracted offtake Volume': 44761821
+    '#LB EET Price exposed offtake Volume': 44738809
+    '#LB General Current offtake Volume': 44738750
+    '#LB General Expected offtake Marketvalue': 44738779
+    '#LB General Expected offtake Volume': 44738755
+    '#LB General Open position Expected offtake Marketvalue': 44738781
+    '#LB General Open position Expected offtake Volume': 44738760
+    '#LB General Sourced forward Cost': 44738788
+    '#LB General Sourced forward Marketvalue': 44738793
+    '#LB General Sourced forward MtM': 44738795
+    '#LB General Sourced forward Volume': 44738764
+    '#LB General Sourced spot Cost': 44738797
+    '#LB General Sourced spot Volume': 44738769
+    '#LB General Sourced total Cost': 44738783
+    '#LB General Sourced total Volume': 44738774
+    '2022_07_19 #LB General Expected offtake Volume': 44771380
+    '2022_07_19 #LB General Sourced total Cost': 44771450
+    '2022_07_19 #LB General Sourced total Volume': 44771382
+    '2022_08_01 #LB General Expected offtake Volume': 44779562
+    '2022_08_01 #LB General Sourced total Cost': 44779620
+    '2022_08_01 #LB General Sourced total Volume': 44779564
+    '2022_08_15 #LB General Expected offtake Volume': 44788638
+    '2022_08_15 #LB General Sourced total Cost': 44788695
+    '2022_08_15 #LB General Sourced total Volume': 44788640
+    Saldo aller Geschäfte: 44716430
+    Saldo aller Geschäfte +UB: 44716436
+    Saldo aller Käufe: 44716442
+    Saldo aller Käufe+UB: 44716448
+    Saldo aller Verkäufe: 44716454
+    Saldo aller Verkäufe+UB: 44716460
+    Saldo best. realer G. +UB: 44716432
+    Saldo best. realer Gesch.: 44716426
+    Saldo best. realer Käufe: 44716438
+    Saldo best. realer Käufe+UB: 44716444
+    Saldo best. realer Verkäufe: 44716450
+    Saldo best. realer Verkäufe+UB: 44716456
+    Saldo realer Geschäfte: 44716428
+    Saldo realer Geschäfte +UB: 44716434
+    Saldo realer Käufe: 44716440
+    Saldo realer Käufe+UB: 44716446
+    Saldo realer Verkäufe: 44716452
+    Saldo realer Verkäufe+UB: 44716458
+  P_B2C_P2H_HP:
+    '#LB CPM Sourced forward Cost month': 44743958
+    '#LB CPM Sourced forward Marketvalue month': 44743954
+    '#LB CPM Sourced forward MtM month': 44743962
+    '#LB EET Contracted offtake Marketvalue': 44761884
+    '#LB EET Contracted offtake Volume': 44738868
+    '#LB EET Open position Contracted offtake Marketvalue': 44761888
+    '#LB EET Open position Contracted offtake Volume': 44761875
+    '#LB EET Price exposed offtake Volume': 44738873
+    '#LB General Current offtake Volume': 44738814
+    '#LB General Expected offtake Marketvalue': 44738843
+    '#LB General Expected offtake Volume': 44738819
+    '#LB General Open position Expected offtake Marketvalue': 44738845
+    '#LB General Open position Expected offtake Volume': 44738824
+    '#LB General Sourced forward Cost': 44738852
+    '#LB General Sourced forward Marketvalue': 44738857
+    '#LB General Sourced forward MtM': 44738859
+    '#LB General Sourced forward Volume': 44738828
+    '#LB General Sourced spot Cost': 44738861
+    '#LB General Sourced spot Volume': 44738833
+    '#LB General Sourced total Cost': 44738847
+    '#LB General Sourced total Volume': 44738838
+    '2022_07_19 #LB General Expected offtake Volume': 44771385
+    '2022_07_19 #LB General Sourced total Cost': 44771453
+    '2022_07_19 #LB General Sourced total Volume': 44771387
+    '2022_08_01 #LB General Expected offtake Volume': 44779566
+    '2022_08_01 #LB General Sourced total Cost': 44779622
+    '2022_08_01 #LB General Sourced total Volume': 44779568
+    '2022_08_15 #LB General Expected offtake Volume': 44788642
+    '2022_08_15 #LB General Sourced total Cost': 44788697
+    '2022_08_15 #LB General Sourced total Volume': 44788644
+    Saldo aller Geschäfte: 44717430
+    Saldo aller Geschäfte +UB: 44717436
+    Saldo aller Käufe: 44717442
+    Saldo aller Käufe+UB: 44717448
+    Saldo aller Verkäufe: 44717454
+    Saldo aller Verkäufe+UB: 44717460
+    Saldo best. realer G. +UB: 44717432
+    Saldo best. realer Gesch.: 44717426
+    Saldo best. realer Käufe: 44717438
+    Saldo best. realer Käufe+UB: 44717444
+    Saldo best. realer Verkäufe: 44717450
+    Saldo best. realer Verkäufe+UB: 44717456
+    Saldo realer Geschäfte: 44717428
+    Saldo realer Geschäfte +UB: 44717434
+    Saldo realer Käufe: 44717440
+    Saldo realer Käufe+UB: 44717446
+    Saldo realer Verkäufe: 44717452
+    Saldo realer Verkäufe+UB: 44717458
+  P_B2C_P2H_HP_FIX:
+    '#LB CPM Sourced forward Cost month': 44744010
+    '#LB CPM Sourced forward Marketvalue month': 44744006
+    '#LB CPM Sourced forward MtM month': 44744014
+    '#LB EET Contracted offtake Marketvalue': 44761938
+    '#LB EET Contracted offtake Volume': 44738932
+    '#LB EET Open position Contracted offtake Marketvalue': 44761942
+    '#LB EET Open position Contracted offtake Volume': 44761929
+    '#LB EET Price exposed offtake Volume': 44738937
+    '#LB General Current offtake Volume': 44738878
+    '#LB General Expected offtake Marketvalue': 44738907
+    '#LB General Expected offtake Volume': 44738883
+    '#LB General Open position Expected offtake Marketvalue': 44738909
+    '#LB General Open position Expected offtake Volume': 44738888
+    '#LB General Sourced forward Cost': 44738916
+    '#LB General Sourced forward Marketvalue': 44738921
+    '#LB General Sourced forward MtM': 44738923
+    '#LB General Sourced forward Volume': 44738892
+    '#LB General Sourced spot Cost': 44738925
+    '#LB General Sourced spot Volume': 44738897
+    '#LB General Sourced total Cost': 44738911
+    '#LB General Sourced total Volume': 44738902
+    '2022_07_19 #LB General Expected offtake Volume': 44771390
+    '2022_07_19 #LB General Sourced total Cost': 44771456
+    '2022_07_19 #LB General Sourced total Volume': 44771392
+    '2022_08_01 #LB General Expected offtake Volume': 44779570
+    '2022_08_01 #LB General Sourced total Cost': 44779624
+    '2022_08_01 #LB General Sourced total Volume': 44779572
+    '2022_08_15 #LB General Expected offtake Volume': 44788646
+    '2022_08_15 #LB General Sourced total Cost': 44788699
+    '2022_08_15 #LB General Sourced total Volume': 44788648
+    Saldo aller Geschäfte: 44717986
+    Saldo aller Geschäfte +UB: 44717992
+    Saldo aller Käufe: 44717998
+    Saldo aller Käufe+UB: 44718004
+    Saldo aller Verkäufe: 44718010
+    Saldo aller Verkäufe+UB: 44718016
+    Saldo best. realer G. +UB: 44717988
+    Saldo best. realer Gesch.: 44717982
+    Saldo best. realer Käufe: 44717994
+    Saldo best. realer Käufe+UB: 44718000
+    Saldo best. realer Verkäufe: 44718006
+    Saldo best. realer Verkäufe+UB: 44718012
+    Saldo realer Geschäfte: 44717984
+    Saldo realer Geschäfte +UB: 44717990
+    Saldo realer Käufe: 44717996
+    Saldo realer Käufe+UB: 44718002
+    Saldo realer Verkäufe: 44718008
+    Saldo realer Verkäufe+UB: 44718014
+  P_B2C_P2H_HP_FLEX:
+    '#LB CPM Sourced forward Cost month': 44744062
+    '#LB CPM Sourced forward Marketvalue month': 44744058
+    '#LB CPM Sourced forward MtM month': 44744066
+    '#LB EET Contracted offtake Marketvalue': 44761992
+    '#LB EET Contracted offtake Volume': 44738996
+    '#LB EET Open position Contracted offtake Marketvalue': 44761996
+    '#LB EET Open position Contracted offtake Volume': 44761983
+    '#LB EET Price exposed offtake Volume': 44739001
+    '#LB General Current offtake Volume': 44738942
+    '#LB General Expected offtake Marketvalue': 44738971
+    '#LB General Expected offtake Volume': 44738947
+    '#LB General Open position Expected offtake Marketvalue': 44738973
+    '#LB General Open position Expected offtake Volume': 44738952
+    '#LB General Sourced forward Cost': 44738980
+    '#LB General Sourced forward Marketvalue': 44738985
+    '#LB General Sourced forward MtM': 44738987
+    '#LB General Sourced forward Volume': 44738956
+    '#LB General Sourced spot Cost': 44738989
+    '#LB General Sourced spot Volume': 44738961
+    '#LB General Sourced total Cost': 44738975
+    '#LB General Sourced total Volume': 44738966
+    '2022_07_19 #LB General Expected offtake Volume': 44771395
+    '2022_07_19 #LB General Sourced total Cost': 44771459
+    '2022_07_19 #LB General Sourced total Volume': 44771397
+    '2022_08_01 #LB General Expected offtake Volume': 44779574
+    '2022_08_01 #LB General Sourced total Cost': 44779627
+    '2022_08_01 #LB General Sourced total Volume': 44779576
+    '2022_08_15 #LB General Expected offtake Volume': 44788650
+    '2022_08_15 #LB General Sourced total Cost': 44788701
+    '2022_08_15 #LB General Sourced total Volume': 44788652
+    Saldo aller Geschäfte: 44717875
+    Saldo aller Geschäfte +UB: 44717881
+    Saldo aller Käufe: 44717887
+    Saldo aller Käufe+UB: 44717893
+    Saldo aller Verkäufe: 44717899
+    Saldo aller Verkäufe+UB: 44717905
+    Saldo best. realer G. +UB: 44717877
+    Saldo best. realer Gesch.: 44717871
+    Saldo best. realer Käufe: 44717883
+    Saldo best. realer Käufe+UB: 44717889
+    Saldo best. realer Verkäufe: 44717895
+    Saldo best. realer Verkäufe+UB: 44717901
+    Saldo realer Geschäfte: 44717873
+    Saldo realer Geschäfte +UB: 44717879
+    Saldo realer Käufe: 44717885
+    Saldo realer Käufe+UB: 44717891
+    Saldo realer Verkäufe: 44717897
+    Saldo realer Verkäufe+UB: 44717903
+  P_B2C_P2H_NSH:
+    '#LB CPM Sourced forward Cost month': 44744114
+    '#LB CPM Sourced forward Marketvalue month': 44744110
+    '#LB CPM Sourced forward MtM month': 44744118
+    '#LB EET Contracted offtake Marketvalue': 44762077
+    '#LB EET Contracted offtake Volume': 44739060
+    '#LB EET Open position Contracted offtake Marketvalue': 44762081
+    '#LB EET Open position Contracted offtake Volume': 44762068
+    '#LB EET Price exposed offtake Volume': 44739065
+    '#LB General Current offtake Volume': 44739006
+    '#LB General Expected offtake Marketvalue': 44739035
+    '#LB General Expected offtake Volume': 44739011
+    '#LB General Open position Expected offtake Marketvalue': 44739037
+    '#LB General Open position Expected offtake Volume': 44739016
+    '#LB General Sourced forward Cost': 44739044
+    '#LB General Sourced forward Marketvalue': 44739049
+    '#LB General Sourced forward MtM': 44739051
+    '#LB General Sourced forward Volume': 44739020
+    '#LB General Sourced spot Cost': 44739053
+    '#LB General Sourced spot Volume': 44739025
+    '#LB General Sourced total Cost': 44739039
+    '#LB General Sourced total Volume': 44739030
+    '2022_07_19 #LB General Expected offtake Volume': 44771400
+    '2022_07_19 #LB General Sourced total Cost': 44771484
+    '2022_07_19 #LB General Sourced total Volume': 44771402
+    '2022_08_01 #LB General Expected offtake Volume': 44779578
+    '2022_08_01 #LB General Sourced total Cost': 44779635
+    '2022_08_01 #LB General Sourced total Volume': 44779580
+    '2022_08_15 #LB General Expected offtake Volume': 44788654
+    '2022_08_15 #LB General Sourced total Cost': 44788726
+    '2022_08_15 #LB General Sourced total Volume': 44788656
+    Saldo aller Geschäfte: 44717319
+    Saldo aller Geschäfte +UB: 44717325
+    Saldo aller Käufe: 44717331
+    Saldo aller Käufe+UB: 44717337
+    Saldo aller Verkäufe: 44717343
+    Saldo aller Verkäufe+UB: 44717349
+    Saldo best. realer G. +UB: 44717321
+    Saldo best. realer Gesch.: 44717315
+    Saldo best. realer Käufe: 44717327
+    Saldo best. realer Käufe+UB: 44717333
+    Saldo best. realer Verkäufe: 44717339
+    Saldo best. realer Verkäufe+UB: 44717345
+    Saldo realer Geschäfte: 44717317
+    Saldo realer Geschäfte +UB: 44717323
+    Saldo realer Käufe: 44717329
+    Saldo realer Käufe+UB: 44717335
+    Saldo realer Verkäufe: 44717341
+    Saldo realer Verkäufe+UB: 44717347
+  P_B2C_P2H_NSH_FIX:
+    '#LB CPM Sourced forward Cost month': 44744166
+    '#LB CPM Sourced forward Marketvalue month': 44744162
+    '#LB CPM Sourced forward MtM month': 44744170
+    '#LB EET Contracted offtake Marketvalue': 44762131
+    '#LB EET Contracted offtake Volume': 44739124
+    '#LB EET Open position Contracted offtake Marketvalue': 44762135
+    '#LB EET Open position Contracted offtake Volume': 44762122
+    '#LB EET Price exposed offtake Volume': 44739129
+    '#LB General Current offtake Volume': 44739070
+    '#LB General Expected offtake Marketvalue': 44739099
+    '#LB General Expected offtake Volume': 44739075
+    '#LB General Open position Expected offtake Marketvalue': 44739101
+    '#LB General Open position Expected offtake Volume': 44739080
+    '#LB General Sourced forward Cost': 44739108
+    '#LB General Sourced forward Marketvalue': 44739113
+    '#LB General Sourced forward MtM': 44739115
+    '#LB General Sourced forward Volume': 44739084
+    '#LB General Sourced spot Cost': 44739117
+    '#LB General Sourced spot Volume': 44739089
+    '#LB General Sourced total Cost': 44739103
+    '#LB General Sourced total Volume': 44739094
+    '2022_07_19 #LB General Expected offtake Volume': 44771405
+    '2022_07_19 #LB General Sourced total Cost': 44771487
+    '2022_07_19 #LB General Sourced total Volume': 44771407
+    '2022_08_01 #LB General Expected offtake Volume': 44779582
+    '2022_08_01 #LB General Sourced total Cost': 44779644
+    '2022_08_01 #LB General Sourced total Volume': 44779584
+    '2022_08_15 #LB General Expected offtake Volume': 44788658
+    '2022_08_15 #LB General Sourced total Cost': 44788728
+    '2022_08_15 #LB General Sourced total Volume': 44788660
+    Saldo aller Geschäfte: 44717653
+    Saldo aller Geschäfte +UB: 44717659
+    Saldo aller Käufe: 44717665
+    Saldo aller Käufe+UB: 44717671
+    Saldo aller Verkäufe: 44717677
+    Saldo aller Verkäufe+UB: 44717683
+    Saldo best. realer G. +UB: 44717655
+    Saldo best. realer Gesch.: 44717649
+    Saldo best. realer Käufe: 44717661
+    Saldo best. realer Käufe+UB: 44717667
+    Saldo best. realer Verkäufe: 44717673
+    Saldo best. realer Verkäufe+UB: 44717679
+    Saldo realer Geschäfte: 44717651
+    Saldo realer Geschäfte +UB: 44717657
+    Saldo realer Käufe: 44717663
+    Saldo realer Käufe+UB: 44717669
+    Saldo realer Verkäufe: 44717675
+    Saldo realer Verkäufe+UB: 44717681
+  P_B2C_P2H_NSH_FLEX:
+    '#LB CPM Sourced forward Cost month': 44744218
+    '#LB CPM Sourced forward Marketvalue month': 44744214
+    '#LB CPM Sourced forward MtM month': 44744222
+    '#LB EET Contracted offtake Marketvalue': 44762185
+    '#LB EET Contracted offtake Volume': 44739188
+    '#LB EET Open position Contracted offtake Marketvalue': 44762189
+    '#LB EET Open position Contracted offtake Volume': 44762176
+    '#LB EET Price exposed offtake Volume': 44739193
+    '#LB General Current offtake Volume': 44739134
+    '#LB General Expected offtake Marketvalue': 44739163
+    '#LB General Expected offtake Volume': 44739139
+    '#LB General Open position Expected offtake Marketvalue': 44739165
+    '#LB General Open position Expected offtake Volume': 44739144
+    '#LB General Sourced forward Cost': 44739172
+    '#LB General Sourced forward Marketvalue': 44739177
+    '#LB General Sourced forward MtM': 44739179
+    '#LB General Sourced forward Volume': 44739148
+    '#LB General Sourced spot Cost': 44739181
+    '#LB General Sourced spot Volume': 44739153
+    '#LB General Sourced total Cost': 44739167
+    '#LB General Sourced total Volume': 44739158
+    '2022_07_19 #LB General Expected offtake Volume': 44771410
+    '2022_07_19 #LB General Sourced total Cost': 44771490
+    '2022_07_19 #LB General Sourced total Volume': 44771412
+    '2022_08_01 #LB General Expected offtake Volume': 44779586
+    '2022_08_01 #LB General Sourced total Cost': 44779652
+    '2022_08_01 #LB General Sourced total Volume': 44779588
+    '2022_08_15 #LB General Expected offtake Volume': 44788662
+    '2022_08_15 #LB General Sourced total Cost': 44788730
+    '2022_08_15 #LB General Sourced total Volume': 44788664
+    Saldo aller Geschäfte: 44717542
+    Saldo aller Geschäfte +UB: 44717548
+    Saldo aller Käufe: 44717554
+    Saldo aller Käufe+UB: 44717560
+    Saldo aller Verkäufe: 44717566
+    Saldo aller Verkäufe+UB: 44717572
+    Saldo best. realer G. +UB: 44717544
+    Saldo best. realer Gesch.: 44717538
+    Saldo best. realer Käufe: 44717550
+    Saldo best. realer Käufe+UB: 44717556
+    Saldo best. realer Verkäufe: 44717562
+    Saldo best. realer Verkäufe+UB: 44717568
+    Saldo realer Geschäfte: 44717540
+    Saldo realer Geschäfte +UB: 44717546
+    Saldo realer Käufe: 44717552
+    Saldo realer Käufe+UB: 44717558
+    Saldo realer Verkäufe: 44717564
+    Saldo realer Verkäufe+UB: 44717570
+  P_SAL:
+    '#LB CPM Sourced forward Cost month': 44743572
+    '#LB CPM Sourced forward Marketvalue month': 44743568
+    '#LB CPM Sourced forward MtM month': 44743576
+    '#LB EET Contracted offtake Marketvalue': 44761232
+    '#LB EET Contracted offtake Volume': 44738100
+    '#LB EET Open position Contracted offtake Marketvalue': 44761236
+    '#LB EET Open position Contracted offtake Volume': 44761223
+    '#LB EET Price exposed offtake Volume': 44738105
+    '#LB General Current offtake Volume': 44738046
+    '#LB General Expected offtake Marketvalue': 44738075
+    '#LB General Expected offtake Volume': 44738051
+    '#LB General Open position Expected offtake Marketvalue': 44738077
+    '#LB General Open position Expected offtake Volume': 44738056
+    '#LB General Sourced forward Cost': 44738084
+    '#LB General Sourced forward Marketvalue': 44738089
+    '#LB General Sourced forward MtM': 44738091
+    '#LB General Sourced forward Volume': 44738060
+    '#LB General Sourced spot Cost': 44738093
+    '#LB General Sourced spot Volume': 44738065
+    '#LB General Sourced total Cost': 44738079
+    '#LB General Sourced total Volume': 44738070
+    '2022_07_19 #LB General Expected offtake Volume': 44771325
+    '2022_07_19 #LB General Sourced total Cost': 44771414
+    '2022_07_19 #LB General Sourced total Volume': 44771327
+    '2022_08_01 #LB General Expected offtake Volume': 44779518
+    '2022_08_01 #LB General Sourced total Cost': 44779590
+    '2022_08_01 #LB General Sourced total Volume': 44779520
+    '2022_08_15 #LB General Expected offtake Volume': 44788594
+    '2022_08_15 #LB General Sourced total Cost': 44788666
+    '2022_08_15 #LB General Sourced total Volume': 44788596
+    Saldo aller Geschäfte: 44715979
+    Saldo aller Geschäfte +UB: 44715985
+    Saldo aller Käufe: 44715991
+    Saldo aller Käufe+UB: 44715997
+    Saldo aller Verkäufe: 44716003
+    Saldo aller Verkäufe+UB: 44716009
+    Saldo best. realer G. +UB: 44715981
+    Saldo best. realer Gesch.: 44715975
+    Saldo best. realer Käufe: 44715987
+    Saldo best. realer Käufe+UB: 44715993
+    Saldo best. realer Verkäufe: 44715999
+    Saldo best. realer Verkäufe+UB: 44716005
+    Saldo realer Geschäfte: 44715977
+    Saldo realer Geschäfte +UB: 44715983
+    Saldo realer Käufe: 44715989
+    Saldo realer Käufe+UB: 44715995
+    Saldo realer Verkäufe: 44716001
+    Saldo realer Verkäufe+UB: 44716007

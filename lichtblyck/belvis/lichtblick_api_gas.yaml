@@ -1,0 +1,1007 @@
+server: http://lbbelvis01:8040
+tenant: PFMGAS
+cache:
+  PEGAS_THE_H:
+    Aktuellste DFC THE LB_Vorversion_1: 23346559
+    Aktuellste DFC THE LB_Vorversion_2 Tagesmittel: 23346563
+    Aktuellste DFC THE LB_Vorversion_3 geglättet: 23346567
+    Aktuellste DFC THE LB_Vorversion_4 inkl BoM: 23346571
+    Aktuellste DFC THE LB_d: 23346575
+    Aktuellste DFC THE LB_h: 23346581
+    Aktuellste DFC THE LB_m: 23346585
+    End_Of_Day_Fortschreibung für DFC: 23344535
+    End_Of_Day_THE_H_1d: 23344709
+    End_Of_Day_THE_H_1h: 23344722
+    End_Of_Day_THE_Import: 23344685
+    European_Gas_Spot_Index_THE_H_1d: 23344747
+    European_Gas_Spot_Index_THE_H_h: 23344759
+    European_Gas_Spot_Index_THE_Import: 23344734
+    Optimierung 10Tage Aktuellste DFC THE LB_h: 23503623
+    Optimierung LONGPosition Aktuellste DFC THE LB_h: 23503635
+    Optimierung SHORTPosition Aktuellste DFC THE LB_h: 23503629
+    PFC THE 2021_09_23: 23343053
+    PFC THE 2021_09_24: 23343057
+    PFC THE 2021_09_27: 23343061
+    PFC THE 2021_09_28: 23343065
+    PFC THE 2021_09_29: 23343069
+    PFC THE 2021_09_30: 23343073
+    PFC THE 2021_10_01: 23343077
+    PFC THE 2021_10_04: 23343081
+    PFC THE 2021_10_05: 23343085
+    PFC THE 2021_10_06: 23343089
+    PFC THE 2021_10_07: 23343093
+    PFC THE 2021_10_08: 23343097
+    PFC THE 2021_10_11: 23343101
+    PFC THE 2021_10_12: 23343105
+    PFC THE 2021_10_13: 23343109
+    PFC THE 2021_10_14: 23343113
+    PFC THE 2021_10_15: 23343117
+    PFC THE 2021_10_18: 23343121
+    PFC THE 2021_10_19: 23343125
+    PFC THE 2021_10_20: 23343129
+    PFC THE 2021_10_21: 23343133
+    PFC THE 2021_10_22: 23343137
+    PFC THE 2021_10_25: 23343141
+    PFC THE 2021_10_26: 23343145
+    PFC THE 2021_10_27: 23343149
+    PFC THE 2021_10_28: 23343153
+    PFC THE 2021_10_29: 23343157
+    PFC THE 2021_11_01: 23395883
+    PFC THE 2021_11_02: 23343161
+    PFC THE 2021_11_03: 23343165
+    PFC THE 2021_11_04: 23343169
+    PFC THE 2021_11_05: 23343173
+    PFC THE 2021_11_08: 23343177
+    PFC THE 2021_11_09: 23343181
+    PFC THE 2021_11_10: 23343185
+    PFC THE 2021_11_11: 23343189
+    PFC THE 2021_11_12: 23343193
+    PFC THE 2021_11_15: 23343197
+    PFC THE 2021_11_16: 23343201
+    PFC THE 2021_11_17: 23419001
+    PFC THE 2021_11_18: 23343205
+    PFC THE 2021_11_19: 23343209
+    PFC THE 2021_11_22: 23343213
+    PFC THE 2021_11_23: 23343217
+    PFC THE 2021_11_24: 23343221
+    PFC THE 2021_11_25: 23343225
+    PFC THE 2021_11_26: 23343229
+    PFC THE 2021_11_29: 23343233
+    PFC THE 2021_11_30: 23343237
+    PFC THE 2021_12_01: 23343241
+    PFC THE 2021_12_02: 23343245
+    PFC THE 2021_12_03: 23343249
+    PFC THE 2021_12_06: 23343253
+    PFC THE 2021_12_07: 23343257
+    PFC THE 2021_12_08: 23343261
+    PFC THE 2021_12_09: 23343265
+    PFC THE 2021_12_10: 23343270
+    PFC THE 2021_12_13: 23343274
+    PFC THE 2021_12_14: 23343278
+    PFC THE 2021_12_15: 23343282
+    PFC THE 2021_12_16: 23343286
+    PFC THE 2021_12_17: 23343290
+    PFC THE 2021_12_20: 23343294
+    PFC THE 2021_12_21: 23343298
+    PFC THE 2021_12_22: 23343302
+    PFC THE 2021_12_23: 23343306
+    PFC THE 2021_12_24: 23499402
+    PFC THE 2021_12_27: 23343310
+    PFC THE 2021_12_28: 23343314
+    PFC THE 2021_12_29: 23343318
+    PFC THE 2021_12_30: 23343322
+    PFC THE 2021_12_31: 23511081
+    PFC THE 2022_01_03: 23343326
+    PFC THE 2022_01_04: 23343330
+    PFC THE 2022_01_05: 23343334
+    PFC THE 2022_01_06: 23343338
+    PFC THE 2022_01_07: 23343342
+    PFC THE 2022_01_10: 23343346
+    PFC THE 2022_01_11: 23343350
+    PFC THE 2022_01_12: 23343354
+    PFC THE 2022_01_13: 23343358
+    PFC THE 2022_01_14: 23343362
+    PFC THE 2022_01_17: 23343366
+    PFC THE 2022_01_18: 23343370
+    PFC THE 2022_01_19: 23343374
+    PFC THE 2022_01_20: 23343378
+    PFC THE 2022_01_21: 23343382
+    PFC THE 2022_01_24: 23343386
+    PFC THE 2022_01_25: 23343390
+    PFC THE 2022_01_26: 23343394
+    PFC THE 2022_01_27: 23343398
+    PFC THE 2022_01_28: 23343402
+    PFC THE 2022_01_31: 23343406
+    PFC THE 2022_02_01: 23343410
+    PFC THE 2022_02_02: 23343414
+    PFC THE 2022_02_03: 23343418
+    PFC THE 2022_02_04: 23343422
+    PFC THE 2022_02_07: 23343426
+    PFC THE 2022_02_08: 23343430
+    PFC THE 2022_02_09: 23343434
+    PFC THE 2022_02_10: 23343438
+    PFC THE 2022_02_11: 23343442
+    PFC THE 2022_02_14: 23343446
+    PFC THE 2022_02_15: 23343450
+    PFC THE 2022_02_16: 23343454
+    PFC THE 2022_02_17: 23343458
+    PFC THE 2022_02_18: 23343462
+    PFC THE 2022_02_21: 23343466
+    PFC THE 2022_02_22: 23343470
+    PFC THE 2022_02_23: 23343474
+    PFC THE 2022_02_24: 23343478
+    PFC THE 2022_02_25: 23343482
+    PFC THE 2022_02_28: 23343486
+    PFC THE 2022_03_01: 23343490
+    PFC THE 2022_03_02: 23343494
+    PFC THE 2022_03_03: 23343498
+    PFC THE 2022_03_04: 23343502
+    PFC THE 2022_03_07: 23343506
+    PFC THE 2022_03_08: 23343510
+    PFC THE 2022_03_09: 23343514
+    PFC THE 2022_03_10: 23343518
+    PFC THE 2022_03_11: 23343522
+    PFC THE 2022_03_14: 23343526
+    PFC THE 2022_03_15: 23343530
+    PFC THE 2022_03_16: 23343534
+    PFC THE 2022_03_17: 23343538
+    PFC THE 2022_03_18: 23343542
+    PFC THE 2022_03_21: 23343546
+    PFC THE 2022_03_22: 23343550
+    PFC THE 2022_03_23: 23343554
+    PFC THE 2022_03_24: 23343558
+    PFC THE 2022_03_25: 23343562
+    PFC THE 2022_03_28: 23343566
+    PFC THE 2022_03_29: 23343570
+    PFC THE 2022_03_30: 23343574
+    PFC THE 2022_03_31: 23343578
+    PFC THE 2022_04_01: 23343582
+    PFC THE 2022_04_04: 23343586
+    PFC THE 2022_04_05: 23343590
+    PFC THE 2022_04_06: 23343594
+    PFC THE 2022_04_07: 23343598
+    PFC THE 2022_04_08: 23343602
+    PFC THE 2022_04_11: 23343606
+    PFC THE 2022_04_12: 23343610
+    PFC THE 2022_04_13: 23343614
+    PFC THE 2022_04_14: 23343618
+    PFC THE 2022_04_19: 23343622
+    PFC THE 2022_04_20: 23343626
+    PFC THE 2022_04_21: 23343630
+    PFC THE 2022_04_22: 23343634
+    PFC THE 2022_04_25: 23343638
+    PFC THE 2022_04_26: 23343642
+    PFC THE 2022_04_27: 23343646
+    PFC THE 2022_04_28: 23343650
+    PFC THE 2022_04_29: 23343654
+    PFC THE 2022_05_02: 23343658
+    PFC THE 2022_05_03: 23343662
+    PFC THE 2022_05_04: 23343666
+    PFC THE 2022_05_05: 23343670
+    PFC THE 2022_05_06: 23343674
+    PFC THE 2022_05_09: 23343678
+    PFC THE 2022_05_10: 23343682
+    PFC THE 2022_05_11: 23343686
+    PFC THE 2022_05_12: 23343690
+    PFC THE 2022_05_13: 23343694
+    PFC THE 2022_05_16: 23343698
+    PFC THE 2022_05_17: 23343702
+    PFC THE 2022_05_18: 23343706
+    PFC THE 2022_05_19: 23343710
+    PFC THE 2022_05_20: 23343714
+    PFC THE 2022_05_23: 23343718
+    PFC THE 2022_05_24: 23343722
+    PFC THE 2022_05_25: 23343726
+    PFC THE 2022_05_27: 23343730
+    PFC THE 2022_05_30: 23343734
+    PFC THE 2022_05_31: 23343738
+    PFC THE 2022_06_01: 23343742
+    PFC THE 2022_06_02: 23343746
+    PFC THE 2022_06_03: 23343750
+    PFC THE 2022_06_07: 23343754
+    PFC THE 2022_06_08: 23343758
+    PFC THE 2022_06_09: 23343762
+    PFC THE 2022_06_10: 23343766
+    PFC THE 2022_06_13: 23343770
+    PFC THE 2022_06_14: 23343774
+    PFC THE 2022_06_15: 23343778
+    PFC THE 2022_06_17: 23343782
+    PFC THE 2022_06_20: 23343786
+    PFC THE 2022_06_21: 23343790
+    PFC THE 2022_06_22: 23343794
+    PFC THE 2022_06_23: 23343798
+    PFC THE 2022_06_24: 23343802
+    PFC THE 2022_06_27: 23343806
+    PFC THE 2022_06_28: 23343810
+    PFC THE 2022_06_29: 23343814
+    PFC THE 2022_06_30: 23343818
+    PFC THE 2022_07_01: 23343822
+    PFC THE 2022_07_04: 23343826
+    PFC THE 2022_07_05: 23343830
+    PFC THE 2022_07_06: 23343834
+    PFC THE 2022_07_07: 23343838
+    PFC THE 2022_07_08: 23343842
+    PFC THE 2022_07_11: 23343846
+    PFC THE 2022_07_12: 23343850
+    PFC THE 2022_07_13: 23343854
+    PFC THE 2022_07_14: 23343858
+    PFC THE 2022_07_15: 23343862
+    PFC THE 2022_07_18: 23343866
+    PFC THE 2022_07_19: 23343870
+    PFC THE 2022_07_20: 23343874
+    PFC THE 2022_07_21: 23343878
+    PFC THE 2022_07_22: 23343882
+    PFC THE 2022_07_25: 23343886
+    PFC THE 2022_07_26: 23343890
+    PFC THE 2022_07_27: 23343894
+    PFC THE 2022_07_28: 23343898
+    PFC THE 2022_07_29: 23343902
+    PFC THE 2022_08_01: 23343906
+    PFC THE 2022_08_02: 23343910
+    PFC THE 2022_08_03: 23343914
+    PFC THE 2022_08_04: 23343918
+    PFC THE 2022_08_05: 23343922
+    PFC THE 2022_08_08: 23343926
+    PFC THE 2022_08_09: 23343930
+    PFC THE 2022_08_10: 23343934
+    PFC THE 2022_08_11: 23343938
+    PFC THE 2022_08_12: 23343942
+    PFC THE 2022_08_15: 23343946
+    PFC THE 2022_08_16: 23343950
+    PFC THE 2022_08_17: 23343954
+    PFC THE 2022_08_18: 23343958
+    PFC THE 2022_08_19: 23343962
+    PFC THE 2022_08_22: 23343966
+    PFC THE 2022_08_23: 23343970
+    PFC THE 2022_08_24: 23343974
+    PFC THE 2022_08_25: 23343978
+    PFC THE 2022_08_26: 23343982
+    PFC THE 2022_08_29: 23343986
+    PFC THE 2022_08_30: 23343990
+    PFC THE 2022_08_31: 23343994
+    PFC THE 2022_09_01: 23343998
+    PFC THE 2022_09_02: 23344002
+    PFC THE 2022_09_05: 23344006
+    PFC THE 2022_09_06: 23344010
+    PFC THE 2022_09_07: 23344014
+    PFC THE 2022_09_08: 23344018
+    PFC THE 2022_09_09: 23344022
+    PFC THE 2022_09_12: 23344026
+    PFC THE 2022_09_13: 23344030
+    PFC THE 2022_09_14: 23344034
+    PFC THE 2022_09_15: 23344038
+    PFC THE 2022_09_16: 23344042
+    PFC THE 2022_09_19: 23344046
+    PFC THE 2022_09_20: 23344050
+    PFC THE 2022_09_21: 23344054
+    PFC THE 2022_09_22: 23344058
+    PFC THE 2022_09_23: 23344062
+    PFC THE 2022_09_26: 23344066
+    PFC THE 2022_09_27: 23344070
+    PFC THE 2022_09_28: 23344074
+    PFC THE 2022_09_29: 23344078
+    PFC THE 2022_09_30: 23344082
+    PFC THE 2022_10_04: 23344086
+    PFC THE 2022_10_05: 23344090
+    PFC THE 2022_10_06: 23344094
+    PFC THE 2022_10_07: 23344098
+    PFC THE 2022_10_10: 23344102
+    PFC THE 2022_10_11: 23344106
+    PFC THE 2022_10_12: 23344110
+    PFC THE 2022_10_13: 23344114
+    PFC THE 2022_10_14: 23344118
+    PFC THE 2022_10_17: 23344122
+    PFC THE 2022_10_18: 23344126
+    PFC THE 2022_10_19: 23344130
+    PFC THE 2022_10_20: 23344134
+    PFC THE 2022_10_21: 23344138
+    PFC THE 2022_10_24: 23344142
+    PFC THE 2022_10_25: 23344146
+    PFC THE 2022_10_26: 23344150
+    PFC THE 2022_10_27: 23344154
+    PFC THE 2022_10_28: 23344158
+    PFC THE 2022_11_02: 23344162
+    PFC THE 2022_11_03: 23344166
+    PFC THE 2022_11_04: 23344170
+    PFC THE 2022_11_07: 23344174
+    PFC THE 2022_11_08: 23344178
+    PFC THE 2022_11_09: 23344182
+    PFC THE 2022_11_10: 23344186
+    PFC THE 2022_11_11: 23344190
+    PFC THE 2022_11_14: 23344194
+    PFC THE 2022_11_15: 23344198
+    PFC THE 2022_11_17: 23344202
+    PFC THE 2022_11_18: 23344206
+    PFC THE 2022_11_21: 23344210
+    PFC THE 2022_11_22: 23344214
+    PFC THE 2022_11_23: 23344218
+    PFC THE 2022_11_24: 23344222
+    PFC THE 2022_11_25: 23344226
+    PFC THE 2022_11_28: 23344230
+    PFC THE 2022_11_29: 23344234
+    PFC THE 2022_11_30: 23344238
+    PFC THE 2022_12_01: 23344242
+    PFC THE 2022_12_02: 23344246
+    PFC THE 2022_12_05: 23344250
+    PFC THE 2022_12_06: 23344254
+    PFC THE 2022_12_07: 23344258
+    PFC THE 2022_12_08: 23344262
+    PFC THE 2022_12_09: 23344266
+    PFC THE 2022_12_12: 23344270
+    PFC THE 2022_12_13: 23344274
+    PFC THE 2022_12_14: 23344278
+    PFC THE 2022_12_15: 23344282
+    PFC THE 2022_12_16: 23344286
+    PFC THE 2022_12_19: 23344290
+    PFC THE 2022_12_20: 23344294
+    PFC THE 2022_12_21: 23344298
+    PFC THE 2022_12_22: 23344302
+    PFC THE 2022_12_23: 23344306
+    PFC THE 2022_12_27: 23344310
+    PFC THE 2022_12_28: 23344314
+    PFC THE 2022_12_29: 23344318
+    PFC THE 2022_12_30: 23344322
+    PFC2022_05_26: 23717731
+    PFC2022_06_06: 23733426
+    PFC2022_06_16: 23751070
+    THE_Base_2021: 23361892
+    THE_Base_2021_M01: 23361820
+    THE_Base_2021_M02: 23361824
+    THE_Base_2021_M03: 23361828
+    THE_Base_2021_M04: 23361832
+    THE_Base_2021_M05: 23361836
+    THE_Base_2021_M06: 23361840
+    THE_Base_2021_M07: 23361844
+    THE_Base_2021_M08: 23361848
+    THE_Base_2021_M09: 23361852
+    THE_Base_2021_M10: 23361856
+    THE_Base_2021_M11: 23361860
+    THE_Base_2021_M12: 23361864
+    THE_Base_2021_Q1: 23361868
+    THE_Base_2021_Q2: 23361872
+    THE_Base_2021_Q3: 23361876
+    THE_Base_2021_Q4: 23361880
+    THE_Base_2021_S1: 23361884
+    THE_Base_2021_S2: 23361888
+    THE_Base_2022: 23361968
+    THE_Base_2022_M01: 23361896
+    THE_Base_2022_M02: 23361900
+    THE_Base_2022_M03: 23361904
+    THE_Base_2022_M04: 23361908
+    THE_Base_2022_M05: 23361912
+    THE_Base_2022_M06: 23361916
+    THE_Base_2022_M07: 23361920
+    THE_Base_2022_M08: 23361924
+    THE_Base_2022_M09: 23361928
+    THE_Base_2022_M10: 23361932
+    THE_Base_2022_M11: 23361936
+    THE_Base_2022_M12: 23361940
+    THE_Base_2022_Q1: 23361944
+    THE_Base_2022_Q2: 23361948
+    THE_Base_2022_Q3: 23361952
+    THE_Base_2022_Q4: 23361956
+    THE_Base_2022_S1: 23361960
+    THE_Base_2022_S2: 23361964
+    THE_Base_2023: 23362044
+    THE_Base_2023_M01: 23361972
+    THE_Base_2023_M02: 23361976
+    THE_Base_2023_M03: 23361980
+    THE_Base_2023_M04: 23361984
+    THE_Base_2023_M05: 23361988
+    THE_Base_2023_M06: 23361992
+    THE_Base_2023_M07: 23361996
+    THE_Base_2023_M08: 23362000
+    THE_Base_2023_M09: 23362004
+    THE_Base_2023_M10: 23362008
+    THE_Base_2023_M11: 23362012
+    THE_Base_2023_M12: 23362016
+    THE_Base_2023_Q1: 23362020
+    THE_Base_2023_Q2: 23362024
+    THE_Base_2023_Q3: 23362028
+    THE_Base_2023_Q4: 23362032
+    THE_Base_2023_S1: 23362036
+    THE_Base_2023_S2: 23362040
+    THE_Base_2024: 23362120
+    THE_Base_2024_M01: 23362048
+    THE_Base_2024_M02: 23362052
+    THE_Base_2024_M03: 23362056
+    THE_Base_2024_M04: 23362060
+    THE_Base_2024_M05: 23362064
+    THE_Base_2024_M06: 23362068
+    THE_Base_2024_M07: 23362072
+    THE_Base_2024_M08: 23362076
+    THE_Base_2024_M09: 23362080
+    THE_Base_2024_M10: 23362084
+    THE_Base_2024_M11: 23362088
+    THE_Base_2024_M12: 23362092
+    THE_Base_2024_Q1: 23362096
+    THE_Base_2024_Q2: 23362100
+    THE_Base_2024_Q3: 23362104
+    THE_Base_2024_Q4: 23362108
+    THE_Base_2024_S1: 23362112
+    THE_Base_2024_S2: 23362116
+    THE_Base_2025: 23362197
+    THE_Base_2025_M01: 23362124
+    THE_Base_2025_M02: 23362128
+    THE_Base_2025_M03: 23362132
+    THE_Base_2025_M04: 23362136
+    THE_Base_2025_M05: 23362140
+    THE_Base_2025_M06: 23362144
+    THE_Base_2025_M07: 23362148
+    THE_Base_2025_M08: 23362152
+    THE_Base_2025_M09: 23362156
+    THE_Base_2025_M10: 23362160
+    THE_Base_2025_M11: 23362164
+    THE_Base_2025_M12: 23362168
+    THE_Base_2025_Q1: 23362172
+    THE_Base_2025_Q2: 23362176
+    THE_Base_2025_Q3: 23362181
+    THE_Base_2025_Q4: 23362185
+    THE_Base_2025_S1: 23362189
+    THE_Base_2025_S2: 23362193
+    THE_Base_2026: 23362273
+    THE_Base_2026_M01: 23362201
+    THE_Base_2026_M02: 23362205
+    THE_Base_2026_M03: 23362209
+    THE_Base_2026_M04: 23362213
+    THE_Base_2026_M05: 23362217
+    THE_Base_2026_M06: 23362221
+    THE_Base_2026_M07: 23362225
+    THE_Base_2026_M08: 23362229
+    THE_Base_2026_M09: 23362233
+    THE_Base_2026_M10: 23362237
+    THE_Base_2026_M11: 23362241
+    THE_Base_2026_M12: 23362245
+    THE_Base_2026_Q1: 23362249
+    THE_Base_2026_Q2: 23362253
+    THE_Base_2026_Q3: 23362257
+    THE_Base_2026_Q4: 23362261
+    THE_Base_2026_S1: 23362265
+    THE_Base_2026_S2: 23362269
+    THE_Base_2027: 23362349
+    THE_Base_2027_M01: 23362277
+    THE_Base_2027_M02: 23362281
+    THE_Base_2027_M03: 23362285
+    THE_Base_2027_M04: 23362289
+    THE_Base_2027_M05: 23362293
+    THE_Base_2027_M06: 23362297
+    THE_Base_2027_M07: 23362301
+    THE_Base_2027_M08: 23362305
+    THE_Base_2027_M09: 23362309
+    THE_Base_2027_M10: 23362313
+    THE_Base_2027_M11: 23362317
+    THE_Base_2027_M12: 23362321
+    THE_Base_2027_Q1: 23362325
+    THE_Base_2027_Q2: 23362329
+    THE_Base_2027_Q3: 23362333
+    THE_Base_2027_Q4: 23362337
+    THE_Base_2027_S1: 23362341
+    THE_Base_2027_S2: 23362345
+    THE_Base_2028: 23509765
+    THE_Base_2028_M01: 23509693
+    THE_Base_2028_M02: 23509697
+    THE_Base_2028_M03: 23509701
+    THE_Base_2028_M04: 23509705
+    THE_Base_2028_M05: 23509709
+    THE_Base_2028_M06: 23509713
+    THE_Base_2028_M07: 23509717
+    THE_Base_2028_M08: 23509721
+    THE_Base_2028_M09: 23509725
+    THE_Base_2028_M10: 23509729
+    THE_Base_2028_M11: 23509733
+    THE_Base_2028_M12: 23509737
+    THE_Base_2028_Q1: 23509741
+    THE_Base_2028_Q2: 23509745
+    THE_Base_2028_Q3: 23509749
+    THE_Base_2028_Q4: 23509753
+    THE_Base_2028_S1: 23509757
+    THE_Base_2028_S2: 23509761
+    Within_Day_Reference_Price_THE_Import: 23321492
+    Within_Day_Reference_Price_THE_h: 23329332
+  SBK1_G:
+    '#LB EET Contracted Offtake Marketvalue': 23840863
+    '#LB EET Contracted Offtake Volume': 23840718
+    '#LB EET Open position Contracted offtake Marketvalue': 23840867
+    '#LB EET Open position Contracted offtake Volume': 23840723
+    '#LB General Sourced SBK4 Cost': 23840784
+    '#LB General Sourced SBK4 Marketvalue': 23840789
+    '#LB General Sourced SBK4 MtM': 23840793
+    '#LB General Sourced SBK4 Volume': 23840729
+    '#LB General Sourced biogas Cost': 23840797
+    '#LB General Sourced biogas Volume': 23840734
+    '#LB General Sourced conversion Cost': 23840802
+    '#LB General Sourced conversion Volume': 23840739
+    '#LB General Sourced forward Cost': 23840807
+    '#LB General Sourced forward Marketvalue': 23840812
+    '#LB General Sourced forward MtM': 23840816
+    '#LB General Sourced forward Volume': 23840744
+    '#LB General Sourced imbalance Cost': 23840820
+    '#LB General Sourced imbalance Volume': 23840749
+    '#LB General Sourced natural gas forward total Cost': 23840825
+    '#LB General Sourced natural gas forward total Marketvalue': 23840829
+    '#LB General Sourced natural gas forward total MtM': 23840833
+    '#LB General Sourced natural gas forward total Volume': 23840754
+    '#LB General Sourced natural gas total Cost': 23840837
+    '#LB General Sourced natural gas total Volume': 23840758
+    '#LB General Sourced spot Cost': 23840842
+    '#LB General Sourced spot Volume': 23840763
+    '#LB General Sourced spot total Cost': 23840847
+    '#LB General Sourced spot total Volume': 23840768
+    '#LB General Sourced temperature Cost': 23840851
+    '#LB General Sourced temperature Volume': 23840772
+    '#LB General Sourced total Cost': 23840856
+    '#LB General Sourced total Volume': 23840777
+    '#LB PFMG Absatz SBK1 Gesamt': 20600268
+    '#LB RM Kostensumme Anteil AE': 19279715
+    '#LB RM Kostensumme Anteil Konvertierung': 19279717
+    '#LB RM Kostensumme Anteil SBK6': 21562232
+    '#LB RM Kostensumme Anteil Speicher': 19279711
+    '#LB RM Kostensumme Anteil Spot': 19279709
+    '#LB RM Kostensumme Anteil Temperatur': 19279713
+    '#LB RM Kostensumme Anteil Termin': 19279707
+    '#LB RM Kostensumme Anteil ToP': 19279719
+    '#LB RM Saldo Menge Anteil AE': 19279632
+    '#LB RM Saldo Menge Anteil Konvertierung': 19279634
+    '#LB RM Saldo Menge Anteil SBK6': 21562225
+    '#LB RM Saldo Menge Anteil Speicher': 19279628
+    '#LB RM Saldo Menge Anteil Spot': 19279626
+    '#LB RM Saldo Menge Anteil Temperatur': 19279630
+    '#LB RM Saldo Menge Anteil Termin': 19279483
+    '#LB RM Saldo Menge Anteil ToP': 19279636
+    Saldo aller Geschäfte: 19180668
+    Saldo aller Geschäfte +UB: 19180674
+    Saldo aller Käufe: 19180681
+    Saldo aller Käufe+UB: 19180687
+    Saldo aller Verkäufe: 19180693
+    Saldo aller Verkäufe+UB: 19180699
+    Saldo best. realer G. +UB: 19180670
+    Saldo best. realer Gesch.: 19180664
+    Saldo best. realer Käufe: 19180676
+    Saldo best. realer Käufe+UB: 19180683
+    Saldo best. realer Verkäufe: 19180689
+    Saldo best. realer Verkäufe+UB: 19180695
+    Saldo realer Geschäfte: 19180666
+    Saldo realer Geschäfte +UB: 19180672
+    Saldo realer Käufe: 19180679
+    Saldo realer Käufe+UB: 19180685
+    Saldo realer Verkäufe: 19180691
+    Saldo realer Verkäufe+UB: 19180697
+  SBK4_G:
+    '#LB EET Contracted Offtake Marketvalue': 23838917
+    '#LB EET Contracted Offtake Volume': 23838772
+    '#LB EET Open position Contracted offtake Marketvalue': 23838921
+    '#LB EET Open position Contracted offtake Volume': 23838777
+    '#LB General Sourced SBK4 Cost': 23838838
+    '#LB General Sourced SBK4 Marketvalue': 23838843
+    '#LB General Sourced SBK4 MtM': 23838847
+    '#LB General Sourced SBK4 Volume': 23838783
+    '#LB General Sourced biogas Cost': 23838851
+    '#LB General Sourced biogas Volume': 23838788
+    '#LB General Sourced conversion Cost': 23838856
+    '#LB General Sourced conversion Volume': 23838793
+    '#LB General Sourced forward Cost': 23838861
+    '#LB General Sourced forward Marketvalue': 23838866
+    '#LB General Sourced forward MtM': 23838870
+    '#LB General Sourced forward Volume': 23838798
+    '#LB General Sourced imbalance Cost': 23838874
+    '#LB General Sourced imbalance Volume': 23838803
+    '#LB General Sourced natural gas forward total Cost': 23838879
+    '#LB General Sourced natural gas forward total Marketvalue': 23838883
+    '#LB General Sourced natural gas forward total MtM': 23838887
+    '#LB General Sourced natural gas forward total Volume': 23838808
+    '#LB General Sourced natural gas total Cost': 23838891
+    '#LB General Sourced natural gas total Volume': 23838812
+    '#LB General Sourced spot Cost': 23838896
+    '#LB General Sourced spot Volume': 23838817
+    '#LB General Sourced spot total Cost': 23838901
+    '#LB General Sourced spot total Volume': 23838822
+    '#LB General Sourced temperature Cost': 23838905
+    '#LB General Sourced temperature Volume': 23838826
+    '#LB General Sourced total Cost': 23838910
+    '#LB General Sourced total Volume': 23838831
+    '#LB PFMG Absatz SBK4 Gesamt': 20898218
+    '#LB PFMG GK Saldo HI Terminverteilung': 21882258
+    '#LB PFMG GK Saldo HI Terminverteilung Kostensumme': 21882264
+    '#LB RM Kostensumme Anteil AE': 19279766
+    '#LB RM Kostensumme Anteil Konvertierung': 19279761
+    '#LB RM Kostensumme Anteil SBK4': 21522536
+    '#LB RM Kostensumme Anteil Spot': 19279759
+    '#LB RM Kostensumme Anteil Temperatur': 19279764
+    '#LB RM Kostensumme Anteil Termin': 19279757
+    '#LB RM Kostensumme Anteil ToP': 19279768
+    '#LB RM Saldo Menge Anteil AE': 19279678
+    '#LB RM Saldo Menge Anteil Konvertierung': 19279674
+    '#LB RM Saldo Menge Anteil SBK4': 21522525
+    '#LB RM Saldo Menge Anteil Spot': 19279672
+    '#LB RM Saldo Menge Anteil Temperatur': 19279676
+    '#LB RM Saldo Menge Anteil Termin': 19279670
+    '#LB RM Saldo Menge Anteil ToP': 19279680
+    Saldo aller Geschäfte: 19181025
+    Saldo aller Geschäfte +UB: 19181031
+    Saldo aller Käufe: 19181037
+    Saldo aller Käufe+UB: 19181043
+    Saldo aller Verkäufe: 19181049
+    Saldo aller Verkäufe+UB: 19181055
+    Saldo best. realer G. +UB: 19181027
+    Saldo best. realer Gesch.: 19181021
+    Saldo best. realer Käufe: 19181033
+    Saldo best. realer Käufe+UB: 19181039
+    Saldo best. realer Verkäufe: 19181045
+    Saldo best. realer Verkäufe+UB: 19181051
+    Saldo realer Geschäfte: 19181023
+    Saldo realer Geschäfte +UB: 19181029
+    Saldo realer Käufe: 19181035
+    Saldo realer Käufe+UB: 19181041
+    Saldo realer Verkäufe: 19181047
+    Saldo realer Verkäufe+UB: 19181053
+  SBK5_G:
+    '#LB EET Contracted Offtake Marketvalue': 23838452
+    '#LB EET Contracted Offtake Volume': 23838307
+    '#LB EET Open position Contracted offtake Marketvalue': 23838456
+    '#LB EET Open position Contracted offtake Volume': 23838312
+    '#LB General Sourced SBK4 Cost': 23838373
+    '#LB General Sourced SBK4 Marketvalue': 23838378
+    '#LB General Sourced SBK4 MtM': 23838382
+    '#LB General Sourced SBK4 Volume': 23838318
+    '#LB General Sourced biogas Cost': 23838386
+    '#LB General Sourced biogas Volume': 23838323
+    '#LB General Sourced conversion Cost': 23838391
+    '#LB General Sourced conversion Volume': 23838328
+    '#LB General Sourced forward Cost': 23838396
+    '#LB General Sourced forward Marketvalue': 23838401
+    '#LB General Sourced forward MtM': 23838405
+    '#LB General Sourced forward Volume': 23838333
+    '#LB General Sourced imbalance Cost': 23838409
+    '#LB General Sourced imbalance Volume': 23838338
+    '#LB General Sourced natural gas forward total Cost': 23838414
+    '#LB General Sourced natural gas forward total Marketvalue': 23838418
+    '#LB General Sourced natural gas forward total MtM': 23838422
+    '#LB General Sourced natural gas forward total Volume': 23838343
+    '#LB General Sourced natural gas total Cost': 23838426
+    '#LB General Sourced natural gas total Volume': 23838347
+    '#LB General Sourced spot Cost': 23838431
+    '#LB General Sourced spot Volume': 23838352
+    '#LB General Sourced spot total Cost': 23838436
+    '#LB General Sourced spot total Volume': 23838357
+    '#LB General Sourced temperature Cost': 23838440
+    '#LB General Sourced temperature Volume': 23838361
+    '#LB General Sourced total Cost': 23838445
+    '#LB General Sourced total Volume': 23838366
+    '#LB PFMG Absatz SBK5 Gesamt': 20898189
+    '#LB RM Kostensumme Anteil AE': 19279779
+    '#LB RM Kostensumme Anteil Konvertierung': 19279775
+    '#LB RM Kostensumme Anteil SBK4': 19279783
+    '#LB RM Kostensumme Anteil Spot': 19279773
+    '#LB RM Kostensumme Anteil Temperatur': 19279777
+    '#LB RM Kostensumme Anteil Termin': 19279771
+    '#LB RM Kostensumme Anteil ToP': 19279781
+    '#LB RM Saldo Menge Anteil AE': 19279690
+    '#LB RM Saldo Menge Anteil Konvertierung': 19279686
+    '#LB RM Saldo Menge Anteil SBK4': 19279694
+    '#LB RM Saldo Menge Anteil Spot': 19279684
+    '#LB RM Saldo Menge Anteil Temperatur': 19279688
+    '#LB RM Saldo Menge Anteil Termin': 19279682
+    '#LB RM Saldo Menge Anteil ToP': 19279692
+    Saldo aller Geschäfte: 19181114
+    Saldo aller Geschäfte +UB: 19181120
+    Saldo aller Käufe: 19181126
+    Saldo aller Käufe+UB: 19181132
+    Saldo aller Verkäufe: 19181138
+    Saldo aller Verkäufe+UB: 19181144
+    Saldo best. realer G. +UB: 19181116
+    Saldo best. realer Gesch.: 19181110
+    Saldo best. realer Käufe: 19181122
+    Saldo best. realer Käufe+UB: 19181128
+    Saldo best. realer Verkäufe: 19181134
+    Saldo best. realer Verkäufe+UB: 19181140
+    Saldo realer Geschäfte: 19181112
+    Saldo realer Geschäfte +UB: 19181118
+    Saldo realer Käufe: 19181124
+    Saldo realer Käufe+UB: 19181130
+    Saldo realer Verkäufe: 19181136
+    Saldo realer Verkäufe+UB: 19181142
+  SBK6_G:
+    '#LB EET Contracted Offtake Marketvalue': 23841019
+    '#LB EET Contracted Offtake Volume': 23840873
+    '#LB EET Open position Contracted offtake Marketvalue': 23841023
+    '#LB EET Open position Contracted offtake Volume': 23840878
+    '#LB General Sourced SBK4 Cost': 23840939
+    '#LB General Sourced SBK4 Marketvalue': 23840945
+    '#LB General Sourced SBK4 MtM': 23840949
+    '#LB General Sourced SBK4 Volume': 23840884
+    '#LB General Sourced biogas Cost': 23840953
+    '#LB General Sourced biogas Volume': 23840889
+    '#LB General Sourced conversion Cost': 23840958
+    '#LB General Sourced conversion Volume': 23840894
+    '#LB General Sourced forward Cost': 23840963
+    '#LB General Sourced forward Marketvalue': 23840968
+    '#LB General Sourced forward MtM': 23840972
+    '#LB General Sourced forward Volume': 23840899
+    '#LB General Sourced imbalance Cost': 23840976
+    '#LB General Sourced imbalance Volume': 23840904
+    '#LB General Sourced natural gas forward total Cost': 23840981
+    '#LB General Sourced natural gas forward total Marketvalue': 23840985
+    '#LB General Sourced natural gas forward total MtM': 23840989
+    '#LB General Sourced natural gas forward total Volume': 23840909
+    '#LB General Sourced natural gas total Cost': 23840993
+    '#LB General Sourced natural gas total Volume': 23840913
+    '#LB General Sourced spot Cost': 23840998
+    '#LB General Sourced spot Volume': 23840918
+    '#LB General Sourced spot total Cost': 23841003
+    '#LB General Sourced spot total Volume': 23840923
+    '#LB General Sourced temperature Cost': 23841007
+    '#LB General Sourced temperature Volume': 23840927
+    '#LB General Sourced total Cost': 23841012
+    '#LB General Sourced total Volume': 23840932
+    '#LB PFMG Absatz SBK6 Gesamt': 20600282
+    '#LB PFMG SBK6 Biogasbedarf 5% Jahresband/h Jahr': 22294859
+    '#LB PFMG SBK6 Biogasbedarf 5% Jahresband/h Stunde': 22294893
+    '#LB PFMG SBK6 Biogasbedarf 5% Jahresband/h Stunde gerundet': 22294897
+    '#LB PFMG SBK6 Biogasbedarf 5% Jahresmenge Jahr': 22297677
+    '#LB PFMG SBK6 Biogasbedarf 5% Long/Short Jahresmenge Jahr': 22297691
+    '#LB PFMG SBK6 Biogasbedarf 5% Stunde': 22294855
+    '#LB RM Kostensumme Anteil AE': 19279732
+    '#LB RM Kostensumme Anteil Biogas': 19279728
+    '#LB RM Kostensumme Anteil Konvertierung': 19279736
+    '#LB RM Kostensumme Anteil SBK6': 21562242
+    '#LB RM Kostensumme Anteil Speicher': 19279726
+    '#LB RM Kostensumme Anteil Spot': 19279724
+    '#LB RM Kostensumme Anteil Temperatur': 19279730
+    '#LB RM Kostensumme Anteil Termin': 19279722
+    '#LB RM Kostensumme Anteil ToP': 19279734
+    '#LB RM Saldo Menge Anteil AE': 19279648
+    '#LB RM Saldo Menge Anteil Biogas': 19279644
+    '#LB RM Saldo Menge Anteil Konvertierung': 19279652
+    '#LB RM Saldo Menge Anteil SBK6': 21562237
+    '#LB RM Saldo Menge Anteil Speicher': 19279642
+    '#LB RM Saldo Menge Anteil Spot': 19279640
+    '#LB RM Saldo Menge Anteil Temperatur': 19279646
+    '#LB RM Saldo Menge Anteil Termin': 19279638
+    '#LB RM Saldo Menge Anteil ToP': 19279650
+    Saldo aller Geschäfte: 19180758
+    Saldo aller Geschäfte +UB: 19180764
+    Saldo aller Käufe: 19180770
+    Saldo aller Käufe+UB: 19180776
+    Saldo aller Verkäufe: 19180782
+    Saldo aller Verkäufe+UB: 19180788
+    Saldo best. realer G. +UB: 19180760
+    Saldo best. realer Gesch.: 19180754
+    Saldo best. realer Käufe: 19180766
+    Saldo best. realer Käufe+UB: 19180772
+    Saldo best. realer Verkäufe: 19180778
+    Saldo best. realer Verkäufe+UB: 19180784
+    Saldo realer Geschäfte: 19180756
+    Saldo realer Geschäfte +UB: 19180762
+    Saldo realer Käufe: 19180768
+    Saldo realer Käufe+UB: 19180774
+    Saldo realer Verkäufe: 19180780
+    Saldo realer Verkäufe+UB: 19180786
+  SBK7_G:
+    '#LB EET Contracted Offtake Marketvalue': 23839227
+    '#LB EET Contracted Offtake Volume': 23839082
+    '#LB EET Open position Contracted offtake Marketvalue': 23839231
+    '#LB EET Open position Contracted offtake Volume': 23839087
+    '#LB General Sourced SBK4 Cost': 23839148
+    '#LB General Sourced SBK4 Marketvalue': 23839153
+    '#LB General Sourced SBK4 MtM': 23839157
+    '#LB General Sourced SBK4 Volume': 23839093
+    '#LB General Sourced biogas Cost': 23839161
+    '#LB General Sourced biogas Volume': 23839098
+    '#LB General Sourced conversion Cost': 23839166
+    '#LB General Sourced conversion Volume': 23839103
+    '#LB General Sourced forward Cost': 23839171
+    '#LB General Sourced forward Marketvalue': 23839176
+    '#LB General Sourced forward MtM': 23839180
+    '#LB General Sourced forward Volume': 23839108
+    '#LB General Sourced imbalance Cost': 23839184
+    '#LB General Sourced imbalance Volume': 23839113
+    '#LB General Sourced natural gas forward total Cost': 23839189
+    '#LB General Sourced natural gas forward total Marketvalue': 23839193
+    '#LB General Sourced natural gas forward total MtM': 23839197
+    '#LB General Sourced natural gas forward total Volume': 23839118
+    '#LB General Sourced natural gas total Cost': 23839201
+    '#LB General Sourced natural gas total Volume': 23839122
+    '#LB General Sourced spot Cost': 23839206
+    '#LB General Sourced spot Volume': 23839127
+    '#LB General Sourced spot total Cost': 23839211
+    '#LB General Sourced spot total Volume': 23839132
+    '#LB General Sourced temperature Cost': 23839215
+    '#LB General Sourced temperature Volume': 23839136
+    '#LB General Sourced total Cost': 23839220
+    '#LB General Sourced total Volume': 23839141
+    '#LB PFMG Absatz SBK7 Gesamt': 20898227
+    '#LB RM Kostensumme Anteil AE': 19279794
+    '#LB RM Kostensumme Anteil Konvertierung': 19279790
+    '#LB RM Kostensumme Anteil SBK4': 19279792
+    '#LB RM Kostensumme Anteil Spot': 19279788
+    '#LB RM Kostensumme Anteil Temperatur': 23851342
+    '#LB RM Kostensumme Anteil Termin': 19279786
+    '#LB RM Kostensumme Anteil ToP': 21509543
+    '#LB RM Saldo Menge Anteil AE': 19279704
+    '#LB RM Saldo Menge Anteil Konvertierung': 19279700
+    '#LB RM Saldo Menge Anteil SBK4': 19279702
+    '#LB RM Saldo Menge Anteil Spot': 19279698
+    '#LB RM Saldo Menge Anteil Temperatur': 23851347
+    '#LB RM Saldo Menge Anteil Termin': 19279696
+    '#LB RM Saldo Menge Anteil ToP': 21509496
+    Saldo aller Geschäfte: 19181203
+    Saldo aller Geschäfte +UB: 19181209
+    Saldo aller Käufe: 19181215
+    Saldo aller Käufe+UB: 19181221
+    Saldo aller Verkäufe: 19181227
+    Saldo aller Verkäufe+UB: 19181233
+    Saldo best. realer G. +UB: 19181205
+    Saldo best. realer Gesch.: 19181199
+    Saldo best. realer Käufe: 19181211
+    Saldo best. realer Käufe+UB: 19181217
+    Saldo best. realer Verkäufe: 19181223
+    Saldo best. realer Verkäufe+UB: 19181229
+    Saldo realer Geschäfte: 19181201
+    Saldo realer Geschäfte +UB: 19181207
+    Saldo realer Käufe: 19181213
+    Saldo realer Käufe+UB: 19181219
+    Saldo realer Verkäufe: 19181225
+    Saldo realer Verkäufe+UB: 19181231
+  SBK8_G:
+    '#LB EET Contracted Offtake Marketvalue': 23838607
+    '#LB EET Contracted Offtake Volume': 23838462
+    '#LB EET Open position Contracted offtake Marketvalue': 23838611
+    '#LB EET Open position Contracted offtake Volume': 23838467
+    '#LB General Sourced SBK4 Cost': 23838528
+    '#LB General Sourced SBK4 Marketvalue': 23838533
+    '#LB General Sourced SBK4 MtM': 23838537
+    '#LB General Sourced SBK4 Volume': 23838473
+    '#LB General Sourced biogas Cost': 23838541
+    '#LB General Sourced biogas Volume': 23838478
+    '#LB General Sourced conversion Cost': 23838546
+    '#LB General Sourced conversion Volume': 23838483
+    '#LB General Sourced forward Cost': 23838551
+    '#LB General Sourced forward Marketvalue': 23838556
+    '#LB General Sourced forward MtM': 23838560
+    '#LB General Sourced forward Volume': 23838488
+    '#LB General Sourced imbalance Cost': 23838564
+    '#LB General Sourced imbalance Volume': 23838493
+    '#LB General Sourced natural gas forward total Cost': 23838569
+    '#LB General Sourced natural gas forward total Marketvalue': 23838573
+    '#LB General Sourced natural gas forward total MtM': 23838577
+    '#LB General Sourced natural gas forward total Volume': 23838498
+    '#LB General Sourced natural gas total Cost': 23838581
+    '#LB General Sourced natural gas total Volume': 23838502
+    '#LB General Sourced spot Cost': 23838586
+    '#LB General Sourced spot Volume': 23838507
+    '#LB General Sourced spot total Cost': 23838591
+    '#LB General Sourced spot total Volume': 23838512
+    '#LB General Sourced temperature Cost': 23838595
+    '#LB General Sourced temperature Volume': 23838516
+    '#LB General Sourced total Cost': 23838600
+    '#LB General Sourced total Volume': 23838521
+    '#LB PFMG Absatz SBK8 Gesamt': 23654490
+    '#LB PFMG SBK8 Absatz': 22153526
+    '#LB PFMG SBK8 Biogasbedarf 5% Jahresband/h Jahr': 22153534
+    '#LB PFMG SBK8 Biogasbedarf 5% Jahresband/h Stunde': 22153538
+    '#LB PFMG SBK8 Biogasbedarf 5% Jahresband/h Stunde gerundet': 22157893
+    '#LB PFMG SBK8 Biogasbedarf 5% Stunde': 22153530
+    '#LB PFMG SBK8 Biogasbeschaffung Jahresmenge Jahr': 22297700
+    '#LB PFMG SBK8 Biogasposition Long Stunde': 22154132
+    '#LB PFMG SBK8 Biogasposition Long/Short Delta Laufendes Jahr Stunde': 22258121
+    '#LB PFMG SBK8 Biogasposition Long/Short FINAL Stunde': 22258126
+    '#LB PFMG SBK8 Biogasposition Long/Short Plan Jahresband Stunde': 22153859
+    '#LB PFMG SBK8 Biogasposition Long/Short kumuliert Stunde': 22257772
+    '#LB PFMG SBK8 Biogasposition Short Stunde': 22154137
+    '#LB RM Kostensumme Anteil AE': 22119224
+    '#LB RM Kostensumme Anteil Konvertierung': 22119220
+    '#LB RM Kostensumme Anteil SBK4': 22119228
+    '#LB RM Kostensumme Anteil SBK6': 22119440
+    '#LB RM Kostensumme Anteil Spot': 22119218
+    '#LB RM Kostensumme Anteil Temperatur': 22119222
+    '#LB RM Kostensumme Anteil Termin': 22119216
+    '#LB RM Kostensumme Anteil ToP': 22119226
+    '#LB RM Saldo Menge Anteil AE': 22119239
+    '#LB RM Saldo Menge Anteil Konvertierung': 22119235
+    '#LB RM Saldo Menge Anteil SBK4': 22119243
+    '#LB RM Saldo Menge Anteil SBK6': 22119506
+    '#LB RM Saldo Menge Anteil Spot': 22119233
+    '#LB RM Saldo Menge Anteil Temperatur': 22119237
+    '#LB RM Saldo Menge Anteil Termin': 22119231
+    '#LB RM Saldo Menge Anteil ToP': 22119241
+    Saldo aller Geschäfte: 22091252
+    Saldo aller Geschäfte +UB: 22091258
+    Saldo aller Käufe: 22091264
+    Saldo aller Käufe+UB: 22091270
+    Saldo aller Verkäufe: 22091276
+    Saldo aller Verkäufe+UB: 22091282
+    Saldo best. realer G. +UB: 22091254
+    Saldo best. realer Gesch.: 22091248
+    Saldo best. realer Käufe: 22091260
+    Saldo best. realer Käufe+UB: 22091266
+    Saldo best. realer Verkäufe: 22091272
+    Saldo best. realer Verkäufe+UB: 22091278
+    Saldo realer Geschäfte: 22091250
+    Saldo realer Geschäfte +UB: 22091256
+    Saldo realer Käufe: 22091262
+    Saldo realer Käufe+UB: 22091268
+    Saldo realer Verkäufe: 22091274
+    Saldo realer Verkäufe+UB: 22091280
+    Test_Hendrik: 22283436
+  SBK9_G:
+    '#LB EET Contracted Offtake Marketvalue': 23841174
+    '#LB EET Contracted Offtake Volume': 23841029
+    '#LB EET Open position Contracted offtake Marketvalue': 23841178
+    '#LB EET Open position Contracted offtake Volume': 23841034
+    '#LB General Sourced SBK4 Cost': 23841095
+    '#LB General Sourced SBK4 Marketvalue': 23841100
+    '#LB General Sourced SBK4 MtM': 23841104
+    '#LB General Sourced SBK4 Volume': 23841040
+    '#LB General Sourced biogas Cost': 23841108
+    '#LB General Sourced biogas Volume': 23841045
+    '#LB General Sourced conversion Cost': 23841113
+    '#LB General Sourced conversion Volume': 23841050
+    '#LB General Sourced forward Cost': 23841118
+    '#LB General Sourced forward Marketvalue': 23841123
+    '#LB General Sourced forward MtM': 23841127
+    '#LB General Sourced forward Volume': 23841055
+    '#LB General Sourced imbalance Cost': 23841131
+    '#LB General Sourced imbalance Volume': 23841060
+    '#LB General Sourced natural gas forward total Cost': 23841136
+    '#LB General Sourced natural gas forward total Marketvalue': 23841140
+    '#LB General Sourced natural gas forward total MtM': 23841144
+    '#LB General Sourced natural gas forward total Volume': 23841065
+    '#LB General Sourced natural gas total Cost': 23841148
+    '#LB General Sourced natural gas total Volume': 23841069
+    '#LB General Sourced spot Cost': 23841153
+    '#LB General Sourced spot Volume': 23841074
+    '#LB General Sourced spot total Cost': 23841158
+    '#LB General Sourced spot total Volume': 23841079
+    '#LB General Sourced temperature Cost': 23841162
+    '#LB General Sourced temperature Volume': 23841083
+    '#LB General Sourced total Cost': 23841167
+    '#LB General Sourced total Volume': 23841088
+    '#LB PFMG Absatz SBK9 Gesamt': 22593846
+    '#LB PFMG Gremlin-Beschaffung Saldo aller hausinternen Geschäfte Termin+ToP GPL_H': 22809583
+    '#LB PFMG Gremlin-Beschaffung Saldo aller hausinternen Geschäfte Termin+ToP GPL_L': 22809610
+    '#LB PFMG Gremlin-Beschaffung Saldo aller hausinternen Geschäfte Termin+ToP NCG_H': 22809602
+    '#LB PFMG Gremlin-Beschaffung Saldo aller hausinternen Geschäfte Termin+ToP NCG_L': 22809618
+    '#LB PFMG Gremlin-Preise Kostensumme aller Geschäfte Termin': 23298184
+    '#LB PFMG Gremlin-Preise Kostensumme aller bestätigten hausinternen Geschäfte Termin': 22698289
+    '#LB PFMG Gremlin-Preise Kostensumme aller unbestätigten hausinternen Geschäfte Termin': 22698256
+    '#LB PFMG Gremlin-Preise Saldo aller bestätigten hausinternen Geschäfte Termin': 22699317
+    '#LB PFMG Gremlin-Preise Saldo aller unbestätigten hausinternen Geschäfte Termin': 22698246
+    '#LB PFMG Kostensumme Anteil Termin': 23225176
+    '#LB PFMG Optimierung offene Position PK SBK9 Gesamt': 22667733
+    '#LB PFMG Saldo Menge Anteil Termin': 23225124
+    '#LB RM Kostensumme Anteil AE': 23655617
+    '#LB RM Kostensumme Anteil Biogas': 23655781
+    '#LB RM Kostensumme Anteil Konvertierung': 23655786
+    '#LB RM Kostensumme Anteil SBK4': 23655775
+    '#LB RM Kostensumme Anteil Speicher': 23655791
+    '#LB RM Kostensumme Anteil Spot': 23655796
+    '#LB RM Kostensumme Anteil Temperatur': 23655801
+    '#LB RM Kostensumme Anteil Termin': 23655806
+    '#LB RM Kostensumme Anteil ToP': 23655811
+    '#LB RM Saldo Menge Anteil AE': 23655612
+    '#LB RM Saldo Menge Anteil Biogas': 23655682
+    '#LB RM Saldo Menge Anteil Konvertierung': 23655687
+    '#LB RM Saldo Menge Anteil SBK4': 23655693
+    '#LB RM Saldo Menge Anteil Speicher': 23655699
+    '#LB RM Saldo Menge Anteil Spot': 23655705
+    '#LB RM Saldo Menge Anteil Temperatur': 23655710
+    '#LB RM Saldo Menge Anteil Termin': 23655715
+    '#LB RM Saldo Menge Anteil ToP': 23655720
+    Saldo aller Geschäfte: 22582090
+    Saldo aller Geschäfte +UB: 22582096
+    Saldo aller Käufe: 22582102
+    Saldo aller Käufe+UB: 22582108
+    Saldo aller Verkäufe: 22582114
+    Saldo aller Verkäufe+UB: 22582120
+    Saldo best. realer G. +UB: 22582092
+    Saldo best. realer Gesch.: 22582086
+    Saldo best. realer Käufe: 22582098
+    Saldo best. realer Käufe+UB: 22582104
+    Saldo best. realer Verkäufe: 22582110
+    Saldo best. realer Verkäufe+UB: 22582116
+    Saldo realer Geschäfte: 22582088
+    Saldo realer Geschäfte +UB: 22582094
+    Saldo realer Käufe: 22582100
+    Saldo realer Käufe+UB: 22582106
+    Saldo realer Verkäufe: 22582112
+    Saldo realer Verkäufe+UB: 22582118
