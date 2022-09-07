@@ -8,7 +8,6 @@ from typing import Dict, Union
 import belvys
 import pandas as pd
 import portfolyo as pf
-from portfolyo.tools import frames
 
 tenants: Dict[str, belvys.Tenant] = {}
 
