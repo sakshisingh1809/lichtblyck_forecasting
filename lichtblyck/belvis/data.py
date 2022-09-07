@@ -8,14 +8,28 @@ from typing import Dict, Union
 import belvys
 import pandas as pd
 import portfolyo as pf
+from portfolyo.tools import frames
 
 tenants: Dict[str, belvys.Tenant] = {}
 
 THISFOLDER = pathlib.Path(__file__).parent
 
 
-def gas_aftercare(s: pd.Series, tsid: int, *args) -> pd.Series:
-    return s.tz_convert("+01:00").tz_localize(None) if tsid == 23346575 else s
+def aftercare_power(s, tsid, pfid, tsname):
+    s = belvys.adjustment.convert_to_berlin(s)
+    s = belvys.adjustment.infer_frequency(s)
+    s = belvys.adjustment.makeleft(s)
+    return s
+
+
+def aftercare_gas(s, tsid, pfid, tsname):
+    if tsid == 23346575:
+        s = belvys.adjustment.cet_to_berlin(s)
+    else:
+        s = belvys.adjustment.convert_to_berlin(s)
+    s = belvys.adjustment.infer_frequency(s)
+    s = belvys.adjustment.makeleft(s)
+    return s
 
 
 # def precare_factory(tsid: int, pfid: str, tsname: str) -> belvys.Precare:
@@ -54,7 +68,10 @@ def create_tenants() -> None:
         a = belvys.Api.from_file(THISFOLDER / f"{apifile}.yaml")
         tenant = belvys.Tenant(s, a)
         if id == "gas":
-            tenant.prepend_aftercare(gas_aftercare)
+            # tenant.prepend_aftercare(gas_aftercare)
+            tenant.aftercare = aftercare_gas
+        else:
+            tenant.aftercare = aftercare_power
         tenants[id] = tenant
 
 
@@ -158,7 +175,7 @@ def unsourcedprice(
     PfLine
     """
     priceid = {"power": "qhpfc", "gas": "dpfc"}[commodity]
-    ts_left = pd.Timestamp(ts_left) + dt.timedelta(days=-1)  # workaround gas
+    ts_left = pd.Timestamp(ts_left)  # + dt.timedelta(days=-1)  # workaround gas
     return tenants[commodity].price_pfl(priceid, ts_left, ts_right)
 
 
@@ -192,8 +209,9 @@ def pfstate(
 create_tenants()
 
 if __name__ == "__main__":
+    auth_with_environ()
     left = dt.date.today()
-    right = dt.date.today() + dt.timedelta(days=3)
+    right = dt.date.today() + dt.timedelta(days=300)
     og = offtakevolume("gas", "SBK1_G", left, right)
     ug = unsourcedprice("gas", left, right)
     op = offtakevolume("power", "P_B2B", left, right)
