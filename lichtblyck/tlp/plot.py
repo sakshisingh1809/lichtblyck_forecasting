@@ -3,11 +3,9 @@
 Plotting of tlp functions.
 """
 
-from ..core import basics
-from . import toload
 from typing import Callable, Iterable
+import portfolyo
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
 
@@ -19,7 +17,7 @@ def vs_time(tlp: Callable, t: Iterable = (-30, 30), freq: str = "15T") -> plt.Ax
     Parameters
     ----------
     tlp : Callable[pd.Series]
-        Function that takes temperature [degC] timeseries as argument, and 
+        Function that takes temperature [degC] timeseries as argument, and
         returns the consumption [MW] timeseries.
     t : Iterable, optional
         Temperatures for which a curve must be plot: (min, max, [step=1]). Only
@@ -60,7 +58,7 @@ def vs_t(tlp: Callable, t: Iterable = (-30, 30)) -> plt.Axes:
     Parameters
     ----------
     tlp : Callable
-        Function that takes temperature [degC] timeseries as argument and returns the 
+        Function that takes temperature [degC] timeseries as argument and returns the
         offtake [MW].
     t : Iterable, optional. Default is (-30, 30).
         Temperatures for which the curve must be plot: (min, max, [step=1]).
@@ -71,8 +69,10 @@ def vs_t(tlp: Callable, t: Iterable = (-30, 30)) -> plt.Axes:
         Pyplot Axes object containing the plot.
     """
     t1 = np.linspace(*t)
-    t2 = pd.Series(t1, pd.date_range('2020-01-01', freq='D', periods=len(t1), tz='Europe/Berlin'))
-    y = tlp(t2).resample('D').mean()
+    t2 = pd.Series(
+        t1, pd.date_range("2020-01-01", freq="D", periods=len(t1), tz="Europe/Berlin")
+    )
+    y = tlp(t2).resample("D").mean()
     s = pd.Series(y.values, t2.values)
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(s)

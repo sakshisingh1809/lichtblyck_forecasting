@@ -126,7 +126,7 @@ def offtakevolume(
 
     Returns
     -------
-    PfLine
+    pf.PfLine
     """
     return tenants[commodity].portfolio_pfl(pfid, "offtake", ts_left, ts_right)
 
@@ -150,7 +150,7 @@ def sourced(
 
     Returns
     -------
-    PfLine
+    pf.PfLine
     """
     return tenants[commodity].portfolio_pfl(pfid, "sourced", ts_left, ts_right)
 
@@ -171,7 +171,7 @@ def unsourcedprice(
 
     Returns
     -------
-    PfLine
+    pf.PfLine
     """
     priceid = {"power": "qhpfc", "gas": "dpfc"}[commodity]
     ts_left = pd.Timestamp(ts_left)  # + dt.timedelta(days=-1)  # workaround gas
