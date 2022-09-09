@@ -22,10 +22,7 @@ def aftercare_power(s, tsid, pfid, tsname):
 
 
 def aftercare_gas(s, tsid, pfid, tsname):
-    if tsid == 23346575:
-        s = belvys.adjustment.cet_to_berlin(s)
-    else:
-        s = belvys.adjustment.convert_to_berlin(s)
+    s = belvys.adjustment.convert_to_berlin(s)
     s = belvys.adjustment.infer_frequency(s)
     s = belvys.adjustment.makeleft(s)
     return s
