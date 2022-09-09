@@ -1,0 +1,98 @@
+########
+# Header
+########
+
+tz: Europe/Berlin       # convert all timestamps to this timezone
+freq: 15T               # frequency to convert all data into before returning
+
+#################
+# Portfolio lines
+#################
+
+pflines:
+
+  offtake: '#LB General Expected offtake Volume'
+        
+  sourced:
+    forward:
+    - "#LB General Sourced forward Volume"
+    - "#LB General Sourced forward Cost"
+    spot:
+    - "#LB General Sourced spot Volume"
+    - "#LB General Sourced spot Cost"
+
+############
+# Portfolios
+############
+
+portfolios:
+
+  original: 
+  - P_SAL
+  - P_B2C
+  - P_B2C_HH
+  - P_B2C_HH_FIX
+  - P_B2C_HH_FLEX
+  - P_B2C_HH_SPOT
+  - P_B2C_P2H
+  - P_B2C_P2H_HP
+  - P_B2C_P2H_HP_FLEX
+  - P_B2C_P2H_HP_FIX
+  - P_B2C_P2H_NSH
+  - P_B2C_P2H_NSH_FLEX
+  - P_B2C_P2H_NSH_FIX
+  - P_B2B
+  - P_B2B_BTB
+  - P_B2B_EXT
+  - P_B2B_SPOT
+  - P_B2B_STR
+
+  synthetic:
+
+    P_B2C_P2H_FLEX:
+    - P_B2C_P2H_HP_FLEX
+    - P_B2C_P2H_NSH_FLEX
+    
+    P_B2C_P2H_FIX:
+    - P_B2C_P2H_HP_FIX
+    - P_B2C_P2H_NSH_FIX
+
+    # Summing lower-level nodes to higher-level ones.
+
+    alt_P_B2C_HH:
+    - P_B2C_HH_FIX
+    - P_B2C_HH_FLEX
+    - P_B2C_HH_SPOT
+
+    alt_P_B2C_P2H:
+    - alt_P_B2C_P2H_HP
+    - alt_P_B2C_P2H_NSH
+
+    alt_P_B2C_P2H_HP:
+    - P_B2C_P2H_HP_FLEX
+    - P_B2C_P2H_HP_FIX
+    
+    alt_P_B2C_P2H_NSH:
+    - P_B2C_P2H_NSH_FLEX
+    - P_B2C_P2H_NSH_FIX
+
+    alt_P_B2B:
+    - P_B2B_BTB
+    - P_B2B_EXT
+    - P_B2B_SPOT
+    - P_B2B_STR
+
+##########################################
+# Corrections: portfolio line vs portfolio 
+##########################################
+
+
+########
+# Prices
+########
+
+prices:
+
+  qhpfc:
+    pfid: Deutschland
+    tsnames: Spot (Mix 15min) / QHPFC (aktuell)

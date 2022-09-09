@@ -1,8 +1,6 @@
 {
     "version": "0.2.0",
     "configurations": [
-    
-    
         {
             "name": "Python: Aktuelle Datei",
             "type": "python",
@@ -10,7 +8,10 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "env": {"PYTHONPATH": "${workspaceFolder}"}
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "justMyCode": false
         }
     ]
 }

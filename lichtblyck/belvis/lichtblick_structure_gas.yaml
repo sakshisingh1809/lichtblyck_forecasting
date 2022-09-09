@@ -1,0 +1,198 @@
+########
+# Header
+########
+
+tz: Europe/Berlin       # convert all timestamps to this timezone
+freq: D                 # frequency to convert all data into before returning
+
+#################
+# Portfolio lines
+#################
+
+pflines:
+
+  offtake: null
+
+  sourced: null
+
+############
+# Portfolios
+############
+
+portfolios:
+
+  original: [SBK1_G, SBK6_G, SBK9_G, SBK5_G, SBK8_G, SBK4_G, SBK7_G]
+
+  synthetic:
+    B2C_LEGACY: [SBK1_G, SBK6_G]
+    B2C_NEW: [SBK9_G]
+    B2B_BTB: [SBK5_G, SBK8_G]
+    B2B_CONTI: [SBK4_G]
+    B2B_RLM: [SBK7_G]
+    B2B: [B2B_BTB, B2B_CONTI, B2B_RLM]
+
+##########################################
+# Corrections: portfolio line vs portfolio 
+##########################################
+
+corrections:
+  SBK1_G:
+    offtake: "#LB PFMG Absatz SBK1 Gesamt"
+    sourced:
+      forward:
+      - "#LB RM Saldo Menge Anteil Termin"
+      - "#LB RM Kostensumme Anteil Termin"
+      spot:
+      - "#LB RM Saldo Menge Anteil Spot"
+      - "#LB RM Kostensumme Anteil Spot"
+      conversion:
+      - "#LB RM Saldo Menge Anteil Konvertierung"
+      - "#LB RM Kostensumme Anteil Konvertierung"
+      top:
+      - "#LB RM Saldo Menge Anteil ToP"
+      - "#LB RM Kostensumme Anteil ToP"
+      transfer:
+      - "#LB RM Saldo Menge Anteil SBK6"
+      - "#LB RM Kostensumme Anteil SBK6"
+      storage:
+      - "#LB RM Saldo Menge Anteil Speicher"
+      - "#LB RM Kostensumme Anteil Speicher"
+      tempr:
+      - "#LB RM Saldo Menge Anteil Temperatur"
+      - "#LB RM Kostensumme Anteil Temperatur"
+  SBK6_G:
+    offtake: "#LB PFMG Absatz SBK6 Gesamt"
+    sourced:
+      forward:
+      - "#LB RM Saldo Menge Anteil Termin"
+      - "#LB RM Kostensumme Anteil Termin"
+      spot:
+      - "#LB RM Saldo Menge Anteil Spot"
+      - "#LB RM Kostensumme Anteil Spot"
+      conversion:
+      - "#LB RM Saldo Menge Anteil Konvertierung"
+      - "#LB RM Kostensumme Anteil Konvertierung"
+      top:
+      - "#LB RM Saldo Menge Anteil ToP"
+      - "#LB RM Kostensumme Anteil ToP"
+      transfer:
+      - "#LB RM Saldo Menge Anteil SBK6"
+      - "#LB RM Kostensumme Anteil SBK6"
+      storage:  
+      - "#LB RM Saldo Menge Anteil Speicher"
+      - "#LB RM Kostensumme Anteil Speicher"
+      biogas:
+      - "#LB RM Saldo Menge Anteil Biogas"
+      - "#LB RM Kostensumme Anteil Biogas"
+      tempr:
+      - "#LB RM Saldo Menge Anteil Temperatur"
+      - "#LB RM Kostensumme Anteil Temperatur"
+  SBK9_G:
+    offtake: "#LB PFMG Absatz SBK9 Gesamt"
+    sourced:
+      forward:
+      - "#LB RM Saldo Menge Anteil Termin"
+      - "#LB RM Kostensumme Anteil Termin"
+      spot:
+      - "#LB RM Saldo Menge Anteil Spot"
+      - "#LB RM Kostensumme Anteil Spot"
+      conversion:
+      - "#LB RM Saldo Menge Anteil Konvertierung"
+      - "#LB RM Kostensumme Anteil Konvertierung"
+      top:
+      - "#LB RM Saldo Menge Anteil ToP"
+      - "#LB RM Kostensumme Anteil ToP"
+  SBK5_G:
+    offtake: "#LB PFMG Absatz SBK5 Gesamt"
+    sourced:
+      forward:
+      - "#LB RM Saldo Menge Anteil Termin"
+      - "#LB RM Kostensumme Anteil Termin"
+      spot:
+      - "#LB RM Saldo Menge Anteil Spot"
+      - "#LB RM Kostensumme Anteil Spot"
+      conversion:
+      - "#LB RM Saldo Menge Anteil Konvertierung"
+      - "#LB RM Kostensumme Anteil Konvertierung"
+      top:
+      - "#LB RM Saldo Menge Anteil ToP"
+      - "#LB RM Kostensumme Anteil ToP"
+      transfer:
+      - "#LB RM Saldo Menge Anteil SBK4"
+      - "#LB RM Kostensumme Anteil SBK4"
+      tempr:
+      - "#LB RM Saldo Menge Anteil Temperatur"
+      - "#LB RM Kostensumme Anteil Temperatur"
+  SBK8_G:
+    offtake: "#LB PFMG Absatz SBK8 Gesamt"
+    sourced:
+      forward:
+      - "#LB RM Saldo Menge Anteil Termin"
+      - "#LB RM Kostensumme Anteil Termin"
+      spot:
+      - "#LB RM Saldo Menge Anteil Spot"
+      - "#LB RM Kostensumme Anteil Spot"
+      conversion:
+      - "#LB RM Saldo Menge Anteil Konvertierung"
+      - "#LB RM Kostensumme Anteil Konvertierung"
+      top:
+      - "#LB RM Saldo Menge Anteil ToP"
+      - "#LB RM Kostensumme Anteil ToP"
+      transfer:
+      - "#LB RM Saldo Menge Anteil SBK6"
+      - "#LB RM Saldo Menge Anteil SBK4"
+      - "#LB RM Kostensumme Anteil SBK6"
+      - "#LB RM Kostensumme Anteil SBK4"
+      tempr:
+      - "#LB RM Saldo Menge Anteil Temperatur"
+      - "#LB RM Kostensumme Anteil Temperatur"
+  SBK4_G:
+    offtake: "#LB PFMG Absatz SBK4 Gesamt"
+    sourced:
+      forward:
+      - "#LB RM Saldo Menge Anteil Termin"
+      - "#LB RM Kostensumme Anteil Termin"
+      spot:
+      - "#LB RM Saldo Menge Anteil Spot"
+      - "#LB RM Kostensumme Anteil Spot"
+      conversion:
+      - "#LB RM Saldo Menge Anteil Konvertierung"
+      - "#LB RM Kostensumme Anteil Konvertierung"
+      top:
+      - "#LB RM Saldo Menge Anteil ToP"
+      - "#LB RM Kostensumme Anteil ToP"
+      transfer:
+      - "#LB RM Saldo Menge Anteil SBK4"
+      - "#LB RM Kostensumme Anteil SBK4"
+      tempr:
+      - "#LB RM Saldo Menge Anteil Temperatur"
+      - "#LB RM Kostensumme Anteil Temperatur"
+  SBK7_G:
+    offtake: "#LB PFMG Absatz SBK7 Gesamt"
+    sourced:
+      forward:
+      - "#LB RM Saldo Menge Anteil Termin"
+      - "#LB RM Kostensumme Anteil Termin"
+      spot:
+      - "#LB RM Saldo Menge Anteil Spot"
+      - "#LB RM Kostensumme Anteil Spot"
+      conversion:
+      - "#LB RM Saldo Menge Anteil Konvertierung"
+      - "#LB RM Kostensumme Anteil Konvertierung"
+      top:
+      - "#LB RM Saldo Menge Anteil ToP"
+      - "#LB RM Kostensumme Anteil ToP"
+      transfer:
+      - "#LB RM Saldo Menge Anteil SBK4"
+      - "#LB RM Kostensumme Anteil SBK4"
+
+########
+# Prices
+########
+
+prices:
+
+  dpfc:
+    pfid: PEGAS_THE_H
+    tsnames: Aktuellste DFC THE LB_h
+

@@ -2,6 +2,7 @@
 from matplotlib import pyplot as plt
 import lichtblyck as lb
 import pandas as pd
+import portfolyo as pf
 
 lb.belvis.auth_with_password("Ruud.Wijtvliet", "Ammm1mmm2mmm3mmm")
 
@@ -18,10 +19,14 @@ pfs6 = lb.portfolios.pfstate("gas", "SBK6", "2022")
 pfs = lb.portfolios.pfstate("gas", "B2C_LEGACY", "2022")
 
 # %%
+pfs = pfs1.__add__(pfs6)
+
+# %%
 i = pd.date_range("2020", "2020-05", freq="H", closed="left", tz="Europe/Berlin")
 u = lb.dev.get_pfstate(i)
 u.plot()
 fig = u.asfreq("MS").plot()
+
 #%%
 fig, ax = plt.subplots(2, 5, figsize=(20, 10))
 offtake = u.offtake + lb.tools.nits.Q_(120, "MW")
