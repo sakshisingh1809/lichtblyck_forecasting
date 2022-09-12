@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from lichtblyck.core.develop import dev
+from datetime import timedelta
+import portfolyo as pf
 import lichtblyck as lb
 import pandas as pd
 import numpy as np
@@ -81,7 +81,7 @@ def test_power_series_fromsource(source):
 
 @pytest.mark.parametrize("source", np.random.choice(lb.tlp.power.SOURCES, 8, False))
 def test_power_fromsource(source):
-    i = dev.get_index("D")  # some random time index in days
+    i = pf.dev.get_index("D")  # some random time index in days
     t = pd.Series(np.random.uniform(-30, 30, len(i)), i)
     tlp1 = lb.tlp.power.fromsource(source["name"], spec=1)
     w1 = tlp1(t)
@@ -95,7 +95,7 @@ def test_power_fromsource(source):
 
 
 def test_gas_D14():
-    i = dev.get_index("D")  # some random time index in days
+    i = pf.dev.get_index("D")  # some random time index in days
     t = pd.Series(np.random.uniform(-30, 30, len(i)), i)
     tlp1 = lb.tlp.gas.D14(kw=1)
     w1 = tlp1(t)

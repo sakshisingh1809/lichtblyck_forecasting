@@ -22,10 +22,7 @@ def aftercare_power(s, tsid, pfid, tsname):
 
 
 def aftercare_gas(s, tsid, pfid, tsname):
-    if tsid == 23346575:
-        s = belvys.adjustment.cet_to_berlin(s)
-    else:
-        s = belvys.adjustment.convert_to_berlin(s)
+    s = belvys.adjustment.convert_to_berlin(s)
     s = belvys.adjustment.infer_frequency(s)
     s = belvys.adjustment.makeleft(s)
     return s
@@ -126,7 +123,7 @@ def offtakevolume(
 
     Returns
     -------
-    PfLine
+    pf.PfLine
     """
     return tenants[commodity].portfolio_pfl(pfid, "offtake", ts_left, ts_right)
 
@@ -150,7 +147,7 @@ def sourced(
 
     Returns
     -------
-    PfLine
+    pf.PfLine
     """
     return tenants[commodity].portfolio_pfl(pfid, "sourced", ts_left, ts_right)
 
@@ -171,7 +168,7 @@ def unsourcedprice(
 
     Returns
     -------
-    PfLine
+    pf.PfLine
     """
     priceid = {"power": "qhpfc", "gas": "dpfc"}[commodity]
     ts_left = pd.Timestamp(ts_left)  # + dt.timedelta(days=-1)  # workaround gas

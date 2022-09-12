@@ -2,14 +2,13 @@
 Module to read montel price data from disk.
 """
 
-from . import utils, convert
-from ..tools.frames import set_ts_index
+from portfolyo.prices import convert, utils
 from typing import Dict
 from pathlib import Path
 import functools
+import portfolyo as pf
 import pandas as pd
 import numpy as np
-
 
 _MONTELFILEPATH = Path(__file__).parent / "sourcedata" / "prices_montel.xlsm"
 
@@ -191,7 +190,7 @@ def power_spot() -> pd.Series:
         except KeyError:
             to_insert = pd.Series(spot[ts], [ts])
         spot = pd.concat([spot[:ts], to_insert, spot[ts:][1:]])
-    spot = set_ts_index(spot).rename("p")
+    spot = pf.standardize(spot).rename("p")
     spot = spot.resample("H").asfreq().astype("pint[Eur/MWh]")
     return spot
 
@@ -209,10 +208,10 @@ def gas_spot(market_code: str = "ncg") -> pd.Series:
     pd.Series
     """
     data = pd.read_excel(**_excel_gas("da", market_code=market_code))
-    data = set_ts_index(data.dropna(), data.columns[0], continuous=False)
+    data = data.dropna().set_index(data.columns[0])
     s = data.iloc[:, 0]  # turn one-column df into series
     s.index = s.index.ts_right  # shift up one, so delivery (not trade) day is shown.
-    spot = set_ts_index(s).rename("p")
+    spot = pf.standardize(s).rename("p")
     return spot
 
 
@@ -243,8 +242,8 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
         df.dropna(inplace=True)
         df.columns = ["ts_left_trade", "p"]
         df.p = df.p.astype("pint[Eur/MWh]")
-    b = set_ts_index(b, "ts_left_trade", continuous=False)
-    p = set_ts_index(p, "ts_left_trade", continuous=False)
+    b = pf.standardize(b, "aware", index_col="ts_left_trade", force_freq="D")
+    p = pf.standardize(p, "aware", index_col="ts_left_trade", force_freq="D")
 
     # ...put into one object...
     df = p.merge(
@@ -337,7 +336,7 @@ def _gas_futures(
     df = pd.read_excel(**_excel_gas(period_type, period_start, market_code))
     df.dropna(inplace=True)
     df.columns = ["ts_left_trade", "p"]
-    df = set_ts_index(df, "ts_left_trade", continuous=False)
+    df = pf.standardize(df, "aware", index_col="ts_left_trade", force_freq="D")
     # ...add some additional information...
     @functools.lru_cache
     def deliv_f(ts):

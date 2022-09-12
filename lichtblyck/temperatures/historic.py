@@ -8,13 +8,12 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 """
 
 from .sourcedata.climate_zones import historicdata, forallzones
-from ..tools.frames import set_ts_index
-from ..tools import stamps, frames
 from sklearn.linear_model import LinearRegression
 from typing import Callable, Union
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
+import portfolyo as pf
 import pandas as pd
 import numpy as np
 import datetime as dt
@@ -38,8 +37,9 @@ def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
     df["MESS_DATUM"] = pd.to_datetime(df["MESS_DATUM"], format="%Y%m%d")
     df = df[df["MESS_DATUM"] >= "1917"]  # Problems with earlier data.
     # ...and set correct index and make gapless.
-    df = set_ts_index(df, "MESS_DATUM", "left", continuous=False).tz_localize(None)
-    df = df.resample("D").asfreq()  # add na-values for missing rows.
+    df = pf.standardize(
+        df, "aware", "left", index_col="MESS_DATUM", force_freq="D"
+    ).tz_localize(None)
     return df
 
 
@@ -82,7 +82,7 @@ def tmpr(
         degC.
     """
     # Fix timestamps (if necessary).
-    ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
+    ts_left, ts_right = pf.ts_leftright(ts_left, ts_right)
     return forallzones(lambda cz: _tmpr(cz, ts_left, ts_right))
 
 
@@ -230,8 +230,8 @@ def tmpr_struct(
         weights["power"] / weights["power"].sum()
         + weights["gas"] / weights["gas"].sum()
     )
-    yymm["t_germany"] = frames.wavg(yymm, weights, axis=1)
-    mm["t_germany"] = frames.wavg(mm, weights, axis=1)
+    yymm["t_germany"] = pf.wavg(yymm, weights, axis=1)
+    mm["t_germany"] = pf.wavg(mm, weights, axis=1)
     #    3: compare to, for each month, find year with lowest deviation from the long-term average
     yymm["t_delta"] = yymm.apply(
         lambda row: row["t_germany"] - mm["t_germany"][row.name[0]], axis=1

@@ -1,9 +1,9 @@
 """Create timeseries with norm temperatures for past and future dates."""
 
 from .sourcedata.climate_zones import norm_fourier_coefficients, forallzones
-from ..tools import stamps
 
 from typing import Union
+import portfolyo as pf
 import pandas as pd
 import numpy as np
 import datetime as dt
@@ -61,5 +61,5 @@ def tmpr(
         degC.
     """
     # Fix timestamps (if necessary).
-    ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
+    ts_left, ts_right = pf.ts_leftright(ts_left, ts_right)
     return forallzones(lambda cz: _tmpr(cz, ts_left, ts_right))
