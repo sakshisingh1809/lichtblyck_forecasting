@@ -884,6 +884,9 @@ cache:
     Saldo realer Käufe+UB: 44717558
     Saldo realer Verkäufe: 44717564
     Saldo realer Verkäufe+UB: 44717570
+    '2022_09_01 #LB General Sourced total Volume': 44797639
+    '2022_09_01 #LB General Expected offtake Volume': 44797637
+    '2022_09_01 #LB General Sourced total Cost': 44797693
   P_SAL:
     '#LB CPM Sourced forward Cost month': 44743572
     '#LB CPM Sourced forward Marketvalue month': 44743568

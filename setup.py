@@ -13,8 +13,9 @@ from setuptools import find_packages
 
 setup(
     name="Lichtblyck",
-    version="1.0.0",
+    version="1.0.1",
     author="Ruud Wijtvliet",
+    author_email="ruud.wijtvliet@lichtblick.de",
     zip_safe=False,
     packages=find_packages(exclude=["tests"]),
     description="Analysing and manipulating timeseries related to power and gas offtake portfolios.",
