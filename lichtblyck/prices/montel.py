@@ -266,7 +266,7 @@ def _power_futures(period_type: str = "m", period_start: int = 1) -> pd.DataFram
 
     # ...and calculate offpeak prices.
     freq = periodtype_to_freq(period_type)
-    df["p_offpeak"] = convert.offpeak(df["p_base"], df["p_peak"], df.index, freq)
+    df["p_offpeak"] = convert.offpeak(df["p_base"], df["p_peak"], pd.DatetimeIndex(df['ts_left']), freq)
 
     # Finally, return in correct row and column order.
     return df[["ts_left", "ts_right", "anticipation", "p_base", "p_peak", "p_offpeak"]]
