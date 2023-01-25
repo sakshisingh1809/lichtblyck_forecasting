@@ -1,0 +1,9 @@
+include README.md
+include requirements.txt
+include lichtblyck/tools/unitdefinitions.txt
+include lichtblyck/belvis/cache/*.json         # probably only needed here because error handling doesnt exist
+
+global-include *.yaml
+recursive-include lichtblyck/tlp/sourcedata *
+recursive-include lichtblyck/temperatures/sourcedata *
+recursive-include lichtblyck/prices/sourcedata *

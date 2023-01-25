@@ -8,13 +8,15 @@ https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/dai
 """
 
 from sourcedata.climate_zones import historicdata, forallzones
-from ..tools.frames import set_ts_index
-from ..tools import stamps, frames
+
+# from ..tools.frames import set_ts_index
+# from ..tools import stamps, frames
 from sklearn.linear_model import LinearRegression
 from typing import Callable, Union
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
+import portfolyo as pf
 import pandas as pd
 import numpy as np
 import datetime as dt
@@ -38,8 +40,9 @@ def climate_data(climate_zone: Union[int, Path]) -> pd.DataFrame:
     df["MESS_DATUM"] = pd.to_datetime(df["MESS_DATUM"], format="%Y%m%d")
     df = df[df["MESS_DATUM"] >= "1917"]  # Problems with earlier data.
     # ...and set correct index and make gapless.
-    df = set_ts_index(df, "MESS_DATUM", "left", continuous=False).tz_localize(None)
-    df = df.resample("D").asfreq()  # add na-values for missing rows.
+    df = pf.standardize(
+        df, "aware", "left", index_col="MESS_DATUM", force_freq="D"
+    ).tz_localize(None)
     return df
 
 
@@ -82,7 +85,7 @@ def tmpr(
         degC.
     """
     # Fix timestamps (if necessary).
-    ts_left, ts_right = stamps.ts_leftright(ts_left, ts_right)
+    ts_left, ts_right = pf.ts_leftright(ts_left, ts_right)
     return forallzones(lambda cz: _tmpr(cz, ts_left, ts_right))
 
 
@@ -186,7 +189,8 @@ def tmpr_struct(
     yymm.index.rename(["MM", "YY"], inplace=True)
     mm = yymm.groupby("MM").mean()
 
-    #    2: calculate geographic average; weigh with consumption / customer presence in each zone
+    #    2: calculate geographic average; weigh with consumption / customer presence
+    #    in each zone
     weights = pd.DataFrame(
         {
             "power": [
@@ -230,9 +234,10 @@ def tmpr_struct(
         weights["power"] / weights["power"].sum()
         + weights["gas"] / weights["gas"].sum()
     )
-    yymm["t_germany"] = frames.wavg(yymm, weights, axis=1)
-    mm["t_germany"] = frames.wavg(mm, weights, axis=1)
-    #    3: compare to, for each month, find year with lowest deviation from the long-term average
+    yymm["t_germany"] = pf.wavg(yymm, weights, axis=1)
+    mm["t_germany"] = pf.wavg(mm, weights, axis=1)
+    #    3: compare to, for each month, find year with lowest deviation
+    #    from the long-term average
     yymm["t_delta"] = yymm.apply(
         lambda row: row["t_germany"] - mm["t_germany"][row.name[0]], axis=1
     )
@@ -264,7 +269,8 @@ def fill_gaps(t: pd.DataFrame) -> pd.DataFrame:
     Parameters
     ----------
     t : pd.DataFrame
-        Dataframe with temperature timeseries. Each column is different geographic location.
+        Dataframe with temperature timeseries. Each column is different geographic
+        location.
 
     Returns
     -------
@@ -272,10 +278,12 @@ def fill_gaps(t: pd.DataFrame) -> pd.DataFrame:
         Temperature dataframe with (some) gaps filled.
     """
     # Keep only days with at most 1 missing climate zone.
-    # remove days with >1 missing value. (.copy() only needed to stop 'A value is trying to be set on a copy of a slice' warning.)
+    # remove days with >1 missing value. (.copy() only needed to stop 'A value is
+    # trying to be set on a copy of a slice' warning.)
     t = t[t.isna().sum(axis=1) < 2].copy()
 
-    # For each missing value, get estimate. Using average difference to other stations' values.
+    # For each missing value, get estimate. Using average difference to other stations'
+    # values.
     complete = t.dropna()  # all days without any missing value
     for col in t:
         isna = t[col].isna()
