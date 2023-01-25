@@ -1,0 +1,6 @@
+Source: DWD
+https://kunden.dwd.de/obt/index.jsp
+
+1. Select correct location on map and download zip file with data.
+   (See source.csv for coordinates used for each climate zone.)
+2. Extract into this folder.

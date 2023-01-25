@@ -5,7 +5,7 @@ Created on Fri Jul 31 11:36:19 2020
 @author: ruud.wijtvliet
 """
 
-import lichtblyck as lb
+import lichtblyck_forecasting as lf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,13 +40,13 @@ weights = (
 )
 
 # Temperature to load
-t2l = lb.tlp.standardized_tmpr_loadprofile(2)
+t2l = lf.tlp.standardized_tmpr_loadprofile(2)
 
 ispeak = lambda ts: (ts.hour >= 8) & (ts.hour < 20)
 
 
 # Actual temperature.
-act = lb.historic.tmpr()
+act = lf.historic.tmpr()
 act = act[act.index >= "1963"]  # after 1963, each day has at most 1 missing station.
 
 # For each missing value, get estimate. Using average difference to other stations' values.
@@ -59,5 +59,5 @@ for col in complete.columns:
     isna = act[col].isna()
     filled.loc[isna, col] = act.drop(col, axis=1).loc[isna].mean(axis=1) + diff
 
-filled["t_germany"] = lb.wavg(filled, weights, axis=1)
+filled["t_germany"] = lf.wavg(filled, weights, axis=1)
 filled.t_germany.to_csv("test.csv")

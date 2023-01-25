@@ -1,0 +1,678 @@
+categorical_groups: {}
+cell_type: LSTM
+dropout: 0.1
+embedding_labels:
+  static:
+    '2': 0
+embedding_paddings: []
+embedding_sizes:
+  static: !!python/tuple
+  - 1
+  - 1
+hidden_size: 32
+learning_rate: 0.1
+log_gradient_flow: false
+log_interval: 10
+log_val_interval: 3
+logging_metrics: !!python/object:torch.nn.modules.container.ModuleList
+  _backward_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _buffers: !!python/object/apply:collections.OrderedDict
+  - []
+  _forward_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _forward_pre_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _is_full_backward_hook: null
+  _load_state_dict_pre_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _modules: !!python/object/apply:collections.OrderedDict
+  - - - '0'
+      - !!python/object:pytorch_forecasting.metrics.SMAPE
+        _backward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _buffers: !!python/object/apply:collections.OrderedDict
+        - []
+        _cache: null
+        _computed: null
+        _defaults:
+          lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+              ZQpxAVgNAAAAMjMyODM4MTU3NDczNnECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+              ODE1NzQ3MzZxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+          losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+              Z2UKcQFYDQAAADIzMjgzODE1NzY0NjRxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+              MzgxNTc2NDY0cQFhLgEAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+        _device: !!python/object/apply:torch.device
+        - cpu
+        _enable_grad: false
+        _forward_cache: null
+        _forward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _forward_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _is_full_backward_hook: null
+        _is_synced: false
+        _load_state_dict_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _modules: !!python/object/apply:collections.OrderedDict
+        - []
+        _non_persistent_buffers_set: !!set {}
+        _parameters: !!python/object/apply:collections.OrderedDict
+        - []
+        _persistent:
+          lengths: false
+          losses: false
+        _reductions:
+          lengths: &id001 !!python/name:torchmetrics.utilities.data.dim_zero_sum ''
+          losses: *id001
+        _should_unsync: true
+        _state_dict_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _to_sync: true
+        _update_called: false
+        compute_on_cpu: false
+        dist_sync_fn: null
+        dist_sync_on_step: false
+        lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+            ZQpxAVgNAAAAMjMyODM4MTU3NTMxMnECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+            ODE1NzUzMTJxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+            Z2UKcQFYDQAAADIzMjgzODE1NzM4NzJxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+            MzgxNTczODcycQFhLgEAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        name: SMAPE
+        process_group: null
+        quantiles: null
+        reduction: mean
+        training: true
+    - - '1'
+      - !!python/object:pytorch_forecasting.metrics.MAE
+        _backward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _buffers: !!python/object/apply:collections.OrderedDict
+        - []
+        _cache: null
+        _computed: null
+        _defaults:
+          lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+              ZQpxAVgNAAAAMjMyODM4MTU3ODE5MnECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+              ODE1NzgxOTJxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+          losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+              Z2UKcQFYDQAAADIzMjgzODE1NzU5ODRxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+              MzgxNTc1OTg0cQFhLgEAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+        _device: !!python/object/apply:torch.device
+        - cpu
+        _enable_grad: false
+        _forward_cache: null
+        _forward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _forward_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _is_full_backward_hook: null
+        _is_synced: false
+        _load_state_dict_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _modules: !!python/object/apply:collections.OrderedDict
+        - []
+        _non_persistent_buffers_set: !!set {}
+        _parameters: !!python/object/apply:collections.OrderedDict
+        - []
+        _persistent:
+          lengths: false
+          losses: false
+        _reductions:
+          lengths: *id001
+          losses: *id001
+        _should_unsync: true
+        _state_dict_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _to_sync: true
+        _update_called: false
+        compute_on_cpu: false
+        dist_sync_fn: null
+        dist_sync_on_step: false
+        lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+            ZQpxAVgNAAAAMjMyODM4MTU3OTI0OHECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+            ODE1NzkyNDhxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+            Z2UKcQFYDQAAADIzMjgzODE1NzYxNzZxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+            MzgxNTc2MTc2cQFhLgEAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        name: MAE
+        process_group: null
+        quantiles: null
+        reduction: mean
+        training: true
+    - - '2'
+      - !!python/object:pytorch_forecasting.metrics.RMSE
+        _backward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _buffers: !!python/object/apply:collections.OrderedDict
+        - []
+        _cache: null
+        _computed: null
+        _defaults:
+          lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+              ZQpxAVgNAAAAMjMyODM4MTU3NjU2MHECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+              ODE1NzY1NjBxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+          losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+              Z2UKcQFYDQAAADIzMjgzODE1NzgyODhxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+              MzgxNTc4Mjg4cQFhLgEAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+        _device: !!python/object/apply:torch.device
+        - cpu
+        _enable_grad: false
+        _forward_cache: null
+        _forward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _forward_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _is_full_backward_hook: null
+        _is_synced: false
+        _load_state_dict_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _modules: !!python/object/apply:collections.OrderedDict
+        - []
+        _non_persistent_buffers_set: !!set {}
+        _parameters: !!python/object/apply:collections.OrderedDict
+        - []
+        _persistent:
+          lengths: false
+          losses: false
+        _reductions:
+          lengths: *id001
+          losses: *id001
+        _should_unsync: true
+        _state_dict_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _to_sync: true
+        _update_called: false
+        compute_on_cpu: false
+        dist_sync_fn: null
+        dist_sync_on_step: false
+        lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+            ZQpxAVgNAAAAMjMyODM4MTU3NzQyNHECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+            ODE1Nzc0MjRxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+            Z2UKcQFYDQAAADIzMjgzODE1Nzg2NzJxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+            MzgxNTc4NjcycQFhLgEAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        name: RMSE
+        process_group: null
+        quantiles: null
+        reduction: sqrt-mean
+        training: true
+    - - '3'
+      - !!python/object:pytorch_forecasting.metrics.MAPE
+        _backward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _buffers: !!python/object/apply:collections.OrderedDict
+        - []
+        _cache: null
+        _computed: null
+        _defaults:
+          lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+              ZQpxAVgNAAAAMjMyODM4MTU4MDU5MnECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+              ODE1ODA1OTJxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+          losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+              Z2UKcQFYDQAAADIzMjgzODE1Nzc2MTZxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+              MzgxNTc3NjE2cQFhLgEAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+        _device: !!python/object/apply:torch.device
+        - cpu
+        _enable_grad: false
+        _forward_cache: null
+        _forward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _forward_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _is_full_backward_hook: null
+        _is_synced: false
+        _load_state_dict_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _modules: !!python/object/apply:collections.OrderedDict
+        - []
+        _non_persistent_buffers_set: !!set {}
+        _parameters: !!python/object/apply:collections.OrderedDict
+        - []
+        _persistent:
+          lengths: false
+          losses: false
+        _reductions:
+          lengths: *id001
+          losses: *id001
+        _should_unsync: true
+        _state_dict_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _to_sync: true
+        _update_called: false
+        compute_on_cpu: false
+        dist_sync_fn: null
+        dist_sync_on_step: false
+        lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+            ZQpxAVgNAAAAMjMyODM4MTU4NTM5MnECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+            ODE1ODUzOTJxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+            Z2UKcQFYDQAAADIzMjgzODE1ODM5NTJxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+            MzgxNTgzOTUycQFhLgEAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        name: MAPE
+        process_group: null
+        quantiles: null
+        reduction: mean
+        training: true
+    - - '4'
+      - !!python/object:pytorch_forecasting.metrics.MASE
+        _backward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _buffers: !!python/object/apply:collections.OrderedDict
+        - []
+        _cache: null
+        _computed: null
+        _defaults:
+          lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+              ZQpxAVgNAAAAMjMyODM4MTU4MDIwOHECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+              ODE1ODAyMDhxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+          losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+          - !!python/object/apply:torch.storage._load_from_bytes
+            - !!binary |
+              gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+              AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+              aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+              Z2UKcQFYDQAAADIzMjgzODE1ODEyNjRxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+              MzgxNTgxMjY0cQFhLgEAAAAAAAAAAAAAAA==
+          - 0
+          - !!python/tuple []
+          - !!python/tuple []
+          - false
+          - !!python/object/apply:collections.OrderedDict
+            - []
+        _device: !!python/object/apply:torch.device
+        - cpu
+        _enable_grad: false
+        _forward_cache: null
+        _forward_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _forward_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _is_full_backward_hook: null
+        _is_synced: false
+        _load_state_dict_pre_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _modules: !!python/object/apply:collections.OrderedDict
+        - []
+        _non_persistent_buffers_set: !!set {}
+        _parameters: !!python/object/apply:collections.OrderedDict
+        - []
+        _persistent:
+          lengths: false
+          losses: false
+        _reductions:
+          lengths: *id001
+          losses: *id001
+        _should_unsync: true
+        _state_dict_hooks: !!python/object/apply:collections.OrderedDict
+        - []
+        _to_sync: true
+        _update_called: false
+        compute_on_cpu: false
+        dist_sync_fn: null
+        dist_sync_on_step: false
+        lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+            ZQpxAVgNAAAAMjMyODM4MTU4MDg4MHECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+            ODE1ODA4ODBxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+        - !!python/object/apply:torch.storage._load_from_bytes
+          - !!binary |
+            gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+            AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+            aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+            Z2UKcQFYDQAAADIzMjgzODE1Nzk5MjBxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+            MzgxNTc5OTIwcQFhLgEAAAAAAAAAAAAAAA==
+        - 0
+        - !!python/tuple []
+        - !!python/tuple []
+        - false
+        - !!python/object/apply:collections.OrderedDict
+          - []
+        name: MASE
+        process_group: null
+        quantiles: null
+        reduction: mean
+        training: true
+  _non_persistent_buffers_set: !!set {}
+  _parameters: !!python/object/apply:collections.OrderedDict
+  - []
+  _state_dict_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  training: true
+loss: !!python/object:pytorch_forecasting.metrics.NormalDistributionLoss
+  _backward_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _buffers: !!python/object/apply:collections.OrderedDict
+  - []
+  _cache: null
+  _computed: null
+  _defaults:
+    lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+    - !!python/object/apply:torch.storage._load_from_bytes
+      - !!binary |
+        gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+        AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+        aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+        ZQpxAVgNAAAAMjMyODM4MTU3NDU0NHECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+        ODE1NzQ1NDRxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+    - 0
+    - !!python/tuple []
+    - !!python/tuple []
+    - false
+    - !!python/object/apply:collections.OrderedDict
+      - []
+    losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+    - !!python/object/apply:torch.storage._load_from_bytes
+      - !!binary |
+        gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+        AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+        aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+        Z2UKcQFYDQAAADIzMjgzODE1NzY5NDRxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+        MzgxNTc2OTQ0cQFhLgEAAAAAAAAAAAAAAA==
+    - 0
+    - !!python/tuple []
+    - !!python/tuple []
+    - false
+    - !!python/object/apply:collections.OrderedDict
+      - []
+  _device: !!python/object/apply:torch.device
+  - cpu
+  _enable_grad: false
+  _forward_cache: null
+  _forward_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _forward_pre_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _is_full_backward_hook: null
+  _is_synced: false
+  _load_state_dict_pre_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _modules: !!python/object/apply:collections.OrderedDict
+  - []
+  _non_persistent_buffers_set: !!set {}
+  _parameters: !!python/object/apply:collections.OrderedDict
+  - []
+  _persistent:
+    lengths: false
+    losses: false
+  _reductions:
+    lengths: *id001
+    losses: *id001
+  _should_unsync: true
+  _state_dict_hooks: !!python/object/apply:collections.OrderedDict
+  - []
+  _to_sync: true
+  _update_called: false
+  compute_on_cpu: false
+  dist_sync_fn: null
+  dist_sync_on_step: false
+  lengths: !!python/object/apply:torch._utils._rebuild_tensor_v2
+  - !!python/object/apply:torch.storage._load_from_bytes
+    - !!binary |
+      gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+      AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+      aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApMb25nU3RvcmFn
+      ZQpxAVgNAAAAMjMyODM4MTU3NTIxNnECWAMAAABjcHVxA0sBTnRxBFEugAJdcQBYDQAAADIzMjgz
+      ODE1NzUyMTZxAWEuAQAAAAAAAAAAAAAAAAAAAA==
+  - 0
+  - !!python/tuple []
+  - !!python/tuple []
+  - false
+  - !!python/object/apply:collections.OrderedDict
+    - []
+  losses: !!python/object/apply:torch._utils._rebuild_tensor_v2
+  - !!python/object/apply:torch.storage._load_from_bytes
+    - !!binary |
+      gAKKCmz8nEb5IGqoUBkugAJN6QMugAJ9cQAoWBAAAABwcm90b2NvbF92ZXJzaW9ucQFN6QNYDQAA
+      AGxpdHRsZV9lbmRpYW5xAohYCgAAAHR5cGVfc2l6ZXNxA31xBChYBQAAAHNob3J0cQVLAlgDAAAA
+      aW50cQZLBFgEAAAAbG9uZ3EHSwR1dS6AAihYBwAAAHN0b3JhZ2VxAGN0b3JjaApGbG9hdFN0b3Jh
+      Z2UKcQFYDQAAADIzMjgzODE1NzM2ODBxAlgDAAAAY3B1cQNLAU50cQRRLoACXXEAWA0AAAAyMzI4
+      MzgxNTczNjgwcQFhLgEAAAAAAAAAAAAAAA==
+  - 0
+  - !!python/tuple []
+  - !!python/tuple []
+  - false
+  - !!python/object/apply:collections.OrderedDict
+    - []
+  name: NormalDistributionLoss
+  process_group: null
+  quantiles:
+  - 0.02
+  - 0.1
+  - 0.25
+  - 0.5
+  - 0.75
+  - 0.9
+  - 0.98
+  reduction: mean
+  training: true
+monotone_constaints: {}
+n_plotting_samples: null
+n_validation_samples: null
+optimizer: ranger
+optimizer_params: null
+reduce_on_plateau_min_lr: 1.0e-05
+reduce_on_plateau_patience: 1000
+reduce_on_plateau_reduction: 2.0
+rnn_layers: 2
+static_categoricals:
+- static
+static_reals:
+- value_center
+- value_scale
+target: value
+target_lags: {}
+time_varying_categoricals_decoder: []
+time_varying_categoricals_encoder: []
+time_varying_reals_decoder:
+- time_idx
+time_varying_reals_encoder:
+- time_idx
+- value
+weight_decay: 0.0
+x_categoricals:
+- static
+x_reals:
+- value_center
+- value_scale
+- time_idx
+- value

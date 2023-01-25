@@ -8,10 +8,10 @@ Or, more precise: 1/Quantitiy * d(Quantity) / d(Temperature) in [1/degC]
 
 import numpy as np
 import pandas as pd
-import lichtblyck as lb
+import lichtblyck_forecasting as lf
 
 # Get temperatures...
-tmpr = lb.future.tmpr_standardized()
+tmpr = lf.future.tmpr_standardized()
 tmpr = tmpr[tmpr.index < "2021"]
 
 # ...and calculate geographic average; weigh with consumption / customer presence in each zone.
@@ -41,12 +41,12 @@ weights = pd.DataFrame(
 weights = (
     weights["power"] / weights["power"].sum() + weights["gas"] / weights["gas"].sum()
 )
-tmpr["t_germany"] = lb.wavg(tmpr, weights, axis=1)
+tmpr["t_germany"] = lf.wavg(tmpr, weights, axis=1)
 
 # Get the tlp profile...
-t2l = 0.9 * lb.tlp.standardized_tmpr_loadprofile(
+t2l = 0.9 * lf.tlp.standardized_tmpr_loadprofile(
     "bayernwerk_nsp"
-) + 0.1 * lb.tlp.standardized_tmpr_loadprofile(
+) + 0.1 * lf.tlp.standardized_tmpr_loadprofile(
     "bayernwerk_wp"
 )  # 2=nsp, 3=wp
 # ...and plot to verify.
@@ -56,9 +56,9 @@ wide = t2l.unstack(
 wide.plot(colormap="coolwarm")
 
 # Combine to get the expected consumption...
-q_ref = lb.tlp.tmpr2load(t2l, tmpr["t_germany"], 0.79e6).mean() * 8760
+q_ref = lf.tlp.tmpr2load(t2l, tmpr["t_germany"], 0.79e6).mean() * 8760
 # ...as well as the consumption with temperature increase...
-q_warmer = lb.tlp.tmpr2load(t2l, tmpr["t_germany"] + 1, 0.79e6).mean() * 8760
+q_warmer = lf.tlp.tmpr2load(t2l, tmpr["t_germany"] + 1, 0.79e6).mean() * 8760
 # ...and calculate the sensitivity with them.
 sensitivity = q_warmer / q_ref - 1  # fraction per degC
 
@@ -68,7 +68,7 @@ sensitivity = q_warmer / q_ref - 1  # fraction per degC
 # Plot the dependence of consumption on temperature.
 delta_t = np.linspace(-2, 2, 51)
 q = [
-    lb.tlp.tmpr2load(t2l, tmpr["t_germany"] + dt, 0.79e6).mean() * 8760 / 1e6
+    lf.tlp.tmpr2load(t2l, tmpr["t_germany"] + dt, 0.79e6).mean() * 8760 / 1e6
     for dt in delta_t
 ]  # in /1e6 to make TWh
 import matplotlib.pyplot as plt
